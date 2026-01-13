@@ -1,0 +1,587 @@
+import $ from 'jquery';
+
+const csrfToken = () => $('meta[name="csrf-token"]').attr('content');
+
+const formatCurrency = (value) => {
+    const number = Number(value ?? 0);
+    return `₱${number.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+};
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+$(() => {
+    const config = window.inventoryAssignmentConfig || {};
+    const routes = config.routes || {};
+    const categories = config.categories || [];
+
+    const $itemsBody = $('#inventoryItemsBody');
+    const $search = $('#inventorySearch');
+    const $stateFilter = $('#inventoryState');
+    const $dateFrom = $('#date_from');
+    const $dateTo = $('#date_to');
+    const $applyDateBtn = $('#inventoryApplyDate');
+    const $pendingCount = $('#inventoryPendingCount');
+    const $recordedCount = $('#inventoryRecordedCount');
+
+    const $createModal = $('#inventoryCreateModal');
+    const $createForm = $('#inventoryCreateForm');
+    const $createErrors = $('#inventoryCreateErrors');
+    const $categorySelect = $('#inventoryCategory');
+    const $subCategorySelect = $('#inventorySubCategory');
+    const $descriptionField = $('#inventoryPropertyDescription');
+    const $unitField = $('#inventoryUnit');
+    const $quantityField = $('#inventoryQuantity');
+    const $unitCostField = $('#inventoryUnitCost');
+    const $totalCostField = $('#inventoryTotalCost');
+    const $dateAcquiredField = $('#inventoryDateAcquired');
+    const $usefulLifeField = $('#inventoryUsefulLife');
+    const $serialsContainer = $('#inventorySerialsContainer');
+
+    const $itemDescription = $('#inventoryItemDescription');
+    const $itemSource = $('#inventoryItemSource');
+    const $itemAccepted = $('#inventoryItemAccepted');
+    const $itemSupplier = $('#inventoryItemSupplier');
+    const $itemAccountableOfficer = $('#inventoryAccountableOfficer');
+
+    const $viewModal = $('#inventoryViewModal');
+    const $viewPropertyNo = $('#inventoryViewPropertyNo');
+    const $viewSource = $('#inventoryViewSource');
+    const $viewDateAcquired = $('#inventoryViewDateAcquired');
+    const $viewDescription = $('#inventoryViewDescription');
+    const $viewCategory = $('#inventoryViewCategory');
+    const $viewSubCategory = $('#inventoryViewSubCategory');
+    const $viewQuantity = $('#inventoryViewQuantity');
+    const $viewUnitCost = $('#inventoryViewUnitCost');
+    const $viewTotalCost = $('#inventoryViewTotalCost');
+    const $viewOfficer = $('#inventoryViewOfficer');
+    const $viewUsefulLife = $('#inventoryViewUsefulLife');
+    const $viewSerials = $('#inventoryViewSerials');
+    const $viewRemarks = $('#inventoryViewRemarks');
+    const $viewDocumentBadge = $('#inventoryViewDocumentBadge');
+    const $viewDocumentMeta = $('#inventoryViewDocumentMeta');
+    const $viewDocumentExtra = $('#inventoryViewDocumentExtra');
+
+    let fetchTimeout = null;
+    let currentStoreUrl = null;
+    let appliedDateFrom = null;
+    let appliedDateTo = null;
+
+    const escapeHtml = (value = '') => String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const escapeAttr = (value = '') => escapeHtml(value);
+
+    const applyCategoriesToSelect = (selectedParent = null, selectedChild = null) => {
+        $categorySelect.empty();
+        const parentPlaceholderSelected = selectedParent ? '' : 'selected';
+        $categorySelect.append(`<option value="" disabled ${parentPlaceholderSelected}>Select category</option>`);
+        categories.forEach((parent) => {
+            $categorySelect.append(`<option value="${parent.id}" ${String(parent.id) === String(selectedParent) ? 'selected' : ''}>${parent.name}</option>`);
+        });
+
+        populateSubCategories(selectedParent, selectedChild);
+    };
+
+    const populateSubCategories = (parentId, selectedChild = null) => {
+        $subCategorySelect.empty();
+        const childPlaceholderSelected = selectedChild ? '' : 'selected';
+        $subCategorySelect.append(`<option value="" disabled ${childPlaceholderSelected}>Select sub-category</option>`);
+
+        const parent = categories.find((cat) => String(cat.id) === String(parentId));
+        if (!parent) {
+            return;
+        }
+
+        parent.children.forEach((child) => {
+            $subCategorySelect.append(`<option value="${child.id}" ${String(child.id) === String(selectedChild) ? 'selected' : ''}>${child.name}</option>`);
+        });
+
+        if (!parent.children.length) {
+            $subCategorySelect.append('<option value="" disabled>No sub-categories available</option>');
+        }
+    };
+
+    $categorySelect.on('change', function () {
+        populateSubCategories($(this).val(), null);
+    });
+
+    const toggleModal = ($modal, open) => {
+        if (open) {
+            $modal.removeClass('hidden opacity-0');
+            $('body').addClass('overflow-hidden');
+        } else {
+            $modal.addClass('opacity-0');
+            setTimeout(() => $modal.addClass('hidden'), 200);
+            $('body').removeClass('overflow-hidden');
+            if ($modal.is($createModal)) {
+                $createForm[0].reset();
+                $createErrors.addClass('hidden').empty();
+                currentStoreUrl = null;
+                populateSubCategories(null, null);
+                $categorySelect.empty();
+                $totalCostField.val('0.00');
+                renderSerialInputs(1);
+                $itemAccountableOfficer.text('—');
+            }
+        }
+    };
+
+    $(document).on('click', '[data-close-modal]', function () {
+        toggleModal($(this).closest('.fixed'), false);
+    });
+
+    $(document).on('click', function (event) {
+        const $target = $(event.target);
+        if ($target.data('closeModal') !== undefined) {
+            toggleModal($target.closest('.fixed'), false);
+        }
+    });
+
+    $(document).on('keydown', (event) => {
+        if (event.key === 'Escape') {
+            if (!$createModal.hasClass('hidden')) toggleModal($createModal, false);
+            if (!$viewModal.hasClass('hidden')) toggleModal($viewModal, false);
+        }
+    });
+
+    const collectSerialInputs = () => $serialsContainer.find('input[name^="serial_numbers"]').map((_, input) => $(input).val()).get();
+
+    const renderSerialInputs = (count, existingValues = []) => {
+        const total = Number.isFinite(count) && count > 0 ? count : 1;
+        const inputs = [];
+
+        for (let index = 0; index < total; index += 1) {
+            const value = escapeAttr(existingValues[index] ?? '');
+            inputs.push(`
+                <div class="flex items-center gap-3">
+                    <span class="w-14 text-xs font-semibold uppercase tracking-wide text-gray-500">#${index + 1}</span>
+                    <input type="text" name="serial_numbers[${index}]" value="${value}" class="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" placeholder="Serial number" autocomplete="off">
+                </div>
+            `);
+        }
+
+        $serialsContainer.html(inputs.join(''));
+    };
+
+    const recalculateTotalCost = () => {
+        const quantity = Number($quantityField.val() || 0);
+        const unitCost = Number($unitCostField.val() || 0);
+        const total = quantity * unitCost;
+        $totalCostField.val(total.toFixed(2));
+    };
+
+    const handleQuantityInput = () => {
+        const max = Number($quantityField.attr('max')) || Number.POSITIVE_INFINITY;
+        let quantity = Number($quantityField.val());
+
+        if (!Number.isFinite(quantity) || quantity <= 0) {
+            quantity = 1;
+        }
+
+        if (quantity > max) {
+            quantity = max;
+            $quantityField.val(quantity);
+        }
+
+        recalculateTotalCost();
+        const preservedValues = collectSerialInputs();
+        renderSerialInputs(quantity, preservedValues);
+    };
+
+    $quantityField.on('input', handleQuantityInput);
+    $unitCostField.on('input', recalculateTotalCost);
+
+    const renderEmptyRow = (message) => {
+        $itemsBody.html(`
+            <tr>
+                <td colspan="8" class="px-4 py-10 text-center text-gray-500">
+                    <i class="fas fa-box-open text-2xl text-gray-300 mb-3"></i>
+                    <p>${message}</p>
+                </td>
+            </tr>
+        `);
+    };
+
+    const buildActionButtons = (item) => {
+        const createStateAttrs = item.can_create ? '' : 'disabled aria-disabled="true"';
+        const viewStateAttrs = item.property_no ? '' : 'disabled aria-disabled="true"';
+    const showUrl = routes.show?.replace('__ID__', item.ia_item_id);
+    const storeUrl = routes.store?.replace('__ID__', item.ia_item_id);
+    const showUrlAttr = showUrl ?? '';
+    const storeUrlAttr = storeUrl ?? '';
+
+        return `
+            <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                <button type="button" class="js-view-pqs inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    data-item-id="${item.ia_item_id}"
+                    data-show-url="${showUrlAttr}"
+                    ${viewStateAttrs}>
+                    <i class="fas fa-eye"></i>
+                    View Record
+                </button>
+                <button type="button" class="js-create-pqs inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-[#154c30] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    data-item-id="${item.ia_item_id}"
+                    data-show-url="${showUrlAttr}"
+                    data-store-url="${storeUrlAttr}"
+                    ${createStateAttrs}>
+                    <i class="fas fa-barcode"></i>
+                    Create PQS Record
+                </button>
+            </div>
+        `;
+    };
+
+    const renderItems = (items) => {
+        if (!items.length) {
+            renderEmptyRow('No accepted items found for the selected filters.');
+            $pendingCount.text('0 Pending');
+            $recordedCount.text('0 Recorded');
+            return;
+        }
+
+        const pending = items.filter((item) => item.can_create).length;
+        const recorded = items.length - pending;
+        $pendingCount.text(`${pending} Pending`);
+        $recordedCount.text(`${recorded} Recorded`);
+
+        const rows = items.map((item) => {
+            const description = escapeHtml(item.item_description ?? '—');
+            const category = escapeHtml(item.category ?? '—');
+            const subCategory = escapeHtml(item.sub_category ?? '—');
+            const unit = item.unit ? ` ${escapeHtml(item.unit)}` : '';
+            const quantityValue = item.quantity != null ? escapeHtml(String(item.quantity)) : null;
+            const quantityDisplay = quantityValue ? `${quantityValue}${unit}` : '—';
+            const sourceSegments = [];
+            if (item.po_no) sourceSegments.push(`PO ${item.po_no}`);
+            if (item.ia_no) sourceSegments.push(`IA ${item.ia_no}`);
+            if (item.supplier_name) sourceSegments.push(item.supplier_name);
+            const sourceText = sourceSegments.length ? escapeHtml(sourceSegments.join(' • ')) : '—';
+
+            const statusName = item.status_name ?? '';
+            const statusLower = statusName.toLowerCase();
+            let badgeClasses = 'bg-slate-100 text-slate-600';
+            let badgeIcon = 'fa-tag';
+            if (statusLower.includes('record')) {
+                badgeClasses = 'bg-emerald-100 text-emerald-700';
+                badgeIcon = 'fa-clipboard-check';
+            } else if (statusLower.includes('accept') || statusLower.includes('pending')) {
+                badgeClasses = 'bg-amber-100 text-amber-700';
+                badgeIcon = 'fa-hourglass-half';
+            }
+            const statusBadge = statusName
+                ? `<span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${badgeClasses}"><i class="fas ${badgeIcon} text-[10px]"></i>${escapeHtml(statusName)}</span>`
+                : '';
+
+            const propertyInfo = item.property_no
+                ? `<div class="mt-2 text-xs font-semibold text-[#1a3a2d]">Property No: ${escapeHtml(item.property_no)}</div>`
+                : '';
+
+            return `
+                <tr class="border-b last:border-0 hover:bg-gray-50">
+                    <td class="px-3 py-4 align-top">
+                        <div class="font-semibold text-gray-800">${description}</div>
+                        <div class="text-xs text-gray-500">IA: ${escapeHtml(item.ia_no ?? '—')} • PO: ${escapeHtml(item.po_no ?? '—')}</div>
+                        <div class="mt-1">${statusBadge}</div>
+                        ${propertyInfo}
+                    </td>
+                    <td class="px-3 py-4 align-top text-gray-700">${category}</td>
+                    <td class="px-3 py-4 align-top text-gray-700">${subCategory}</td>
+                    <td class="px-3 py-4 align-top text-right font-semibold text-gray-800">${quantityDisplay}</td>
+                    <td class="px-3 py-4 align-top text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
+                    <td class="px-3 py-4 align-top text-right text-gray-800 font-semibold">${formatCurrency(item.total_cost)}</td>
+                    <td class="px-3 py-4 align-top text-gray-600">${sourceText}</td>
+                    <td class="px-3 py-4 align-top text-right">${buildActionButtons(item)}</td>
+                </tr>
+            `;
+        });
+
+        $itemsBody.html(rows.join(''));
+    };
+
+    const fetchItems = () => {
+        const params = {
+            search: $search.val(),
+            state: $stateFilter.val(),
+        };
+
+        // Include date filters only if the date range has been applied by the user
+        if (appliedDateFrom) params.date_from = appliedDateFrom;
+        if (appliedDateTo) params.date_to = appliedDateTo;
+
+        $itemsBody.html(`
+            <tr>
+                <td colspan="8" class="px-4 py-10 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-pulse text-2xl text-gray-300 mb-3"></i>
+                    <p>Loading accepted items...</p>
+                </td>
+            </tr>
+        `);
+
+        $.ajax({
+            url: routes.items,
+            method: 'GET',
+            data: params,
+            success: (response) => {
+                renderItems(response.data?.items ?? []);
+            },
+            error: () => {
+                renderEmptyRow('Unable to load items at this time. Please try again later.');
+            },
+        });
+    };
+
+    const debounceFetch = () => {
+        clearTimeout(fetchTimeout);
+        fetchTimeout = setTimeout(fetchItems, 350);
+    };
+
+    $search.on('input', debounceFetch);
+    $stateFilter.on('change', fetchItems);
+
+    // Apply button for date range: only clicking this will apply the date filters
+    $applyDateBtn.on('click', () => {
+        const from = $dateFrom.val() || null;
+        const to = $dateTo.val() || null;
+
+        // Simple validation: if one is provided ensure the other is too
+        if ((from && !to) || (!from && to)) {
+            alert('Please provide both start and end dates to apply the date range.');
+            return;
+        }
+
+        appliedDateFrom = from;
+        appliedDateTo = to;
+
+        fetchItems();
+    });
+
+    const populateCreateModal = (data) => {
+        const item = data || {};
+        const categoriesData = {
+            parent_id: item.category_id || null,
+            sub_id: item.sub_category_id || null,
+        };
+
+        applyCategoriesToSelect(categoriesData.parent_id, categoriesData.sub_id);
+
+        $('#inventoryIaItemId').val(item.ia_item_id);
+        $descriptionField.val(item.property_record?.description || item.item_description || '');
+        $unitField.val(item.unit || '');
+
+        const acceptedQuantity = item.quantity || 1;
+        $quantityField.attr('max', acceptedQuantity).val(acceptedQuantity);
+        $unitCostField.val(item.unit_cost ?? 0);
+        $totalCostField.val((acceptedQuantity * (item.unit_cost ?? 0)).toFixed(2));
+        $dateAcquiredField.val(item.property_record?.date_acquired || todayIso());
+        $usefulLifeField.val(item.property_record?.estimated_useful_life || '');
+        renderSerialInputs(acceptedQuantity);
+
+        $itemDescription.text(item.item_description ?? '—');
+        $itemSource.text(`PO ${item.po_no ?? '—'} • IA ${item.ia_no ?? '—'}`);
+        $itemAccepted.text(`${acceptedQuantity} accepted`);
+        $itemSupplier.text(item.supplier_name ?? '—');
+        $itemAccountableOfficer.text(item.accountable_officer_name ?? '—');
+    };
+
+    const openCreateModal = (button) => {
+        const showUrl = button.data('showUrl');
+        currentStoreUrl = button.data('storeUrl');
+
+        if (!showUrl || !currentStoreUrl) {
+            alert('Endpoints for this item are not configured.');
+            return;
+        }
+
+        $.ajax({
+            url: showUrl,
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            success: (response) => {
+                populateCreateModal(response.data);
+                toggleModal($createModal, true);
+            },
+            error: () => {
+                alert('Unable to load item details.');
+            },
+        });
+    };
+
+    const openViewModal = (button) => {
+        const showUrl = button.data('showUrl');
+        if (!showUrl) {
+            return;
+        }
+
+        $.ajax({
+            url: showUrl,
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            success: (response) => {
+                const data = response.data || {};
+                if (!data.property_no && !data.property_record) {
+                    alert('No PQS record found for this item yet.');
+                    return;
+                }
+
+                const propertyRecord = data.property_record || {};
+
+                const propertyNumber = data.property_no || propertyRecord.property_no || '—';
+                const unit = propertyRecord.unit || data.unit || '';
+                const quantityRaw = propertyRecord.quantity ?? data.quantity ?? null;
+                const quantityDisplay = quantityRaw != null
+                    ? `${quantityRaw} ${unit}`.trim()
+                    : (unit || '—');
+
+                const sourceSegments = [];
+                if (data.po_no) sourceSegments.push(`PO ${data.po_no}`);
+                if (data.ia_no) sourceSegments.push(`IA ${data.ia_no}`);
+                if (data.supplier_name) sourceSegments.push(data.supplier_name);
+                $viewSource.text(sourceSegments.join(' • ') || '—');
+
+                $viewPropertyNo.text(propertyNumber);
+                $viewDateAcquired.text(propertyRecord.date_acquired || '—');
+                $viewDescription.text(propertyRecord.description || data.item_description || '—');
+                $viewCategory.text(data.category || '—');
+                $viewSubCategory.text(data.sub_category || '—');
+                $viewQuantity.text(quantityDisplay || '—');
+
+                const unitCostValue = propertyRecord.unit_value ?? data.unit_cost ?? null;
+                const totalCostValue = propertyRecord.total_value ?? data.total_cost ?? (quantityRaw != null && unitCostValue != null
+                    ? Number(quantityRaw) * Number(unitCostValue)
+                    : null);
+                $viewUnitCost.text(unitCostValue != null ? formatCurrency(unitCostValue) : '—');
+                $viewTotalCost.text(totalCostValue != null ? formatCurrency(totalCostValue) : '—');
+
+                $viewOfficer.text(propertyRecord.accountable_officer_name || data.accountable_officer_name || '—');
+                const usefulLife = propertyRecord.estimated_useful_life || data.ics_record?.estimated_useful_life || '';
+                $viewUsefulLife.text(usefulLife || '—');
+
+                const serialRaw = propertyRecord.serial_number || '';
+                const serials = serialRaw
+                    ? serialRaw.split(/[\n,;]+/).map((serial) => serial.trim()).filter(Boolean)
+                    : [];
+                if (serials.length) {
+                    $viewSerials.html(serials.map((serial) => `
+                        <li class="flex items-center gap-2 text-sm text-gray-700">
+                            <i class="fas fa-circle text-[6px] text-gray-400"></i>
+                            <span>${escapeHtml(serial)}</span>
+                        </li>
+                    `).join(''));
+                } else {
+                    $viewSerials.html('<li class="text-sm text-gray-400 italic">No serial numbers recorded.</li>');
+                }
+
+                $viewRemarks.text(propertyRecord.remarks || 'No additional remarks recorded.');
+
+                const badgeBaseClasses = 'inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm';
+                let badgeClasses = 'bg-amber-100 text-amber-700';
+                let badgeIcon = 'fa-hourglass-half';
+                let badgeLabel = 'Pending Document';
+                let docMetaText = 'No custodial document generated yet.';
+                let docExtraText = 'Generate PQS record to create custodial documents automatically.';
+
+                if (data.ics_record) {
+                    badgeClasses = 'bg-emerald-100 text-emerald-700';
+                    badgeIcon = 'fa-file-circle-check';
+                    badgeLabel = data.ics_record.ics_no ? `ICS #${data.ics_record.ics_no}` : 'ICS Issued';
+                    const quantityForDoc = data.ics_record.quantity ?? quantityRaw ?? 0;
+                    const unitLabel = unit || 'unit(s)';
+                    docMetaText = `${quantityForDoc} ${unitLabel} • ${formatCurrency(data.ics_record.total_cost)}`;
+                    docExtraText = data.ics_record.estimated_useful_life
+                        ? `Estimated useful life: ${data.ics_record.estimated_useful_life}`
+                        : '';
+                } else if (data.par_record) {
+                    badgeClasses = 'bg-purple-100 text-purple-700';
+                    badgeIcon = 'fa-file-contract';
+                    badgeLabel = data.par_record.par_no ? `PAR #${data.par_record.par_no}` : 'PAR Issued';
+                    const quantityForDoc = data.par_record.quantity ?? quantityRaw ?? 0;
+                    const unitLabel = unit || 'unit(s)';
+                    docMetaText = `${quantityForDoc} ${unitLabel} • ${formatCurrency(data.par_record.amount)}`;
+                    docExtraText = data.par_record.date_acquired
+                        ? `Acquired on ${data.par_record.date_acquired}`
+                        : '';
+                }
+
+                $viewDocumentBadge
+                    .attr('class', `${badgeBaseClasses} ${badgeClasses}`)
+                    .html(`<i class="fas ${badgeIcon}"></i><span>${escapeHtml(badgeLabel)}</span>`);
+
+                $viewDocumentMeta.text(docMetaText);
+                if (docExtraText) {
+                    $viewDocumentExtra.text(docExtraText).removeClass('hidden');
+                } else {
+                    $viewDocumentExtra.text('Generate PQS record to create custodial documents automatically.').removeClass('hidden');
+                }
+
+                toggleModal($viewModal, true);
+            },
+            error: () => {
+                alert('Unable to load PQS record.');
+            },
+        });
+    };
+
+    $(document).on('click', '.js-create-pqs', function () {
+        if ($(this).is(':disabled')) {
+            return;
+        }
+        openCreateModal($(this));
+    });
+
+    $(document).on('click', '.js-view-pqs', function () {
+        if ($(this).is(':disabled')) {
+            return;
+        }
+        openViewModal($(this));
+    });
+
+    $createForm.on('submit', function (event) {
+        event.preventDefault();
+        if (!currentStoreUrl) {
+            alert('No endpoint configured for saving this record.');
+            return;
+        }
+
+        $createErrors.addClass('hidden').empty();
+        const $submitBtn = $createForm.find('button[type="submit"]');
+        $submitBtn.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+
+        $.ajax({
+            url: currentStoreUrl,
+            method: 'POST',
+            data: $createForm.serialize(),
+            headers: {
+                'X-CSRF-TOKEN': csrfToken(),
+                Accept: 'application/json',
+            },
+            success: (response) => {
+                toggleModal($createModal, false);
+                alert(response.message || 'PQS record created successfully.');
+                fetchItems();
+            },
+            error: (xhr) => {
+                if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                    const messages = Object.values(xhr.responseJSON.errors).flat();
+                    $createErrors.html(messages.map((msg) => `<div>${msg}</div>`).join(''));
+                    $createErrors.removeClass('hidden');
+                } else if (xhr.responseJSON?.message) {
+                    $createErrors.text(xhr.responseJSON.message).removeClass('hidden');
+                } else {
+                    $createErrors.text('Something went wrong while saving the record.').removeClass('hidden');
+                }
+            },
+            complete: () => {
+                $submitBtn.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+            },
+        });
+    });
+
+    // Initialize state
+    populateSubCategories(null, null);
+    renderSerialInputs(1);
+    fetchItems();
+});
