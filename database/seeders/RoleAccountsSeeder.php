@@ -14,28 +14,39 @@ class RoleAccountsSeeder extends Seeder
     public function run(): void
     {
         $accounts = [
-            [
-                'username' => 'division.head',
-                'password' => Hash::make('DivHead@2025'),
-                'role' => 'division_head',
-            ],
-            [
-                'username' => 'iac.lead',
-                'password' => Hash::make('IACLead@2025'),
-                'role' => 'iac',
-            ],
-            [
-                'username' => 'iac.member',
-                'password' => Hash::make('IACMember@2025'),
-                'role' => 'iac',
-            ],
+            // Requested default accounts (password == username)
+            ['username' => 'employee', 'plain_password' => 'employee', 'role' => 'employee'],
+            ['username' => 'custodian', 'plain_password' => 'custodian', 'role' => 'custodian'],
+            ['username' => 'division_head', 'plain_password' => 'division_head', 'role' => 'division_head'],
+            ['username' => 'IAC', 'plain_password' => 'IAC', 'role' => 'iac'],
+            ['username' => 'BAC', 'plain_password' => 'BAC', 'role' => 'bac'],
+
+            // Existing role-specific accounts
+            ['username' => 'division.head', 'plain_password' => 'DivHead@2025', 'role' => 'division_head'],
+            ['username' => 'iac.lead', 'plain_password' => 'IACLead@2025', 'role' => 'iac'],
+            ['username' => 'iac.member', 'plain_password' => 'IACMember@2025', 'role' => 'iac'],
         ];
 
+        $nextAccountId = ((int) Account::query()->max('account_id')) + 1;
+
         foreach ($accounts as $accountData) {
-            Account::query()->updateOrCreate(
-                ['username' => $accountData['username']],
-                $accountData
-            );
+            $account = Account::query()->where('username', $accountData['username'])->first();
+
+            $payload = [
+                'username' => $accountData['username'],
+                'password' => Hash::make($accountData['plain_password']),
+                'role' => $accountData['role'],
+            ];
+
+            if ($account) {
+                $account->fill($payload)->save();
+                continue;
+            }
+
+            Account::query()->create([
+                'account_id' => $nextAccountId++,
+                ...$payload,
+            ]);
         }
     }
 }

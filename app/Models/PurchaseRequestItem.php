@@ -10,7 +10,8 @@ class PurchaseRequestItem extends Model
 {
     protected $table = 'purchase_request_items';
     protected $primaryKey = 'pri_id';
-    public $incrementing = true;
+    public $incrementing = false;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'pr_no',
@@ -45,5 +46,16 @@ class PurchaseRequestItem extends Model
     public function purchaseOrderItems(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class, 'pri_id', 'pri_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $item): void {
+            if (!empty($item->pri_id)) {
+                return;
+            }
+
+            $item->pri_id = ((int) static::max('pri_id')) + 1;
+        });
     }
 }

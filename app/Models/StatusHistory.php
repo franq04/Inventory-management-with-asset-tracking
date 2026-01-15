@@ -10,6 +10,8 @@ class StatusHistory extends Model
     protected $table = 'status_history';
     protected $primaryKey = 'history_id';
     public $timestamps = false;
+    public $incrementing = false;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'table_name',
@@ -35,5 +37,16 @@ class StatusHistory extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'changed_by', 'account_id');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $history): void {
+            if (!empty($history->history_id)) {
+                return;
+            }
+
+            $history->history_id = ((int) static::max('history_id')) + 1;
+        });
     }
 }
