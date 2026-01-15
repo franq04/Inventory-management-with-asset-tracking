@@ -9,6 +9,8 @@ class Notification extends Model
 {
     protected $table = 'notifications';
     protected $primaryKey = 'notification_id';
+    public $incrementing = false;
+    protected $keyType = 'int';
     public $timestamps = false;
 
     protected $fillable = [
@@ -26,6 +28,18 @@ class Notification extends Model
         'is_read' => 'boolean',
         'created_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $notification): void {
+            if (! empty($notification->notification_id)) {
+                return;
+            }
+
+            $maxId = (int) static::query()->max('notification_id');
+            $notification->notification_id = $maxId + 1;
+        });
+    }
 
     public function recipient(): BelongsTo
     {
