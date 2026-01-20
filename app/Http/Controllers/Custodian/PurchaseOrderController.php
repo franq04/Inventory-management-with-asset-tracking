@@ -373,7 +373,44 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['items', 'supplier', 'purchaseRequest']);
+        $purchaseOrder->load(['items', 'supplier', 'purchaseRequest', 'status']);
+
+        // Get status history for this PO
+        $statusHistory = StatusHistory::query()
+            ->where('table_name', 'purchase_orders')
+            ->where('record_id', $purchaseOrder->po_no)
+            ->with(['account.employee', 'status'])
+            ->orderByDesc('changed_at')
+            ->get()
+            ->map(function (StatusHistory $history) {
+                $changedBy = null;
+                if ($history->account) {
+                    $employee = $history->account->employee;
+                    if ($employee) {
+                        $changedBy = collect([
+                            $employee->first_name ?? null,
+                            $employee->middle_name ?? null,
+                            $employee->last_name ?? null,
+                            $employee->suffix ?? null,
+                        ])->filter()->implode(' ');
+                    }
+                    if (empty($changedBy)) {
+                        $changedBy = $history->account->username ?? 'Unknown';
+                    }
+                }
+
+                $oldStatus = $history->old_status_id
+                    ? Status::find($history->old_status_id)?->status_name
+                    : null;
+
+                return [
+                    'changed_at' => optional($history->changed_at)->format('M d, Y h:i A'),
+                    'changed_by' => $changedBy,
+                    'old_status' => $oldStatus,
+                    'new_status' => $history->status?->status_name,
+                    'remarks' => $history->remarks,
+                ];
+            });
 
         return response()->json([
             'status' => 'success',
@@ -400,6 +437,7 @@ class PurchaseOrderController extends Controller
                         'employee_wait_note' => $item->employee_wait_note,
                     ];
                 }),
+                'status_history' => $statusHistory,
             ],
         ]);
     }

@@ -10,8 +10,19 @@ class ParRecord extends Model
     protected $table = 'par';
     protected $primaryKey = 'par_no';
     public $incrementing = false;
-    protected $keyType = 'string';
+    protected $keyType = 'int';
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $record): void {
+            if (! empty($record->par_no)) {
+                return;
+            }
+
+            $record->par_no = ((int) static::query()->max('par_no')) + 1;
+        });
+    }
 
     protected $fillable = [
         'property_no',

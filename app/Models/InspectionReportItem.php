@@ -9,7 +9,20 @@ class InspectionReportItem extends Model
 {
     protected $table = 'inspection_report_items';
     protected $primaryKey = 'ia_item_id';
+    public $incrementing = false;
+    protected $keyType = 'int';
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $item): void {
+            if (! empty($item->ia_item_id)) {
+                return;
+            }
+
+            $item->ia_item_id = ((int) static::query()->max('ia_item_id')) + 1;
+        });
+    }
 
     protected $fillable = [
         'ia_no',

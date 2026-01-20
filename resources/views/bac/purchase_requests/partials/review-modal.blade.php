@@ -73,6 +73,7 @@
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Stock No.</th>
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Estimated Unit Cost</th>
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Estimated Cost</th>
+                                        <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bacPrItemsTableBody">
@@ -80,7 +81,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50">
                                     <tr>
-                                        <td colspan="5" class="border border-gray-500 px-3 py-2 text-right font-bold text-gray-900 uppercase tracking-wide text-sm">Total Estimated Cost:</td>
+                                        <td colspan="6" class="border border-gray-500 px-3 py-2 text-right font-bold text-gray-900 uppercase tracking-wide text-sm">Total Estimated Cost:</td>
                                         <td class="border border-gray-500 px-3 py-2 text-center font-bold text-gray-900 text-sm" id="bacPrTotalCost">₱0.00</td>
                                     </tr>
                                 </tfoot>
@@ -190,6 +191,92 @@
                     <i class="fas fa-times mr-2"></i>Close
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- Alternative Suggestion Modal --}}
+<div id="bacAlternativeModal" class="fixed inset-0 z-[60] hidden" aria-labelledby="bacAlternativeModalTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" data-close-alternative-modal></div>
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl transform transition-all">
+            <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-md rounded-t-2xl">
+                <div>
+                    <h3 id="bacAlternativeModalTitle" class="text-xl font-bold">Suggest Alternative Item</h3>
+                    <p class="text-sm text-white/90 mt-1">The requester will be notified to accept or wait</p>
+                </div>
+                <button class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all" data-close-alternative-modal>
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <form id="bacAlternativeForm" class="p-6 space-y-4">
+                <input type="hidden" id="alternativePriId" name="pri_id" value="">
+                
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
+                        <i class="fas fa-box mr-1"></i>Original Item
+                    </label>
+                    <div id="alternativeOriginalItem" class="p-3 bg-gray-100 rounded-lg text-sm text-gray-700 border border-gray-200"></div>
+                </div>
+
+                <div>
+                    <label for="alternateDescription" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
+                        <i class="fas fa-exchange-alt mr-1"></i>Alternative Item Description <span class="text-rose-500">*</span>
+                    </label>
+                    <textarea id="alternateDescription" name="alternate_description" rows="3" required
+                        class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-y"
+                        placeholder="Enter the alternative item description..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="alternativeUnitCost" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
+                            <i class="fas fa-peso-sign mr-1"></i>Unit Cost <span class="text-rose-500">*</span>
+                        </label>
+                        <input type="number" id="alternativeUnitCost" name="unit_cost" min="0" step="0.01" required
+                            class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                            placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
+                            <i class="fas fa-calculator mr-1"></i>Total Cost
+                        </label>
+                        <div id="alternativeTotalCost" class="w-full border-2 border-gray-200 bg-gray-50 rounded-lg px-3 py-2.5 text-right text-gray-700 font-medium">
+                            ₱0.00
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="alternativeRemarks" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
+                        <i class="fas fa-comment mr-1"></i>Remarks <span class="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <textarea id="alternativeRemarks" name="remarks" rows="2"
+                        class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-y"
+                        placeholder="Additional notes for the requester..."></textarea>
+                </div>
+
+                <div id="alternativeModalError" class="hidden p-4 bg-rose-50 border-l-4 border-rose-500 rounded-lg">
+                    <div class="flex items-start gap-3">
+                        <i class="fas fa-exclamation-circle text-rose-500 text-lg mt-0.5"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold text-rose-800 text-sm mb-1">Error</p>
+                            <p id="alternativeModalErrorMessage" class="text-rose-700 text-sm"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="button" class="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-all" data-close-alternative-modal>
+                        Cancel
+                    </button>
+                    <button type="submit" id="bacBtnSubmitAlternative" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
+                        <i class="fas fa-paper-plane"></i>
+                        Send Suggestion
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

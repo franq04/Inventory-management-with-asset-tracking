@@ -899,7 +899,8 @@ const initEmployeePurchaseRequests = () => {
         });
     }
 
-    $detailsItems.on('click', '.js-item-decision', function () {
+    // Use event delegation from the modal (which doesn't get replaced) instead of $detailsItems (which does get replaced)
+    $detailsModal.on('click', '.js-item-decision', function () {
         const $btn = $(this);
         const priId = $btn.data('pri-id');
         const decision = $btn.data('decision');
@@ -909,7 +910,7 @@ const initEmployeePurchaseRequests = () => {
         handleItemDecision($btn, priId, decision);
     });
 
-    $detailsItems.on('click', '.js-item-timeframe', function () {
+    $detailsModal.on('click', '.js-item-timeframe', function () {
         const $btn = $(this);
         const priId = $btn.data('pri-id');
         const status = $btn.data('status');

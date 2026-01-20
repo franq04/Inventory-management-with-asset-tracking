@@ -24,19 +24,73 @@ class PurchaseRequestItem extends Model
         'remarks',
         'fulfillment_status',
         'alternate_description',
+        'suggested_by',
+        'suggested_at',
+        'original_description',
         'employee_decision',
         'employee_decided_at',
         'employee_wait_until',
         'employee_wait_note',
+        'removed_at',
+        'removal_reason',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'estimated_unit_cost' => 'decimal:2',
         'estimated_total_cost' => 'decimal:2',
+        'suggested_at' => 'datetime',
         'employee_decided_at' => 'datetime',
         'employee_wait_until' => 'date',
+        'removed_at' => 'datetime',
     ];
+
+    /**
+     * Check if this item has a pending alternative suggestion awaiting employee response.
+     */
+    public function hasPendingAlternative(): bool
+    {
+        return $this->fulfillment_status === 'alternative' 
+            && $this->alternate_description 
+            && !$this->employee_decision;
+    }
+
+    /**
+     * Check if this item is waiting for the original (employee chose to wait).
+     */
+    public function isWaitingForOriginal(): bool
+    {
+        return $this->employee_decision === 'wait' 
+            && $this->employee_wait_until;
+    }
+
+    /**
+     * Check if the wait period has expired.
+     */
+    public function isWaitExpired(): bool
+    {
+        if (!$this->isWaitingForOriginal()) {
+            return false;
+        }
+        
+        return now()->startOfDay()->gt($this->employee_wait_until);
+    }
+
+    /**
+     * Check if item is active (not removed).
+     */
+    public function isActive(): bool
+    {
+        return is_null($this->removed_at);
+    }
+
+    /**
+     * Get the account that suggested the alternative.
+     */
+    public function suggester(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'suggested_by', 'account_id');
+    }
 
     public function purchaseRequest(): BelongsTo
     {

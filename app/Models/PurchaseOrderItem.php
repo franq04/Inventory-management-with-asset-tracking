@@ -11,6 +11,8 @@ class PurchaseOrderItem extends Model
 {
     protected $table = 'purchase_order_items';
     protected $primaryKey = 'poi_id';
+    public $incrementing = false;
+    protected $keyType = 'int';
     public $timestamps = false;
 
     protected $fillable = [
@@ -45,6 +47,17 @@ class PurchaseOrderItem extends Model
         'employee_wait_until' => 'date',
         'received_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $item): void {
+            if (! empty($item->poi_id)) {
+                return;
+            }
+
+            $item->poi_id = ((int) static::query()->max('poi_id')) + 1;
+        });
+    }
 
     public function purchaseOrder(): BelongsTo
     {

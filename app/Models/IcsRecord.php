@@ -10,8 +10,19 @@ class IcsRecord extends Model
     protected $table = 'ics';
     protected $primaryKey = 'ics_no';
     public $incrementing = false;
-    protected $keyType = 'string';
+    protected $keyType = 'int';
     public $timestamps = false;
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $record): void {
+            if (! empty($record->ics_no)) {
+                return;
+            }
+
+            $record->ics_no = ((int) static::query()->max('ics_no')) + 1;
+        });
+    }
 
     protected $fillable = [
         'property_no',
