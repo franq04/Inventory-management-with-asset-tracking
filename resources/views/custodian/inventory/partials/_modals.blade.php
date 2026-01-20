@@ -86,23 +86,23 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Unit *</label>
-                                    <input type="text" name="unit" id="inventoryUnit" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Unit</label>
+                                    <input type="text" name="unit" id="inventoryUnit" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed" readonly>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Quantity *</label>
-                                    <input type="number" min="1" name="quantity" id="inventoryQuantity" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Quantity</label>
+                                    <input type="number" min="1" name="quantity" id="inventoryQuantity" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed" readonly>
                                 </div>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
-                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Unit Cost *</label>
-                                    <input type="number" min="0" step="0.01" name="unit_cost" id="inventoryUnitCost" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required>
+                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Unit Cost</label>
+                                    <input type="number" min="0" step="0.01" name="unit_cost" id="inventoryUnitCost" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed" readonly>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Total Cost</label>
-                                    <input type="number" min="0" step="0.01" id="inventoryTotalCost" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 focus:outline-none" readonly>
+                                    <input type="number" min="0" step="0.01" id="inventoryTotalCost" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed" readonly>
                                 </div>
                             </div>
 

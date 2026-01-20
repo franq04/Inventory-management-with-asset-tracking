@@ -123,6 +123,45 @@ const bindPoDetailsModal = () => {
                     `);
                 });
 
+                // Render status history
+                const $statusHistory = $('#poStatusHistory');
+                $statusHistory.empty();
+                const historyItems = data.status_history || [];
+                if (historyItems.length === 0) {
+                    $statusHistory.html('<p class="text-gray-500 text-sm italic">No status history available.</p>');
+                } else {
+                    const historyHtml = historyItems.map((entry, index) => {
+                        const isFirst = index === 0;
+                        const statusChange = entry.old_status
+                            ? `<span class="text-gray-500">${escapeHtml(entry.old_status)}</span> <i class="fas fa-arrow-right text-gray-400 text-xs mx-1"></i> <span class="font-semibold text-indigo-600">${escapeHtml(entry.new_status)}</span>`
+                            : `<span class="font-semibold text-emerald-600">${escapeHtml(entry.new_status)}</span>`;
+
+                        const remarksHtml = entry.remarks
+                            ? `<div class="mt-1 text-xs text-gray-600 italic bg-gray-100 rounded px-2 py-1"><i class="fas fa-comment-alt mr-1 text-gray-400"></i>${escapeHtml(entry.remarks)}</div>`
+                            : '';
+
+                        return `
+                            <div class="relative pl-6 pb-4 ${!isFirst ? 'border-l-2 border-gray-200 ml-2' : ''}">
+                                <div class="absolute left-0 top-0 w-4 h-4 rounded-full ${isFirst ? 'bg-indigo-500' : 'bg-gray-300'} flex items-center justify-center -translate-x-1/2">
+                                    <i class="fas fa-circle text-white text-[6px]"></i>
+                                </div>
+                                <div class="bg-white border border-gray-200 rounded-lg p-3 shadow-sm ml-2">
+                                    <div class="flex items-center justify-between flex-wrap gap-2">
+                                        <div class="text-sm">${statusChange}</div>
+                                        <div class="text-xs text-gray-400">${escapeHtml(entry.changed_at)}</div>
+                                    </div>
+                                    <div class="text-xs text-gray-600 mt-1">
+                                        <i class="fas fa-user mr-1 text-gray-400"></i>
+                                        ${entry.changed_by ? escapeHtml(entry.changed_by) : '<span class="italic">System</span>'}
+                                    </div>
+                                    ${remarksHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    $statusHistory.html(`<div class="space-y-0">${historyHtml}</div>`);
+                }
+
                 toggleModal(true);
             },
             error: (xhr) => {

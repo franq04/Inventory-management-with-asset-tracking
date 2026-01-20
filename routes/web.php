@@ -225,6 +225,14 @@ Route::middleware(['auth.session', 'role:bac'])->prefix('bac')->name('bac.')->gr
 
     Route::post('purchase-requests/{purchase_request}/cancel', [App\Http\Controllers\BAC\PurchaseRequestController::class, 'cancel'])
         ->name('requests.cancel');
+
+    // BAC Alternative Suggestion
+    Route::post('purchase-requests/{purchase_request}/suggest-alternative', [App\Http\Controllers\BAC\PurchaseRequestController::class, 'suggestAlternative'])
+        ->name('requests.suggest-alternative');
+
+    // BAC Update Item Costs
+    Route::post('purchase-requests/{purchase_request}/update-item-costs', [App\Http\Controllers\BAC\PurchaseRequestController::class, 'updateItemCosts'])
+        ->name('requests.update-item-costs');
 });
 
 // ==========================

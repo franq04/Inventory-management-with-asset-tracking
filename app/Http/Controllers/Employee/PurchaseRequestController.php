@@ -277,7 +277,9 @@ class PurchaseRequestController extends Controller
 
         abort_unless($purchaseRequest && $purchaseRequest->account_id === $account->account_id, 403);
 
-        if ((int) $purchaseRequest->status_id !== Status::PR_FOR_APPROVAL) {
+        // Allow response when PR is in Recommended or For Approval status
+        $allowedStatuses = [Status::PR_RECOMMENDED, Status::PR_FOR_APPROVAL];
+        if (! in_array((int) $purchaseRequest->status_id, $allowedStatuses, true)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'This purchase request is not currently awaiting your decision.',
@@ -292,7 +294,8 @@ class PurchaseRequestController extends Controller
 
         $waitNote = isset($validated['wait_note']) ? trim((string) $validated['wait_note']) : null;
 
-        if (! in_array($purchaseRequestItem->fulfillment_status, ['alternative', 'unavailable'], true)) {
+        // Check if item has a pending alternative
+        if (! $purchaseRequestItem->hasPendingAlternative() && $purchaseRequestItem->fulfillment_status !== 'unavailable') {
             return response()->json([
                 'status' => 'error',
                 'message' => 'This item does not require a decision right now.',
@@ -319,68 +322,108 @@ class PurchaseRequestController extends Controller
             }
         }
 
+        $now = now();
+        $originalDescription = $purchaseRequestItem->original_description ?: $purchaseRequestItem->item_description;
+        $alternateDescription = $purchaseRequestItem->alternate_description;
+
         if ($validated['decision'] === 'accept') {
+            // Accept the alternative: replace item description with alternate
             $purchaseRequestItem->employee_decision = 'accept';
             $purchaseRequestItem->employee_wait_until = null;
             $purchaseRequestItem->employee_wait_note = null;
+            
+            // Update item description to the alternative
+            if ($alternateDescription) {
+                $purchaseRequestItem->item_description = $alternateDescription;
+            }
+            $purchaseRequestItem->fulfillment_status = 'fulfilled';
         } else {
+            // Wait for original: keep original item, set wait date
             $purchaseRequestItem->employee_decision = 'wait';
             $purchaseRequestItem->employee_wait_until = $waitUntil;
             $purchaseRequestItem->employee_wait_note = $waitNote ?: null;
+            
+            // Restore original description if it was changed
+            if ($purchaseRequestItem->original_description) {
+                $purchaseRequestItem->item_description = $purchaseRequestItem->original_description;
+            }
+            // Mark as waiting - original item retained
+            $purchaseRequestItem->fulfillment_status = 'waiting';
         }
 
-        if ($validated['decision'] === 'wait') {
-            $purchaseRequestItem->fulfillment_status = 'ordered';
-            $purchaseRequestItem->alternate_description = null;
-        } elseif ($validated['decision'] === 'accept' && $purchaseRequestItem->alternate_description) {
-            $purchaseRequestItem->fulfillment_status = 'alternative';
-        }
-
-        $purchaseRequestItem->employee_decided_at = now();
+        $purchaseRequestItem->employee_decided_at = $now;
         $purchaseRequestItem->save();
 
-        $notifiedCustodians = Account::whereIn('role', ['custodian', 'bac'])->pluck('account_id');
+        // Notify BAC members about the decision
+        $bacMembers = Account::where('role', 'bac')->pluck('account_id');
 
-        $itemSummary = Str::limit($purchaseRequestItem->item_description, 60);
+        $itemSummary = Str::limit($originalDescription, 60);
 
-        if ($purchaseRequestItem->fulfillment_status === 'alternative') {
-            if ($validated['decision'] === 'accept') {
-                $decisionMessage = 'accepted the proposed alternative item';
-            } else {
-                $decisionMessage = sprintf('prefers to wait for the original item until %s', optional($waitUntil)->format('M d, Y'));
-            }
+        if ($validated['decision'] === 'accept') {
+            $decisionMessage = sprintf(
+                'accepted the alternative item "%s"',
+                Str::limit($alternateDescription, 50)
+            );
         } else {
-            $decisionMessage = sprintf('will wait for the unavailable item until %s', optional($waitUntil)->format('M d, Y'));
+            $decisionMessage = sprintf(
+                'chose to wait for the original item "%s" until %s',
+                $itemSummary,
+                optional($waitUntil)->format('M d, Y')
+            );
         }
 
         $message = sprintf(
-            '%s %s for PR %s (%s).',
+            '%s has %s for PR %s.',
             $account->username,
             $decisionMessage,
-            $purchaseRequestItem->pr_no,
-            $itemSummary
+            $purchaseRequestItem->pr_no
         );
 
         if ($waitNote) {
-            $message .= ' Note: '.$waitNote;
+            $message .= ' Note: ' . $waitNote;
         }
 
-        $notifiedCustodians->unique()->each(function ($recipientId) use ($account, $purchaseRequestItem, $message) {
+        // Notify BAC
+        $bacMembers->unique()->each(function ($recipientId) use ($account, $purchaseRequestItem, $message, $validated) {
             Notification::create([
                 'recipient_id' => $recipientId,
                 'sender_id' => $account->account_id,
                 'table_name' => 'purchase_requests',
                 'record_id' => $purchaseRequestItem->pr_no,
                 'message' => $message,
-                'type' => 'info',
+                'type' => $validated['decision'] === 'wait' ? 'warning' : 'success',
                 'is_read' => false,
                 'created_at' => now(),
             ]);
         });
 
+        // Also notify custodians
+        $custodians = Account::where('role', 'custodian')->pluck('account_id');
+        $custodians->unique()->each(function ($recipientId) use ($account, $purchaseRequestItem, $message, $validated) {
+            Notification::create([
+                'recipient_id' => $recipientId,
+                'sender_id' => $account->account_id,
+                'table_name' => 'purchase_requests',
+                'record_id' => $purchaseRequestItem->pr_no,
+                'message' => $message,
+                'type' => $validated['decision'] === 'wait' ? 'warning' : 'info',
+                'is_read' => false,
+                'created_at' => now(),
+            ]);
+        });
+
+        // Log the action
+        AuditLog::create([
+            'account_id' => $account->account_id,
+            'table_name' => 'purchase_request_items',
+            'action' => $validated['decision'] === 'accept' ? 'ACCEPT_ALTERNATIVE' : 'WAIT_FOR_ORIGINAL',
+            'description' => $message,
+            'log_time' => $now,
+        ]);
+
         $responseMessage = $validated['decision'] === 'accept'
-            ? 'Thank you! We will proceed with the alternative item.'
-            : 'Thanks for the update. We will monitor the item based on your timeframe.';
+            ? 'Thank you! The purchase request will proceed with the alternative item.'
+            : 'Thanks for the update. We will monitor the item availability until your specified date.';
 
         return response()->json([
             'status' => 'success',
@@ -397,6 +440,7 @@ class PurchaseRequestController extends Controller
         return [
             'pri_id' => $item->pri_id,
             'item_description' => $item->item_description,
+            'original_description' => $item->original_description,
             'item_type' => $item->item_type,
             'quantity' => $item->quantity,
             'unit' => $item->unit,
@@ -406,10 +450,18 @@ class PurchaseRequestController extends Controller
             'remarks' => $item->remarks,
             'fulfillment_status' => $item->fulfillment_status,
             'alternate_description' => $item->alternate_description,
+            'suggested_by' => $item->suggested_by,
+            'suggested_at' => optional($item->suggested_at)->toDateTimeString(),
             'employee_decision' => $item->employee_decision,
             'employee_decided_at' => optional($item->employee_decided_at)->toDateTimeString(),
             'employee_wait_until' => optional($item->employee_wait_until)->toDateString(),
             'employee_wait_note' => $item->employee_wait_note,
+            'removed_at' => optional($item->removed_at)->toDateTimeString(),
+            'removal_reason' => $item->removal_reason,
+            'has_pending_alternative' => $item->hasPendingAlternative(),
+            'is_waiting_for_original' => $item->isWaitingForOriginal(),
+            'is_wait_expired' => $item->isWaitExpired(),
+            'is_active' => $item->isActive(),
         ];
     }
 

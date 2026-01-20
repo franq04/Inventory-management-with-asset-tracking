@@ -443,12 +443,222 @@ class PurchaseRequestController extends Controller
             'items' => $pr->items->map(fn ($item) => [
                 'pri_id' => $item->pri_id,
                 'item_description' => $item->item_description,
+                'original_description' => $item->original_description,
+                'alternate_description' => $item->alternate_description,
                 'quantity' => $item->quantity,
                 'unit' => $item->unit,
                 'stock_property_no' => $item->stock_property_no,
                 'estimated_unit_cost' => $item->estimated_unit_cost,
                 'estimated_total_cost' => $item->estimated_total_cost,
+                'fulfillment_status' => $item->fulfillment_status,
+                'employee_decision' => $item->employee_decision,
+                'employee_wait_until' => $item->employee_wait_until?->toDateString(),
+                'employee_wait_note' => $item->employee_wait_note,
+                'suggested_at' => $item->suggested_at?->toDateTimeString(),
+                'removed_at' => $item->removed_at?->toDateTimeString(),
+                'removal_reason' => $item->removal_reason,
             ])->toArray(),
         ];
+    }
+
+    /**
+     * BAC suggests an alternative item for a specific item in the PR.
+     * 
+     * This notifies the requester who can then:
+     * 1. Accept the alternative (item_description gets replaced)
+     * 2. Wait for the original until a specific date
+     */
+    public function suggestAlternative(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        if (Gate::denies('bac-approve')) {
+            abort(403, 'Only BAC members can suggest alternatives.');
+        }
+
+        $validated = $request->validate([
+            'pri_id' => 'required|integer',
+            'alternate_description' => 'required|string|max:500',
+            'unit_cost' => 'required|numeric|min:0.01',
+            'remarks' => 'nullable|string|max:1000',
+        ]);
+
+        $item = $purchaseRequest->items()->where('pri_id', $validated['pri_id'])->first();
+
+        if (!$item) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found in this purchase request.',
+            ], 404);
+        }
+
+        // Verify PR is in a status that allows suggesting alternatives
+        $currentStatus = (int) $purchaseRequest->status_id;
+        if (!in_array($currentStatus, [Status::PR_RECOMMENDED, Status::PR_FOR_APPROVAL], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot suggest alternatives for this purchase request in its current state.',
+            ], 422);
+        }
+
+        // Check if item already has a pending alternative
+        if ($item->hasPendingAlternative()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This item already has a pending alternative awaiting the requester\'s response.',
+            ], 422);
+        }
+
+        $accountId = Auth::id();
+        $now = now();
+        $newUnitCost = (float) $validated['unit_cost'];
+        $newTotalCost = $newUnitCost * $item->quantity;
+
+        DB::transaction(function () use ($item, $validated, $purchaseRequest, $accountId, $now, $newUnitCost, $newTotalCost) {
+            // Store original description if not already saved
+            if (!$item->original_description) {
+                $item->original_description = $item->item_description;
+            }
+
+            $item->update([
+                'alternate_description' => $validated['alternate_description'],
+                'fulfillment_status' => 'alternative',
+                'suggested_by' => $accountId,
+                'suggested_at' => $now,
+                'employee_decision' => null,
+                'employee_decided_at' => null,
+                'employee_wait_until' => null,
+                'employee_wait_note' => null,
+                // Store the new cost with the alternative
+                'estimated_unit_cost' => $newUnitCost,
+                'estimated_total_cost' => $newTotalCost,
+            ]);
+
+            // Update PR total
+            $purchaseRequest->total_estimated_cost = $purchaseRequest->items()
+                ->whereNull('removed_at')
+                ->sum('estimated_total_cost');
+            $purchaseRequest->save();
+
+            // Log the action
+            AuditLog::create([
+                'account_id' => $accountId,
+                'table_name' => 'purchase_request_items',
+                'action' => 'SUGGEST_ALTERNATIVE',
+                'description' => sprintf(
+                    'BAC suggested alternative for item in PR %s: "%s" → "%s" (Cost: ₱%s)',
+                    $purchaseRequest->pr_no,
+                    \Illuminate\Support\Str::limit($item->original_description, 50),
+                    \Illuminate\Support\Str::limit($validated['alternate_description'], 50),
+                    number_format($newUnitCost, 2)
+                ),
+                'log_time' => $now,
+            ]);
+
+            // Notify the requester
+            $message = sprintf(
+                'BAC has suggested an alternative for an item in your purchase request %s. Original: "%s". Suggested alternative: "%s" at ₱%s/unit. Please review and respond.',
+                $purchaseRequest->pr_no,
+                \Illuminate\Support\Str::limit($item->original_description, 60),
+                \Illuminate\Support\Str::limit($validated['alternate_description'], 60),
+                number_format($newUnitCost, 2)
+            );
+
+            if (!empty($validated['remarks'])) {
+                $message .= ' Note: ' . $validated['remarks'];
+            }
+
+            Notification::create([
+                'recipient_id' => $purchaseRequest->account_id,
+                'sender_id' => $accountId,
+                'table_name' => 'purchase_requests',
+                'record_id' => $purchaseRequest->pr_no,
+                'message' => $message,
+                'type' => 'action_required',
+                'is_read' => false,
+                'created_at' => $now,
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Alternative suggestion sent to the requester.',
+            'data' => [
+                'pri_id' => $item->pri_id,
+                'original_description' => $item->fresh()->original_description,
+                'alternate_description' => $item->fresh()->alternate_description,
+                'fulfillment_status' => $item->fresh()->fulfillment_status,
+                'estimated_unit_cost' => $item->fresh()->estimated_unit_cost,
+                'estimated_total_cost' => $item->fresh()->estimated_total_cost,
+            ],
+        ]);
+    }
+
+    /**
+     * Update item costs (for BAC in For Approval status)
+     */
+    public function updateItemCosts(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        // Only BAC can update costs
+        $currentStatus = (int) $purchaseRequest->status_id;
+        if ($currentStatus !== Status::PR_FOR_APPROVAL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item costs can only be updated in the "For Approval" status.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'items' => 'required|array',
+            'items.*.pri_id' => 'required|integer',
+            'items.*.unit_cost' => 'required|numeric|min:0',
+        ]);
+
+        $accountId = Auth::id();
+        $now = now();
+
+        DB::transaction(function () use ($validated, $purchaseRequest, $accountId, $now) {
+            foreach ($validated['items'] as $itemData) {
+                $item = $purchaseRequest->items()
+                    ->where('pri_id', $itemData['pri_id'])
+                    ->whereNull('removed_at')
+                    ->first();
+
+                if ($item) {
+                    $newUnitCost = (float) $itemData['unit_cost'];
+                    $newTotalCost = $newUnitCost * $item->quantity;
+
+                    $item->update([
+                        'estimated_unit_cost' => $newUnitCost,
+                        'estimated_total_cost' => $newTotalCost,
+                    ]);
+                }
+            }
+
+            // Update PR total
+            $purchaseRequest->total_estimated_cost = $purchaseRequest->items()
+                ->whereNull('removed_at')
+                ->sum('estimated_total_cost');
+            $purchaseRequest->save();
+
+            // Log the action
+            AuditLog::create([
+                'account_id' => $accountId,
+                'table_name' => 'purchase_requests',
+                'action' => 'UPDATE_ITEM_COSTS',
+                'description' => sprintf(
+                    'BAC updated item costs for PR %s. New total: ₱%s',
+                    $purchaseRequest->pr_no,
+                    number_format($purchaseRequest->total_estimated_cost, 2)
+                ),
+                'log_time' => $now,
+            ]);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item costs updated successfully.',
+            'data' => [
+                'total_estimated_cost' => $purchaseRequest->fresh()->total_estimated_cost,
+            ],
+        ]);
     }
 }
