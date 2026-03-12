@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Gateway</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <link rel="icon" type="image/png" href="{{ asset('images/pqslogo.png') }}">
-    @vite('resources/js/login.js')
+    @vite(['resources/css/app.css', 'resources/js/login.js'])
     
     <style>
         :root {
@@ -187,7 +185,7 @@
                     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
                         <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
                     </div>
-                    <input type="text" id="login-username" name="username" class="floating-input block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-0 focus:border-[var(--primary-color)] transition" placeholder=" " required>
+                    <input type="text" id="login-username" name="username" class="floating-input block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-0 focus:border-[var(--primary-color)] transition" placeholder=" ">
                     <label for="login-username" class="floating-label">Username</label>
                 </div>
                 
@@ -195,7 +193,7 @@
                      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
                        <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
                     </div>
-                    <input type="password" id="login-password" name="password" class="floating-input block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-0 focus:border-[var(--primary-color)] transition" placeholder=" " required>
+                    <input type="password" id="login-password" name="password" class="floating-input block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-0 focus:border-[var(--primary-color)] transition" placeholder=" ">
                     <label for="login-password" class="floating-label">Password</label>
                     <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer z-10">
                         <svg id="eye-icon" class="h-5 w-5 text-gray-500 hover:text-[var(--secondary-color)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

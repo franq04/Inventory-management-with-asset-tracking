@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\ParRecord;
-use App\Models\PqsRecord;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ParController extends Controller
@@ -66,16 +66,22 @@ class ParController extends Controller
             ]);
         }
 
-        $totalPar = ParRecord::count();
-        $totalAmount = (float) ParRecord::sum('amount');
-        $unassignedAssets = PqsRecord::doesntHave('icsRecord')->whereDoesntHave('parRecord')->count();
+        $agg = DB::table('par')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(amount) as total_amount')
+            ->first();
+
+        $unassignedAssets = (int) DB::table('pqs')
+            ->whereNotIn('property_no', DB::table('ics')->select('property_no'))
+            ->whereNotIn('property_no', DB::table('par')->select('property_no'))
+            ->count();
 
         $stats = [
-            'total' => $totalPar,
-            'totalAmount' => $totalAmount,
-            'averageUsefulLife' => null, // PAR records may not have useful life
+            'total' => (int) $agg->total,
+            'totalAmount' => (float) $agg->total_amount,
+            'averageUsefulLife' => null,
             'unassigned' => $unassignedAssets,
-            'totalValue' => $totalAmount,
+            'totalValue' => (float) $agg->total_amount,
         ];
 
         $categories = Category::query()

@@ -224,7 +224,7 @@
                     <label for="alternateDescription" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
                         <i class="fas fa-exchange-alt mr-1"></i>Alternative Item Description <span class="text-rose-500">*</span>
                     </label>
-                    <textarea id="alternateDescription" name="alternate_description" rows="3" required
+                    <textarea id="alternateDescription" name="alternate_description" rows="3"
                         class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-y"
                         placeholder="Enter the alternative item description..."></textarea>
                 </div>
@@ -234,7 +234,7 @@
                         <label for="alternativeUnitCost" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">
                             <i class="fas fa-peso-sign mr-1"></i>Unit Cost <span class="text-rose-500">*</span>
                         </label>
-                        <input type="number" id="alternativeUnitCost" name="unit_cost" min="0" step="0.01" required
+                        <input type="number" id="alternativeUnitCost" name="unit_cost" min="0" step="0.01"
                             class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                             placeholder="0.00">
                     </div>

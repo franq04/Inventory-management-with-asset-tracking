@@ -161,7 +161,7 @@
                             <label for="custodianStatusSelect" class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">
                                 <i class="fas fa-check-circle mr-1"></i>Status
                             </label>
-                            <select id="custodianStatusSelect" name="status_id" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:border-transparent transition-all" required>
+                            <select id="custodianStatusSelect" name="status_id" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:border-transparent transition-all">
                                 @foreach ($statuses as $status)
                                     @php
                                         $isManaged = in_array($status->status_id, $systemManaged, true);

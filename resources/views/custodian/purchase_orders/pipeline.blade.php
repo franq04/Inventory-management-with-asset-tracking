@@ -499,24 +499,14 @@
                     <tbody>
                         @forelse ($purchaseOrders as $order)
                             @php
-                                $latestInspectionItems = $order->inspectionReports
-                                    ->sortBy('inspection_date')
-                                    ->flatMap(fn($report) => $report->items)
-                                    ->keyBy('po_item_id');
-
-                                $issueStatusIds = [
-                                    \App\Models\Status::ITEM_DEFECTIVE,
-                                    \App\Models\Status::ITEM_RETURNED,
-                                    \App\Models\Status::ITEM_REPLACED,
+                                $registerSummary = $registerSummaries[$order->po_no] ?? [
+                                    'accepted_count' => 0,
+                                    'issue_count' => 0,
+                                    'pending_count' => $order->items->count(),
+                                    'deliveries_count' => 0,
+                                    'latest_inspection_date' => null,
+                                    'can_inspect' => false,
                                 ];
-                                $acceptedStatusIds = [
-                                    \App\Models\Status::ITEM_ACCEPTED,
-                                    \App\Models\Status::ITEM_RECORDED,
-                                ];
-
-                                $issueCount = $latestInspectionItems->filter(fn ($item) => in_array((int) $item->inspection_status_id, $issueStatusIds, true))->count();
-                                $acceptedCount = $latestInspectionItems->filter(fn ($item) => in_array((int) $item->inspection_status_id, $acceptedStatusIds, true))->count();
-                                $pendingCount = max($order->items->count() - $acceptedCount - $issueCount, 0);
 
                                 $stageKey = match ((int) $order->status_id) {
                                     \App\Models\Status::PO_PARTIALLY_DELIVERED => 'receiving',
@@ -529,16 +519,6 @@
                                 $stageMeta = $stageMetaByKey[$stageKey] ?? null;
                                 $stageLabel = $stageMeta['label'] ?? 'Awaiting Delivery';
                                 $stageBadge = $stageMeta['badge'] ?? 'bg-slate-100 text-slate-700';
-
-                                $deliveriesCount = $order->inspectionReports->count();
-                                $latestInspectionDate = optional($order->inspectionReports->sortByDesc('inspection_date')->first()?->inspection_date)->format('M d, Y');
-
-                                $inspectableStatuses = [
-                                    \App\Models\Status::PO_PARTIALLY_DELIVERED,
-                                    \App\Models\Status::PO_DELIVERED_PENDING_INSPECTION,
-                                    \App\Models\Status::PO_CLOSED,
-                                ];
-                                $canInspect = in_array($order->status_id, $inspectableStatuses, true) || $order->inspectionReports->isNotEmpty();
                             @endphp
                             <tr class="border-b last:border-0 hover:bg-gray-50 transition">
                                 <td class="px-4 py-4">
@@ -553,17 +533,17 @@
                                 </td>
                                 <td class="px-4 py-4 text-gray-700">
                                     <div class="flex flex-wrap gap-2 text-[11px] font-semibold">
-                                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">Accepted {{ $acceptedCount }}</span>
-                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">Pending {{ $pendingCount }}</span>
-                                        @if ($issueCount > 0)
-                                            <span class="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700">Issues {{ $issueCount }}</span>
+                                        <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700">Accepted {{ $registerSummary['accepted_count'] }}</span>
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">Pending {{ $registerSummary['pending_count'] }}</span>
+                                        @if ($registerSummary['issue_count'] > 0)
+                                            <span class="rounded-full bg-rose-100 px-2.5 py-1 text-rose-700">Issues {{ $registerSummary['issue_count'] }}</span>
                                         @endif
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 text-gray-700">
                                     <div class="text-xs text-gray-600">
-                                        <div>{{ $deliveriesCount }} batch{{ $deliveriesCount === 1 ? '' : 'es' }}</div>
-                                        <div>Latest {{ $latestInspectionDate ?? '—' }}</div>
+                                        <div>{{ $registerSummary['deliveries_count'] }} batch{{ $registerSummary['deliveries_count'] === 1 ? '' : 'es' }}</div>
+                                        <div>Latest {{ $registerSummary['latest_inspection_date'] ?? '—' }}</div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-4 text-gray-700">{{ $order->status?->status_name ?? '—' }}</td>
@@ -574,7 +554,7 @@
                                             <i class="fas fa-eye"></i>
                                             View
                                         </button>
-                                        @if ($canInspect)
+                                        @if ($registerSummary['can_inspect'])
                                             <button type="button"
                                                 class="js-open-inspection inline-flex items-center gap-2 rounded-lg bg-[#1a3a2d] px-3 py-2 text-xs font-semibold text-white shadow hover:bg-opacity-90"
                                                 data-form-url="{{ route('custodian.inspection.form', $order) }}"
@@ -707,7 +687,7 @@
 @vite('resources/js/purchase-orders.js')
 @vite('resources/js/inspection.js')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+(() => {
     // Tab switching logic
     const tabs = document.querySelectorAll('.pipeline-tab');
     const panels = document.querySelectorAll('.pipeline-panel');
@@ -734,6 +714,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
-});
+})();
 </script>
 @endpush

@@ -29,7 +29,7 @@
                 <div class="space-y-4">
                     <div class="grid gap-2">
                         <label for="poPrNo" class="text-sm font-semibold text-gray-700">Purchase Request No.</label>
-                        <select id="poPrNo" name="pr_no" class="rounded-lg border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" @if($requests->isEmpty()) disabled @endif required>
+                        <select id="poPrNo" name="pr_no" class="rounded-lg border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" @if($requests->isEmpty()) disabled @endif>
                             <option value="" disabled @if(!$selectedPrNo) selected @endif>
                                 @if($requests->isEmpty())
                                     No convertible purchase requests available
@@ -130,7 +130,7 @@
                     <div id="poSupplierNewWrapper" class="hidden space-y-3">
                         <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                             <label for="poNewSupplierName" class="font-semibold">Supplier Name :</label>
-                            <input type="text" id="poNewSupplierName" name="new_supplier[name]" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Enter supplier name" data-new-supplier-field required disabled>
+                            <input type="text" id="poNewSupplierName" name="new_supplier[name]" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Enter supplier name" data-new-supplier-field disabled>
                         </div>
                         <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                             <label for="poNewSupplierAddress" class="font-semibold">Address :</label>
@@ -162,7 +162,7 @@
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poOrderDate" class="font-semibold">Date :</label>
-                        <input type="date" id="poOrderDate" name="order_date" value="{{ now()->toDateString() }}" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" required>
+                        <input type="date" id="poOrderDate" name="order_date" value="{{ now()->toDateString() }}" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poMode" class="font-semibold">Mode of Procurement :</label>
@@ -181,21 +181,21 @@
                 <div class="space-y-3">
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poPlace" class="font-semibold">Place of Delivery <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poPlace" name="place_of_delivery" required class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poPlace" name="place_of_delivery" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poDeliveryDate" class="font-semibold">Date of Delivery <span class="text-rose-500">*</span>:</label>
-                        <input type="date" id="poDeliveryDate" name="delivery_date" required class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                        <input type="date" id="poDeliveryDate" name="delivery_date" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
                     </div>
                 </div>
                 <div class="space-y-3">
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poDeliveryTerm" class="font-semibold">Delivery Term <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poDeliveryTerm" name="delivery_term" required class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poDeliveryTerm" name="delivery_term" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poPaymentTerm" class="font-semibold">Payment Term <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poPaymentTerm" name="payment_term" required class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poPaymentTerm" name="payment_term" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                     </div>
                 </div>
             </div>

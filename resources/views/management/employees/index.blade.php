@@ -244,7 +244,7 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    (function () {
         const tableWrapper = document.getElementById('employeeTableContainer');
         const totalSpan = document.getElementById('employeeCount');
         const paginationDiv = document.getElementById('employeePagination');
@@ -325,6 +325,6 @@
                 });
             }
         })();
-    });
+    })();
 </script>
 @endpush

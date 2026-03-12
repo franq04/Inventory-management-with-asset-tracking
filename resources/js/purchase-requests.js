@@ -506,13 +506,13 @@ const initEmployeePurchaseRequests = () => {
         const row = `
             <tr class="align-top" data-index="${idx}">
                 <td class="border border-gray-500 px-2 py-2">
-                    <input type="number" name="items[${idx}][quantity]" min="1" value="1" data-quantity class="w-full border border-gray-400 px-2 py-1 text-sm text-center font-semibold focus:border-[#1a3a2d] focus:ring-0" required />
+                    <input type="number" name="items[${idx}][quantity]" min="1" value="1" data-quantity class="w-full border border-gray-400 px-2 py-1 text-sm text-center font-semibold focus:border-[#1a3a2d] focus:ring-0" />
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
-                    <input type="text" name="items[${idx}][unit]" class="w-full border border-gray-400 px-2 py-1 text-sm focus:border-[#1a3a2d] focus:ring-0" placeholder="e.g., pcs, box" required />
+                    <input type="text" name="items[${idx}][unit]" class="w-full border border-gray-400 px-2 py-1 text-sm focus:border-[#1a3a2d] focus:ring-0" placeholder="e.g., pcs, box" />
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
-                    <textarea name="items[${idx}][item_description]" class="w-full border border-gray-400 px-2 py-1 text-sm min-h-[72px] resize-y focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the item in detail..." required></textarea>
+                    <textarea name="items[${idx}][item_description]" class="w-full border border-gray-400 px-2 py-1 text-sm min-h-[72px] resize-y focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the item in detail..."></textarea>
                     <input type="hidden" name="items[${idx}][item_type]" value="consumable" />
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
@@ -521,7 +521,7 @@ const initEmployeePurchaseRequests = () => {
                 <td class="border border-gray-500 px-2 py-2">
                     <div class="relative">
                         <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-xs">₱</span>
-                        <input type="number" name="items[${idx}][estimated_unit_cost]" min="0" step="0.01" value="0" data-unit-cost class="w-full border border-gray-400 pl-6 pr-2 py-1 text-sm text-right font-semibold focus:border-[#1a3a2d] focus:ring-0" required />
+                        <input type="number" name="items[${idx}][estimated_unit_cost]" min="0" step="0.01" value="0" data-unit-cost class="w-full border border-gray-400 pl-6 pr-2 py-1 text-sm text-right font-semibold focus:border-[#1a3a2d] focus:ring-0" />
                     </div>
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
@@ -1014,12 +1014,10 @@ const initPurchaseRequestWorkflow = () => {
         const shouldRequireRemarks = remarksRequiredStatuses.includes(statusIdString);
 
         if (shouldRequireRemarks) {
-            $statusRemarks.attr('required', 'required')
-                .attr('placeholder', 'Provide the required remarks for this status')
+            $statusRemarks.attr('placeholder', 'Provide the required remarks for this status')
                 .addClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
         } else {
-            $statusRemarks.removeAttr('required')
-                .attr('placeholder', remarksDefaultPlaceholder)
+            $statusRemarks.attr('placeholder', remarksDefaultPlaceholder)
                 .removeClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
         }
     };
@@ -1110,10 +1108,10 @@ const initPurchaseRequestWorkflow = () => {
         if ($altWrapper.length) {
             if (normalizedStatus === 'alternative') {
                 $altWrapper.removeClass('hidden');
-                $altInput.prop('disabled', false).attr('required', 'required');
+                $altInput.prop('disabled', false);
             } else {
                 $altWrapper.addClass('hidden');
-                $altInput.prop('disabled', true).removeAttr('required');
+                $altInput.prop('disabled', true);
             }
         }
 

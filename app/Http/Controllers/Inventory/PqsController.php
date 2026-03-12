@@ -8,6 +8,7 @@ use App\Models\PqsRecord;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PqsController extends Controller
@@ -61,12 +62,20 @@ class PqsController extends Controller
             ]);
         }
 
+        $agg = DB::table('pqs')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(total_value) as total_value')
+            ->selectRaw('SUM(CASE WHEN property_no IN (SELECT property_no FROM ics) THEN 1 ELSE 0 END) as with_ics')
+            ->selectRaw('SUM(CASE WHEN property_no IN (SELECT property_no FROM par) THEN 1 ELSE 0 END) as with_par')
+            ->selectRaw('SUM(CASE WHEN property_no NOT IN (SELECT property_no FROM ics) AND property_no NOT IN (SELECT property_no FROM par) THEN 1 ELSE 0 END) as unassigned')
+            ->first();
+
         $stats = [
-            'total' => PqsRecord::count(),
-            'withIcs' => PqsRecord::has('icsRecord')->count(),
-            'withPar' => PqsRecord::has('parRecord')->count(),
-            'unassigned' => PqsRecord::doesntHave('icsRecord')->whereDoesntHave('parRecord')->count(),
-            'totalValue' => (float) PqsRecord::sum('total_value'),
+            'total' => (int) $agg->total,
+            'withIcs' => (int) $agg->with_ics,
+            'withPar' => (int) $agg->with_par,
+            'unassigned' => (int) $agg->unassigned,
+            'totalValue' => (float) $agg->total_value,
         ];
 
         $categories = Category::query()

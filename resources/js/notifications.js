@@ -65,7 +65,11 @@ const renderNotifications = (listEl, emptyEl, notifications) => {
     });
 };
 
+let cleanupNotifications = null;
+
 const initNotifications = () => {
+    cleanupNotifications?.();
+
     const config = window.notificationConfig;
     if (!config) {
         return;
@@ -75,6 +79,9 @@ const initNotifications = () => {
     if (!root) {
         return;
     }
+
+    const controller = new AbortController();
+    const { signal } = controller;
 
     const toggleButton = root.querySelector('[data-notif-toggle]');
     const panel = root.querySelector('[data-notif-panel]');
@@ -86,6 +93,19 @@ const initNotifications = () => {
 
     let isPanelOpen = false;
     let isFetching = false;
+    let lastFetchedAt = 0;
+    let initialFetchTimeout = null;
+
+    cleanupNotifications = () => {
+        if (initialFetchTimeout !== null) {
+            window.clearTimeout(initialFetchTimeout);
+            initialFetchTimeout = null;
+        }
+
+        stopPolling();
+        closePanel();
+        controller.abort();
+    };
 
     const fetchNotifications = async () => {
         if (isFetching) {
@@ -102,11 +122,20 @@ const initNotifications = () => {
             const payload = await response.json();
             renderNotifications(listEl, emptyEl, payload.data || []);
             updateBadge(badgeEl, payload.unread_count || 0);
+            lastFetchedAt = Date.now();
         } catch (error) {
             console.error(error);
         } finally {
             isFetching = false;
         }
+    };
+
+    const fetchIfStale = () => {
+        if (Date.now() - lastFetchedAt < 45000) {
+            return;
+        }
+
+        fetchNotifications();
     };
 
     const markNotificationRead = async (notificationId, triggerEl) => {
@@ -160,7 +189,7 @@ const initNotifications = () => {
         }
         panel.classList.remove('hidden');
         isPanelOpen = true;
-        fetchNotifications();
+        fetchIfStale();
     };
 
     const closePanel = () => {
@@ -178,13 +207,13 @@ const initNotifications = () => {
         } else {
             openPanel();
         }
-    });
+    }, { signal });
 
     document.addEventListener('click', (event) => {
         if (!root.contains(event.target)) {
             closePanel();
         }
-    });
+    }, { signal });
 
     listEl?.addEventListener('click', (event) => {
         const markBtn = event.target.closest('[data-notif-mark]');
@@ -200,19 +229,19 @@ const initNotifications = () => {
             return;
         }
         markNotificationRead(notificationId, markBtn);
-    });
+    }, { signal });
 
     markAllBtn?.addEventListener('click', (event) => {
         event.preventDefault();
         markAllRead();
-    });
+    }, { signal });
 
     let pollInterval = null;
     const startPolling = () => {
-        if (pollInterval) {
+        if (pollInterval || document.hidden) {
             return;
         }
-        pollInterval = window.setInterval(fetchNotifications, 20000);
+        pollInterval = window.setInterval(fetchIfStale, 60000);
     };
 
     const stopPolling = () => {
@@ -223,11 +252,42 @@ const initNotifications = () => {
         pollInterval = null;
     };
 
-    root.addEventListener('mouseenter', startPolling);
-    root.addEventListener('mouseleave', stopPolling);
+    root.addEventListener('mouseenter', startPolling, { signal });
+    root.addEventListener('mouseleave', stopPolling, { signal });
 
-    fetchNotifications();
-    startPolling();
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            stopPolling();
+            return;
+        }
+
+        startPolling();
+        fetchIfStale();
+    }, { signal });
+
+    const deferInitialFetch = () => {
+        if ('requestIdleCallback' in window) {
+            window.requestIdleCallback(() => {
+                fetchNotifications();
+                startPolling();
+            }, { timeout: 2500 });
+            return;
+        }
+
+        initialFetchTimeout = window.setTimeout(() => {
+            fetchNotifications();
+            startPolling();
+            initialFetchTimeout = null;
+        }, 1200);
+    };
+
+    if (document.readyState === 'complete') {
+        deferInitialFetch();
+    } else {
+        window.addEventListener('load', deferInitialFetch, { once: true, signal });
+    }
+
+    document.addEventListener('turbo:before-cache', cleanupNotifications, { once: true, signal });
 };
 
-document.addEventListener('DOMContentLoaded', initNotifications);
+document.addEventListener('turbo:load', initNotifications);

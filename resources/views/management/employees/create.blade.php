@@ -70,7 +70,7 @@
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label for="first_name" class="text-sm font-semibold text-gray-600">First Name <span class="text-red-500">*</span></label>
-                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" required class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
                             @error('first_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -80,7 +80,7 @@
                         </div>
                          <div>
                             <label for="last_name" class="text-sm font-semibold text-gray-600">Last Name <span class="text-red-500">*</span></label>
-                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" required class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
                             @error('last_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -90,7 +90,7 @@
                         </div>
                          <div>
                             <label for="date_of_birth" class="text-sm font-semibold text-gray-600">Date of Birth <span class="text-red-500">*</span></label>
-                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" required class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
                             @error('date_of_birth')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -103,7 +103,7 @@
                     </div>
                     <div>
                         <label for="gender" class="text-sm font-semibold text-gray-600">Gender <span class="text-red-500">*</span></label>
-                        <select id="gender" name="gender" required class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <select id="gender" name="gender" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
                             <option value="">Select gender</option>
                             @foreach ($genders as $gender)
                                 <option value="{{ $gender }}" @selected(old('gender') === $gender)>{{ ucfirst($gender) }}</option>
@@ -113,7 +113,7 @@
                     </div>
                     <div>
                         <label for="marital_status" class="text-sm font-semibold text-gray-600">Marital Status <span class="text-red-500">*</span></label>
-                        <select id="marital_status" name="marital_status" required class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <select id="marital_status" name="marital_status" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
                             <option value="">Select status</option>
                             @foreach ($maritalStatuses as $status)
                                 <option value="{{ $status }}" @selected(old('marital_status') === $status)>{{ ucfirst($status) }}</option>
@@ -242,7 +242,7 @@
     }
 @endphp
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    (function () {
         // Your existing section population script
         const sectionsByDivision = @json($sectionsByDivision);
         const allSections = Object.values(sectionsByDivision).flat();
@@ -362,6 +362,6 @@
         
         // Initial state
         updateButtons();
-    });
+    })();
 </script>
 @endpush

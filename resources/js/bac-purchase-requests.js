@@ -1,6 +1,12 @@
 // BAC Purchase Request Review Modal Handler
-document.addEventListener('DOMContentLoaded', function () {
+const initBacPurchaseRequestPage = function () {
     'use strict';
+
+    window.__bacPurchaseRequestsCleanup?.();
+
+    const controller = new AbortController();
+    const { signal } = controller;
+    window.__bacPurchaseRequestsCleanup = () => controller.abort();
 
     const modal = document.getElementById('bacPrModal');
     const toast = document.getElementById('bacPrToast');
@@ -639,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.key === 'Escape' && alternativeModal && !alternativeModal.classList.contains('hidden')) {
             hideAlternativeModal();
         }
-    });
+    }, { signal });
 
     // Alternative modal close buttons
     document.querySelectorAll('[data-close-alternative-modal]').forEach(button => {
@@ -725,4 +731,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-});
+    document.addEventListener('turbo:before-cache', window.__bacPurchaseRequestsCleanup, { once: true, signal });
+};
+
+document.addEventListener('turbo:load', initBacPurchaseRequestPage);

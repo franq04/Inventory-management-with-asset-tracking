@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\IcsRecord;
-use App\Models\PqsRecord;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class IcsController extends Controller
@@ -65,17 +65,23 @@ class IcsController extends Controller
             ]);
         }
 
-        $totalIcs = IcsRecord::count();
-        $totalCost = (float) IcsRecord::sum('total_cost');
-        $averageUsefulLife = (float) IcsRecord::avg('estimated_useful_life');
-        $unassignedAssets = PqsRecord::doesntHave('icsRecord')->whereDoesntHave('parRecord')->count();
+        $agg = DB::table('ics')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(total_cost) as total_cost')
+            ->selectRaw('AVG(estimated_useful_life) as avg_life')
+            ->first();
+
+        $unassignedAssets = (int) DB::table('pqs')
+            ->whereNotIn('property_no', DB::table('ics')->select('property_no'))
+            ->whereNotIn('property_no', DB::table('par')->select('property_no'))
+            ->count();
 
         $stats = [
-            'total' => $totalIcs,
-            'totalCost' => $totalCost,
-            'averageUsefulLife' => $averageUsefulLife,
+            'total' => (int) $agg->total,
+            'totalCost' => (float) $agg->total_cost,
+            'averageUsefulLife' => (float) $agg->avg_life,
             'unassigned' => $unassignedAssets,
-            'totalValue' => $totalCost,
+            'totalValue' => (float) $agg->total_cost,
         ];
 
         $categories = Category::query()

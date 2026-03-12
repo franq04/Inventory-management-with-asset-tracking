@@ -68,24 +68,13 @@ class PurchaseRequestController extends Controller
         $totalRequests = (int) $purchaseRequests->total();
 
         $account->loadMissing('employee.section.division');
-        $employeeProfile = $account->employee;
-        $employeeSection = $employeeProfile?->section;
+        $employeeSection = $account->employee?->section;
         $employeeDivision = $employeeSection?->division;
 
         $defaultDivision = $employeeDivision?->division_id;
         $defaultSection = $employeeSection?->section_id;
-
-        // Explicit join to fetch employee's division and section
-        $employeeData = DB::table('accounts')
-            ->join('employees', 'accounts.account_id', '=', 'employees.account_id')
-            ->leftJoin('sections', 'employees.section_id', '=', 'sections.section_id')
-            ->leftJoin('divisions', 'sections.division_id', '=', 'divisions.division_id')
-            ->where('accounts.account_id', $account->account_id)
-            ->select('divisions.division_name', 'sections.section_name', 'divisions.division_id', 'sections.section_id')
-            ->first();
-
-        $divisionName = $employeeData->division_name ?? null;
-        $sectionName = $employeeData->section_name ?? null;
+        $divisionName = $employeeDivision?->division_name;
+        $sectionName = $employeeSection?->section_name;
 
         // Get available fund allocations
         $fundAllocations = FundAllocation::where('remaining_amount', '>', 0)

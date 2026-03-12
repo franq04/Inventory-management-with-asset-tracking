@@ -308,7 +308,7 @@ const initInspectionModal = () => {
                                class="w-20 rounded-lg border px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]">
                     </td>
                     <td class="px-3 py-3">
-                        <select name="items[${index}][status_id]" required
+                        <select name="items[${index}][status_id]"
                                 class="w-40 rounded-lg border px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]">
                             ${buildStatusOptions(statusId)}
                         </select>
@@ -386,12 +386,10 @@ const initInspectionModal = () => {
         clampQuantities($row, lockQuantities ? 'accepted' : undefined);
 
         if (statusCode && statusesRequiringRemarks.has(statusCode)) {
-            $remarks.attr('required', 'required')
-                .attr('placeholder', 'Provide inspection notes for this status')
+            $remarks.attr('placeholder', 'Provide inspection notes for this status')
                 .addClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
         } else {
-            $remarks.removeAttr('required')
-                .attr('placeholder', defaultPlaceholder)
+            $remarks.attr('placeholder', defaultPlaceholder)
                 .removeClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
         }
     };

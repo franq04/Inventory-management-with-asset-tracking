@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Account;
 use App\Models\AuditLog;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth; // <-- Import Auth facade
 use Illuminate\Support\Facades\Schema;
 use App\Models\InspectionReportItem;
 use App\Models\PqsRecord;
@@ -16,10 +14,6 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Use Auth::user() to get the currently authenticated user.
-        // This is guaranteed to work because of the 'auth.session' middleware.
-        $account = Auth::user() ?? Account::find(session('account_id'));
-
         // ✅ Summary counts (guarded if tables don't exist yet)
         $totalRequests = Schema::hasTable('purchase_requests') ? DB::table('purchase_requests')->count() : 0;
         $totalOrders = Schema::hasTable('purchase_orders') ? DB::table('purchase_orders')->count() : 0;
@@ -58,26 +52,60 @@ class DashboardController extends Controller
                 $assignmentQuery->whereIn('inspection_status_id', [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED]);
             }
 
-            $inventoryStats['accepted'] = (clone $assignmentQuery)->count();
-            $inventoryStats['ready'] = (clone $assignmentQuery)->whereNull('property_no')->count();
+            $assignmentSnapshot = $assignmentQuery
+                ->selectRaw('COUNT(*) as accepted_count')
+                ->selectRaw('SUM(CASE WHEN property_no IS NULL THEN 1 ELSE 0 END) as ready_count')
+                ->first();
+
+            $inventoryStats['accepted'] = (int) ($assignmentSnapshot->accepted_count ?? 0);
+            $inventoryStats['ready'] = (int) ($assignmentSnapshot->ready_count ?? 0);
             $inventoryStats['recorded'] = max(0, $inventoryStats['accepted'] - $inventoryStats['ready']);
         }
 
         if (Schema::hasTable('pqs')) {
-            if (Schema::hasTable('ics')) {
-                $inventoryStats['withIcs'] = PqsRecord::whereHas('icsRecord')->count();
-            }
+            if (Schema::hasTable('ics') || Schema::hasTable('par')) {
+                $hasIcsTable = Schema::hasTable('ics');
+                $hasParTable = Schema::hasTable('par');
 
-            if (Schema::hasTable('par')) {
-                $inventoryStats['withPar'] = PqsRecord::whereHas('parRecord')->count();
-            }
+                $pqsDocumentSnapshotQuery = DB::table('pqs');
 
-            if (Schema::hasTable('ics') && Schema::hasTable('par')) {
-                $inventoryStats['awaiting'] = PqsRecord::doesntHave('icsRecord')
-                    ->whereDoesntHave('parRecord')
-                    ->count();
-            } else {
-                $inventoryStats['awaiting'] = max(0, DB::table('pqs')->count() - $inventoryStats['withIcs'] - $inventoryStats['withPar']);
+                if ($hasIcsTable) {
+                    $pqsDocumentSnapshotQuery->leftJoin('ics', 'pqs.property_no', '=', 'ics.property_no');
+                }
+
+                if ($hasParTable) {
+                    $pqsDocumentSnapshotQuery->leftJoin('par', 'pqs.property_no', '=', 'par.property_no');
+                }
+
+                $withIcsExpression = $hasIcsTable
+                    ? 'SUM(CASE WHEN ics.property_no IS NOT NULL THEN 1 ELSE 0 END)'
+                    : '0';
+
+                $withParExpression = $hasParTable
+                    ? 'SUM(CASE WHEN par.property_no IS NOT NULL THEN 1 ELSE 0 END)'
+                    : '0';
+
+                $awaitingConditions = [];
+                if ($hasIcsTable) {
+                    $awaitingConditions[] = 'ics.property_no IS NULL';
+                }
+                if ($hasParTable) {
+                    $awaitingConditions[] = 'par.property_no IS NULL';
+                }
+
+                $awaitingExpression = empty($awaitingConditions)
+                    ? '0'
+                    : 'SUM(CASE WHEN '.implode(' AND ', $awaitingConditions).' THEN 1 ELSE 0 END)';
+
+                $pqsDocumentSnapshot = $pqsDocumentSnapshotQuery
+                    ->selectRaw($withIcsExpression.' as with_ics_count')
+                    ->selectRaw($withParExpression.' as with_par_count')
+                    ->selectRaw($awaitingExpression.' as awaiting_count')
+                    ->first();
+
+                $inventoryStats['withIcs'] = (int) ($pqsDocumentSnapshot->with_ics_count ?? 0);
+                $inventoryStats['withPar'] = (int) ($pqsDocumentSnapshot->with_par_count ?? 0);
+                $inventoryStats['awaiting'] = (int) ($pqsDocumentSnapshot->awaiting_count ?? 0);
             }
         }
 
@@ -113,7 +141,7 @@ class DashboardController extends Controller
 
         // ✅ Recent activity (with user)
         $recentLogs = Schema::hasTable('audit_logs')
-            ? AuditLog::with('account')->latest('log_time')->take(5)->get()
+            ? AuditLog::with('account:account_id,username')->latest('log_time')->take(5)->get()
             : collect();
 
         // ✅ Most requested items report (from purchase_request_items)
@@ -171,7 +199,14 @@ class DashboardController extends Controller
 
         // ✅ Latest custodial records
         $recentPqs = Schema::hasTable('pqs')
-            ? PqsRecord::with(['category.parent', 'icsRecord', 'parRecord'])
+            ? PqsRecord::query()
+                ->select(['property_no', 'cat_id', 'date_acquired', 'total_value'])
+                ->with([
+                    'category:cat_id,cat_name,parent_id',
+                    'category.parent:cat_id,cat_name',
+                    'icsRecord:ics_no,property_no',
+                    'parRecord:par_no,property_no',
+                ])
                 ->orderByDesc('date_acquired')
                 ->take(5)
                 ->get()
@@ -184,14 +219,7 @@ class DashboardController extends Controller
         $inventoryCounts = $inventoryCounts->map(fn ($value) => (int) $value)->values();
         $inventoryValues = $inventoryValues->map(fn ($value) => round((float) $value, 2))->values();
 
-        // ✅ Fetch unread notifications for the logged-in user
-        $unreadNotifications = (Schema::hasTable('notifications') && $account)
-            ? $account->unreadNotifications
-            : collect();
-
         return view('custodian.dashboard', compact(
-            'account',
-            'unreadNotifications',
             'totalRequests',
             'totalOrders',
             'totalAssets',

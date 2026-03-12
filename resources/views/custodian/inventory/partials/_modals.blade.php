@@ -63,17 +63,17 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Category *</label>
-                                    <select name="category_id" id="inventoryCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required></select>
+                                    <select name="category_id" id="inventoryCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"></select>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Sub-category *</label>
-                                    <select name="sub_category_id" id="inventorySubCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required></select>
+                                    <select name="sub_category_id" id="inventorySubCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"></select>
                                 </div>
                             </div>
 
                             <div class="flex flex-col gap-1.5">
                                 <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Property Description *</label>
-                                <textarea name="property_description" id="inventoryPropertyDescription" rows="3" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 resize-y" required></textarea>
+                                <textarea name="property_description" id="inventoryPropertyDescription" rows="3" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400 resize-y"></textarea>
                             </div>
 
                             <div class="flex flex-col gap-1.5" id="inventorySerialsSection">
@@ -109,7 +109,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Date Acquired *</label>
-                                    <input type="date" name="date_acquired" id="inventoryDateAcquired" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" required>
+                                    <input type="date" name="date_acquired" id="inventoryDateAcquired" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400">
                                 </div>
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Estimated Useful Life</label>

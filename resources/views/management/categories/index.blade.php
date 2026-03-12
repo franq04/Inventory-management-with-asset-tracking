@@ -82,7 +82,13 @@
 @push('scripts')
 @include('management.categories.partials.modal')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    (() => {
+        window.__categoriesPageCleanup?.();
+
+        const controller = new AbortController();
+        const { signal } = controller;
+        window.__categoriesPageCleanup = () => controller.abort();
+
         const tableWrapper = document.getElementById('categoriesTableWrapper');
         const totalSpan = document.getElementById('categoriesTotalCount');
         const modal = document.querySelector('[data-category-modal]');
@@ -202,7 +208,7 @@
             if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
                 closeModal();
             }
-        });
+        }, { signal });
 
         document.getElementById('addCategoryBtn').addEventListener('click', function () {
             openModal({
@@ -458,6 +464,7 @@
                 });
             }
         })();
-    });
+        document.addEventListener('turbo:before-cache', window.__categoriesPageCleanup, { once: true, signal });
+    })();
 </script>
 @endpush

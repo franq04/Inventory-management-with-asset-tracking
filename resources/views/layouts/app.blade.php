@@ -4,17 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard') - PQS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" type="image/png" href="{{ asset('images/pqslogo.png') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    {{-- ADD ALPINE.JS for dropdowns --}}
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    @vite('resources/js/app.js')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         :root {
@@ -105,10 +97,16 @@
 
     @stack('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    (() => {
+        window.__pqsLayoutCleanup?.();
+
+        const controller = new AbortController();
+        const { signal } = controller;
+
         // --- Element Selectors ---
         const menuToggle = document.getElementById('menu-toggle');
         const sidebar = document.getElementById('sidebar');
+        const sidebarScroll = document.getElementById('sidebar-scroll');
         const mainContent = document.getElementById('main-content');
         const sidebarBackdrop = document.getElementById('sidebar-backdrop');
         
@@ -125,10 +123,91 @@
         let logoutUrl = ''; // To store the logout URL when a link is clicked
 
         // --- Sidebar Logic ---
+        const isDesktop = () => window.innerWidth >= 768;
+        const sidebarStateKey = 'pqs.sidebar.collapsed';
+        const sidebarScrollKey = 'pqs.sidebar.scrollTop';
+        const mainContentScrollKey = 'pqs.main-content.scrollTop';
+
+        const getStoredSidebarCollapsed = () => {
+            try {
+                return window.localStorage.getItem(sidebarStateKey) === 'true';
+            } catch (error) {
+                return false;
+            }
+        };
+
+        const storeSidebarCollapsed = (collapsed) => {
+            try {
+                window.localStorage.setItem(sidebarStateKey, collapsed ? 'true' : 'false');
+            } catch (error) {
+                // Ignore storage failures and keep the in-memory state only.
+            }
+        };
+
+        const readSessionNumber = (key) => {
+            try {
+                const value = window.sessionStorage.getItem(key);
+
+                if (value === null) {
+                    return 0;
+                }
+
+                const parsed = Number.parseInt(value, 10);
+
+                return Number.isNaN(parsed) ? 0 : parsed;
+            } catch (error) {
+                return 0;
+            }
+        };
+
+        const writeSessionNumber = (key, value) => {
+            try {
+                window.sessionStorage.setItem(key, String(Math.max(0, value)));
+            } catch (error) {
+                // Ignore storage failures and keep default browser scroll behavior.
+            }
+        };
+
+        const saveScrollPositions = () => {
+            if (sidebarScroll) {
+                writeSessionNumber(sidebarScrollKey, sidebarScroll.scrollTop);
+            }
+
+            if (mainContent) {
+                writeSessionNumber(mainContentScrollKey, mainContent.scrollTop);
+            }
+        };
+
+        const restoreScrollPositions = () => {
+            if (sidebarScroll) {
+                sidebarScroll.scrollTop = readSessionNumber(sidebarScrollKey);
+            }
+
+            if (mainContent) {
+                mainContent.scrollTop = readSessionNumber(mainContentScrollKey);
+            }
+        };
+
+        window.__pqsLayoutCleanup = () => {
+            saveScrollPositions();
+            controller.abort();
+        };
+
+        const setDesktopSidebarCollapsed = (collapsed) => {
+            if (!sidebar || !mainContent) return;
+
+            sidebar.dataset.collapsed = collapsed ? 'true' : 'false';
+            sidebar.classList.toggle('w-20', collapsed);
+            sidebar.classList.toggle('w-64', !collapsed);
+            mainContent.classList.toggle('md:ml-20', collapsed);
+            mainContent.classList.toggle('md:ml-64', !collapsed);
+            storeSidebarCollapsed(collapsed);
+        };
+
         const syncSidebarState = () => {
             if (!sidebar || !mainContent) return;
 
-            if (window.innerWidth >= 768) {
+            if (isDesktop()) {
                 // Desktop: show sidebar, hide backdrop
                 sidebar.classList.remove('-translate-x-full');
                 if (sidebarBackdrop) {
@@ -136,15 +215,11 @@
                     sidebarBackdrop.classList.add('opacity-0');
                 }
 
-                if (sidebar.classList.contains('w-20')) {
-                    mainContent.classList.add('md:ml-20');
-                    mainContent.classList.remove('md:ml-64');
-                } else {
-                    mainContent.classList.add('md:ml-64');
-                    mainContent.classList.remove('md:ml-20');
-                }
+                setDesktopSidebarCollapsed(getStoredSidebarCollapsed());
             } else {
                 // Mobile: reset margins
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
                 mainContent.classList.remove('md:ml-64', 'md:ml-20');
             }
         };
@@ -152,7 +227,7 @@
         const toggleSidebar = () => {
             if (!sidebar || !mainContent) return;
 
-            if (window.innerWidth < 768) {
+            if (!isDesktop()) {
                 // Mobile: slide sidebar and toggle backdrop
                 const isHidden = sidebar.classList.contains('-translate-x-full');
                 sidebar.classList.toggle('-translate-x-full');
@@ -170,9 +245,7 @@
                 }
             } else {
                 // Desktop: toggle collapsed state
-                sidebar.classList.toggle('w-20');
-                mainContent.classList.toggle('md:ml-64');
-                mainContent.classList.toggle('md:ml-20');
+                setDesktopSidebarCollapsed(sidebar.dataset.collapsed !== 'true');
             }
         };
 
@@ -187,9 +260,15 @@
         };
 
         syncSidebarState();
-        window.addEventListener('resize', syncSidebarState);
-        if (menuToggle) menuToggle.addEventListener('click', toggleSidebar);
-        if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+        restoreScrollPositions();
+        requestAnimationFrame(restoreScrollPositions);
+        window.addEventListener('resize', syncSidebarState, { signal });
+        window.addEventListener('beforeunload', saveScrollPositions, { signal });
+        window.addEventListener('pagehide', saveScrollPositions, { signal });
+        if (menuToggle) menuToggle.addEventListener('click', toggleSidebar, { signal });
+        if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar, { signal });
+        if (sidebarScroll) sidebarScroll.addEventListener('scroll', saveScrollPositions, { passive: true, signal });
+        if (mainContent) mainContent.addEventListener('scroll', saveScrollPositions, { passive: true, signal });
 
         // Close sidebar when clicking main content on small screens (but ignore clicks on the menu toggle)
         if (mainContent) {
@@ -201,19 +280,19 @@
                 if (e.target.closest('#menu-toggle') || e.target.closest('#sidebar')) return;
 
                 closeSidebar();
-            });
+            }, { signal });
         }
 
         // --- User Dropdown Logic ---
         if (userMenuButton) {
             userMenuButton.addEventListener('click', () => {
                 userMenuDropdown.classList.toggle('hidden');
-            });
+            }, { signal });
             document.addEventListener('click', (event) => {
                 if (!userMenuButton.contains(event.target) && !userMenuDropdown.contains(event.target)) {
                     userMenuDropdown.classList.add('hidden');
                 }
-            });
+            }, { signal });
         }
         
         // --- Sidebar Accordion Dropdown Logic ---
@@ -224,7 +303,7 @@
                 submenu.classList.toggle('hidden');
                 const chevron = button.querySelector('i.fa-chevron-down');
                 if(chevron) chevron.classList.toggle('rotate-180');
-            });
+            }, { signal });
         });
 
         // ✨ NEW: Logout Modal Logic ---
@@ -248,22 +327,31 @@
                     e.preventDefault();
                     logoutUrl = trigger.href; // Capture the URL from the link
                     showModal();
-                });
+                }, { signal });
             });
 
             confirmLogoutBtn.addEventListener('click', () => {
                 if (logoutUrl) window.location.href = logoutUrl; // Proceed to the captured URL
-            });
+            }, { signal });
 
-            cancelLogoutBtn.addEventListener('click', hideModal);
-            modalBackdrop.addEventListener('click', hideModal);
+            cancelLogoutBtn.addEventListener('click', hideModal, { signal });
+            modalBackdrop.addEventListener('click', hideModal, { signal });
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && !logoutModal.classList.contains('hidden')) {
                     hideModal();
                 }
-            });
+            }, { signal });
         }
-    });
+
+        document.addEventListener('turbo:before-cache', () => {
+            saveScrollPositions();
+            userMenuDropdown?.classList.add('hidden');
+            if (logoutModal) {
+                logoutModal.classList.add('hidden', 'opacity-0');
+                logoutModal.querySelector('[role="dialog"]')?.classList.add('scale-95');
+            }
+        }, { once: true, signal });
+    })();
 </script>
 <div id="logout-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-300 ease-in-out opacity-0 hidden">
     <div id="modal-backdrop" class="fixed inset-0"></div>

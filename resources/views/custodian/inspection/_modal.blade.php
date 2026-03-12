@@ -115,7 +115,7 @@
                                 <h4 class="text-center font-bold">INSPECTION</h4>
                                 <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                                     <label for="inspectionDate" class="font-semibold">Date Inspected :</label>
-                                    <input type="date" id="inspectionDate" name="inspection_date" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0" required>
+                                    <input type="date" id="inspectionDate" name="inspection_date" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                                 </div>
                                 <div class="pt-4 flex items-start gap-3">
                                     <div class="w-5 h-5 border border-gray-400 mt-0.5"></div>

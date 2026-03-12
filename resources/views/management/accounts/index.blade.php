@@ -152,7 +152,7 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    (function () {
         document.querySelectorAll('[data-auto-submit]').forEach(function (element) {
             element.addEventListener('change', function () {
                 element.form.submit();
@@ -272,6 +272,6 @@
                 });
             }
         })();
-    });
+    })();
 </script>
 @endpush

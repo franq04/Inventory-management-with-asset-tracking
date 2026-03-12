@@ -357,7 +357,7 @@
                                 <label for="fundAllocation" class="mb-2 block text-sm font-semibold uppercase tracking-wide text-gray-700">
                                     Fund Cluster <span class="text-red-600">*</span>
                                 </label>
-                                <select id="fundAllocation" name="fund_allocation_id" class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" required>
+                                <select id="fundAllocation" name="fund_allocation_id" class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0">
                                     <option value="">Select Fund Cluster</option>
                                     @foreach($fundAllocations ?? [] as $allocation)
                                         <option value="{{ $allocation->id }}" 
@@ -380,7 +380,7 @@
                             </div>
                             <div>
                                 <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-gray-700" for="purpose">Purpose :</label>
-                                <textarea id="purpose" name="purpose" rows="3" data-focus class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the purpose and justification for this purchase request..." required></textarea>
+                                <textarea id="purpose" name="purpose" rows="3" data-focus class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the purpose and justification for this purchase request..."></textarea>
                             </div>
                         </div>
 
@@ -446,7 +446,7 @@
                 <div id="employeeWaitErrors" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"></div>
                 <div class="space-y-2">
                     <label for="employeeWaitDate" class="text-xs font-semibold uppercase tracking-wide text-gray-600">Wait Until</label>
-                    <input type="date" id="employeeWaitDate" class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#1a3a2d] focus:outline-none" data-focus required>
+                    <input type="date" id="employeeWaitDate" class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#1a3a2d] focus:outline-none" data-focus>
                 </div>
                 <div class="space-y-2">
                     <label for="employeeWaitNote" class="text-xs font-semibold uppercase tracking-wide text-gray-600">Optional Notes</label>

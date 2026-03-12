@@ -24,6 +24,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Database\Eloquent\Builder;
 
 class PurchaseOrderController extends Controller
 {
@@ -101,33 +102,97 @@ class PurchaseOrderController extends Controller
     {
         $searchTerm = $request->string('search')->trim();
 
-        $approvedRequests = PurchaseRequest::with([
-                'items',
-                'status',
-                'requester.employee',
-                'division',
-                'section',
+        $approvedRequests = PurchaseRequest::query()
+            ->select([
+                'pr_no',
+                'account_id',
+                'division_id',
+                'section_id',
+                'purpose',
+                'created_at',
+            ])
+            ->with([
+                'requester:account_id,username',
+                'requester.employee:employee_id,account_id,first_name,middle_name,last_name,suffix',
+                'division:division_id,division_name',
+                'section:section_id,section_name',
             ])
             ->whereIn('status_id', $this->convertiblePurchaseRequestStatuses())
             ->whereDoesntHave('purchaseOrder')
             ->orderByDesc('created_at')
             ->get();
 
-        $purchaseOrderQuery = PurchaseOrder::with([
-                'purchaseRequest.requester.employee',
-                'purchaseRequest.status',
-                'supplier',
-                'status',
-                'items.purchaseRequestItem',
-                'items.receivedBy',
-                'items.receivedBy.employee',
-                'inspectionReports.items.status',
+        $purchaseOrderQuery = $this->purchaseOrderIndexQuery($searchTerm->toString());
+
+        $ordersForPipeline = (clone $purchaseOrderQuery)->get();
+        $ordersForPipeline->each(function (PurchaseOrder $order) {
+            $order->setRelation('inspectionReports', $order->inspectionReports->sortBy('inspection_date')->values());
+        });
+
+        $pipelineStages = $this->buildPipeline($ordersForPipeline);
+        $purchaseOrders = $purchaseOrderQuery->paginate(10)->withQueryString();
+        $registerSummaries = $purchaseOrders->getCollection()
+            ->mapWithKeys(fn (PurchaseOrder $order) => [$order->po_no => $this->summarizeOrderForRegister($order)])
+            ->all();
+
+        $viewData = [
+            'approvedRequests' => $approvedRequests,
+            'pipelineStages' => $pipelineStages,
+            'purchaseOrders' => $purchaseOrders,
+            'registerSummaries' => $registerSummaries,
+            'search' => $searchTerm->toString(),
+        ];
+
+        return view('custodian.purchase_orders.pipeline', array_merge($viewData, $this->purchaseRequestUiContext()));
+    }
+
+    protected function purchaseOrderIndexQuery(?string $searchTerm = null): Builder
+    {
+        $query = PurchaseOrder::query()
+            ->select([
+                'po_no',
+                'pr_no',
+                'supplier_id',
+                'status_id',
+                'order_date',
+                'delivery_date',
+                'created_at',
+            ])
+            ->with([
+                'supplier:supplier_id,supplier_name',
+                'status:status_id,status_name',
+                'items' => function ($itemQuery) {
+                    $itemQuery->select([
+                        'poi_id',
+                        'po_no',
+                        'item_description',
+                        'quantity',
+                        'unit',
+                        'unit_cost',
+                        'fulfillment_status',
+                        'alternate_description',
+                        'employee_decision',
+                        'employee_wait_until',
+                        'received_at',
+                    ]);
+                },
+                'items.latestInspectionItem' => function ($inspectionItemQuery) {
+                    $inspectionItemQuery->select([
+                        'inspection_report_items.ia_item_id',
+                        'inspection_report_items.po_item_id',
+                        'inspection_report_items.inspection_status_id',
+                        'inspection_report_items.ia_no',
+                    ]);
+                },
+                'inspectionReports:ia_no,po_no,inspection_date,overall_status_id',
             ])
             ->orderByDesc('order_date')
             ->orderByDesc('created_at');
 
-        if ($searchTerm->isNotEmpty()) {
-            $purchaseOrderQuery->where(function ($subQuery) use ($searchTerm) {
+        $searchTerm = trim((string) $searchTerm);
+
+        if ($searchTerm !== '') {
+            $query->where(function ($subQuery) use ($searchTerm) {
                 $value = '%'.$searchTerm.'%';
                 $subQuery->where('po_no', 'like', $value)
                     ->orWhere('pr_no', 'like', $value)
@@ -137,23 +202,7 @@ class PurchaseOrderController extends Controller
             });
         }
 
-        $ordersForPipeline = (clone $purchaseOrderQuery)->get();
-        $ordersForPipeline->each(function (PurchaseOrder $order) {
-            $order->setRelation('inspectionReports', $order->inspectionReports->sortBy('inspection_date')->values());
-            $this->synchronizeOrderAndRequestStatus($order);
-        });
-
-        $pipelineStages = $this->buildPipeline($ordersForPipeline);
-        $purchaseOrders = $purchaseOrderQuery->paginate(10)->withQueryString();
-
-        $viewData = [
-            'approvedRequests' => $approvedRequests,
-            'pipelineStages' => $pipelineStages,
-            'purchaseOrders' => $purchaseOrders,
-            'search' => $searchTerm->toString(),
-        ];
-
-        return view('custodian.purchase_orders.pipeline', array_merge($viewData, $this->purchaseRequestUiContext()));
+        return $query;
     }
 
     public function create(Request $request)
@@ -806,18 +855,16 @@ class PurchaseOrderController extends Controller
 
     protected function collectLatestInspectionItems(PurchaseOrder $order): Collection
     {
-        $latest = collect();
+        return $order->items
+            ->mapWithKeys(function (PurchaseOrderItem $item) {
+                $latestItem = $item->latestInspectionItem;
 
-        $order->inspectionReports
-            ->flatMap(function (InspectionReport $report) {
-                return $report->items;
-            })
-            ->sortBy('ia_item_id')
-            ->each(function (InspectionReportItem $item) use ($latest) {
-                $latest->put($item->po_item_id, $item);
+                if (! $latestItem) {
+                    return [];
+                }
+
+                return [$item->poi_id => $latestItem];
             });
-
-        return $latest;
     }
 
     protected function summarizeOrderForPipeline(PurchaseOrder $order): array
@@ -849,13 +896,10 @@ class PurchaseOrderController extends Controller
         $resolvedCount = $acceptedItems->count() + $issueItems->count();
         $pendingItems = max($totalItems - $resolvedCount, 0);
 
-        $issueBreakdown = $issueItems->groupBy('inspection_status_id')->map(function (Collection $group) {
-            /** @var InspectionReportItem $first */
-            $first = $group->first();
-
+        $issueBreakdown = $issueItems->groupBy('inspection_status_id')->map(function (Collection $group, $statusId) {
             return [
-                'status_id' => $first->inspection_status_id,
-                'label' => $first->status?->status_name ?? 'Issue',
+                'status_id' => (int) $statusId,
+                'label' => 'Issue',
                 'count' => $group->count(),
             ];
         })->values();
@@ -916,6 +960,47 @@ class PurchaseOrderController extends Controller
             'latest_items' => $latestInspectionItems,
             'has_issues' => $issueItems->isNotEmpty(),
             'timing' => $timing,
+        ];
+    }
+
+    protected function summarizeOrderForRegister(PurchaseOrder $order): array
+    {
+        $latestInspectionItems = $this->collectLatestInspectionItems($order);
+
+        $issueStatusIds = [
+            Status::ITEM_DEFECTIVE,
+            Status::ITEM_RETURNED,
+            Status::ITEM_REPLACED,
+        ];
+
+        $acceptedStatusIds = [
+            Status::ITEM_ACCEPTED,
+            Status::ITEM_RECORDED,
+        ];
+
+        $issueCount = $latestInspectionItems->filter(
+            fn (InspectionReportItem $item) => in_array((int) $item->inspection_status_id, $issueStatusIds, true)
+        )->count();
+
+        $acceptedCount = $latestInspectionItems->filter(
+            fn (InspectionReportItem $item) => in_array((int) $item->inspection_status_id, $acceptedStatusIds, true)
+        )->count();
+
+        $pendingCount = max($order->items->count() - $acceptedCount - $issueCount, 0);
+        $latestInspectionDate = optional($order->inspectionReports->sortByDesc('inspection_date')->first()?->inspection_date)->format('M d, Y');
+        $deliveriesCount = $order->inspectionReports->count();
+
+        return [
+            'accepted_count' => $acceptedCount,
+            'issue_count' => $issueCount,
+            'pending_count' => $pendingCount,
+            'deliveries_count' => $deliveriesCount,
+            'latest_inspection_date' => $latestInspectionDate,
+            'can_inspect' => in_array((int) $order->status_id, [
+                Status::PO_PARTIALLY_DELIVERED,
+                Status::PO_DELIVERED_PENDING_INSPECTION,
+                Status::PO_CLOSED,
+            ], true) || $deliveriesCount > 0,
         ];
     }
 

@@ -258,26 +258,22 @@ const bindPurchaseOrderForm = () => {
 
         $supplierSelect.prop('disabled', !isExisting);
         if (isExisting) {
-            $supplierSelect.prop('required', true);
             if ($supplierSelect.val()) {
                 populateExistingSupplier($supplierSelect.val());
             } else {
                 clearExistingSupplierDisplay();
             }
         } else {
-            $supplierSelect.prop('required', false).val('');
+            $supplierSelect.val('');
             clearExistingSupplierDisplay();
         }
 
         $newSupplierFields.each(function () {
             const $field = $(this);
             if (isExisting) {
-                $field.prop('disabled', true).prop('required', false).val('');
+                $field.prop('disabled', true).val('');
             } else {
                 $field.prop('disabled', false);
-                if ($field.is($newSupplierName)) {
-                    $field.prop('required', true);
-                }
             }
         });
 
@@ -463,13 +459,13 @@ const togglePartialItemFields = ($form) => {
 
     if (status === 'alternative') {
         $altWrapper.removeClass('hidden');
-        $altInput.prop('disabled', false).attr('required', true);
+        $altInput.prop('disabled', false);
         $unitCost.prop('disabled', false);
         return;
     }
 
     $altWrapper.addClass('hidden');
-    $altInput.prop('disabled', true).attr('required', false).val('');
+    $altInput.prop('disabled', true).val('');
 
     if (status === 'unavailable') {
         $unitCost.val('0').prop('disabled', true);

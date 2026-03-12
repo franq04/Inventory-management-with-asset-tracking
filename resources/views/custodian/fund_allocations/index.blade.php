@@ -154,7 +154,7 @@
                     <label for="fundCluster" class="block text-sm font-semibold text-gray-700 mb-2">
                         Fund Cluster <span class="text-red-600">*</span>
                     </label>
-                    <input type="text" id="fundCluster" name="fund_cluster" required
+                    <input type="text" id="fundCluster" name="fund_cluster"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:border-[#1a3a2d] focus:ring-2 focus:ring-[#1a3a2d]/20"
                            placeholder="e.g., FY2025-GEN-001">
                 </div>
@@ -165,7 +165,7 @@
                     </label>
                     <div class="relative">
                         <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
-                        <input type="number" id="totalAmount" name="total_amount" step="0.01" min="0" required
+                        <input type="number" id="totalAmount" name="total_amount" step="0.01" min="0"
                                class="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-2 focus:border-[#1a3a2d] focus:ring-2 focus:ring-[#1a3a2d]/20"
                                placeholder="0.00">
                     </div>

@@ -1,8 +1,7 @@
+import $ from 'jquery';
+import Chart from 'chart.js/auto';
+
 (function($) {
-    if (!window.Chart) {
-        console.warn('Chart.js is not available – dashboard visuals will be skipped.');
-        return;
-    }
 
     const data = window.dashboardData || {};
 

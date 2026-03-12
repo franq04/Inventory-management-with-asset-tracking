@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Property, Plant & Equipment Ledger</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite('resources/css/app.css')
     <style>
         @media print {
             @page {
@@ -162,10 +162,6 @@
         </div>
         @endif
     @endforeach
-
-
-
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
         <!-- Print Controls (screen only) -->
         <div class="fixed bottom-4 right-4 no-print flex gap-2">
             <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">
