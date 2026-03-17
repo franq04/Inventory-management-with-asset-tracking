@@ -93,12 +93,21 @@ class EmployeeController extends Controller
             ->limit(5)
             ->get();
 
+        $positions = Position::query()
+            ->orderBy('position_title')
+            ->get(['position_id', 'position_title']);
+
+        $accounts = Account::query()
+            ->with('employee:employee_id,account_id')
+            ->orderBy('username')
+            ->get(['account_id', 'username', 'role']);
+
         if ($request->ajax()) {
             $html = view('management.employees._table', [
                 'employees' => $employees,
             ])->render();
 
-            $pagination = $employees->hasPages() ? $employees->onEachSide(1)->links()->toHtml() : '';
+            $pagination = $employees->hasPages() ? $employees->onEachSide(1)->links('vendor.pagination.procurement')->toHtml() : '';
 
             return response()->json([
                 'html' => $html,
@@ -111,6 +120,10 @@ class EmployeeController extends Controller
             'employees' => $employees,
             'divisions' => $divisions,
             'sections' => $sections,
+            'positions' => $positions,
+            'accounts' => $accounts,
+            'maritalStatuses' => self::MARITAL_STATUSES,
+            'genders' => self::GENDERS,
             'stats' => $stats,
             'search' => $search,
             'divisionFilter' => $divisionFilter,
@@ -335,11 +348,108 @@ class EmployeeController extends Controller
             ->with('status', 'Employee record updated successfully.');
     }
 
+    public function updateModal(Request $request, Employee $employee)
+    {
+        $this->normalizeNullableFields($request);
+
+        $validated = $request->validate($this->validationRules($employee));
+        $this->assertSectionMatchesDivision($validated['section_id'] ?? null, $validated['division_id'] ?? null);
+
+        $payload = $this->preparePayload($validated, $employee);
+
+        $createAccount = (bool) $request->input('create_account');
+        $newAccountData = null;
+
+        if ($createAccount) {
+            if ($employee->account_id) {
+                throw ValidationException::withMessages([
+                    'create_account' => 'This employee already has a linked account.',
+                ]);
+            }
+
+            if (!empty($validated['account_id'])) {
+                throw ValidationException::withMessages([
+                    'account_id' => 'Choose either linking an existing account or creating a new account, not both.',
+                ]);
+            }
+
+            $newAccountData = Validator::make($request->all(), [
+                'new_account_username' => ['required', 'string', 'max:255', Rule::unique('accounts', 'username')],
+                'new_account_role' => ['required', Rule::in(['employee', 'custodian', 'iac', 'division_head'])],
+                'new_account_password' => ['nullable', 'string', 'min:6'],
+            ])->validate();
+        }
+
+        if ($request->hasFile('profile_img')) {
+            $path = $request->file('profile_img')->store('profile_images', 'public');
+            $payload['profile_img'] = 'storage/' . $path;
+        }
+
+        DB::transaction(function () use ($employee, &$payload, $createAccount, $newAccountData) {
+            if ($createAccount && $newAccountData && !$employee->account_id) {
+                $accountId = $this->generateAccountId();
+                $password = $newAccountData['new_account_password'] ?: 'password';
+
+                $account = Account::create([
+                    'account_id' => $accountId,
+                    'username' => $newAccountData['new_account_username'],
+                    'password' => Hash::make($password),
+                    'role' => $newAccountData['new_account_role'],
+                ]);
+
+                $payload['account_id'] = $account->account_id;
+            }
+
+            $employee->update($payload);
+        });
+
+        $employee->load(['section', 'account']);
+
+        $fullName = trim((string) $employee->last_name);
+        $nameTail = trim(implode(' ', array_filter([
+            $employee->first_name,
+            $employee->middle_name,
+            $employee->suffix,
+        ])));
+        if ($nameTail !== '') {
+            $fullName = $fullName !== '' ? ($fullName . ', ' . $nameTail) : $nameTail;
+        }
+
+        return response()->json([
+            'message' => 'Employee updated successfully.',
+            'employee' => [
+                'id' => $employee->id,
+                'full_name' => $fullName,
+                'first_name' => $employee->first_name,
+                'middle_name' => $employee->middle_name,
+                'last_name' => $employee->last_name,
+                'suffix' => $employee->suffix,
+                'employee_id' => $employee->employee_id,
+                'date_of_birth' => $employee->date_of_birth,
+                'gender' => $employee->gender,
+                'marital_status' => $employee->marital_status,
+                'position_id' => $employee->position_id,
+                'section_id' => $employee->section_id,
+                'division_id' => $employee->section?->division_id,
+                'account_id' => $employee->account_id,
+                'email' => $employee->email,
+                'contact_no' => $employee->contact_no,
+                'profile_img' => $employee->profile_img,
+            ],
+        ]);
+    }
+
     public function destroy(Employee $employee)
     {
         DB::transaction(function () use ($employee) {
             $employee->delete();
         });
+
+        if (request()->wantsJson()) {
+            return response()->json([
+                'message' => 'Employee record removed.',
+            ]);
+        }
 
         return redirect()
             ->route('employees.index')

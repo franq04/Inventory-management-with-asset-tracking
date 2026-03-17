@@ -18,6 +18,46 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (char) => {
     return map[char] ?? char;
 });
 
+const softNavigate = (url = window.location.href, options = {}) => {
+    const { replace = false } = options;
+    if (window.Turbo && typeof window.Turbo.visit === 'function') {
+        window.Turbo.visit(url, { action: replace ? 'replace' : 'advance' });
+        return;
+    }
+
+    if (url && url !== window.location.href) {
+        window.location.assign(url);
+        return;
+    }
+
+    window.location.reload();
+};
+
+const ensureToast = () => {
+    let toast = document.getElementById('pqs-global-toast');
+    if (toast) {
+        return toast;
+    }
+
+    toast = document.createElement('div');
+    toast.id = 'pqs-global-toast';
+    toast.className = 'fixed bottom-6 right-6 z-[90] hidden max-w-sm rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg';
+    document.body.appendChild(toast);
+    return toast;
+};
+
+const showToast = (message, type = 'error') => {
+    const toast = ensureToast();
+    toast.textContent = message;
+    toast.classList.remove('hidden', 'bg-rose-600', 'bg-emerald-600', 'bg-amber-600');
+    toast.classList.add(type === 'success' ? 'bg-emerald-600' : type === 'warning' ? 'bg-amber-600' : 'bg-rose-600');
+
+    window.clearTimeout(showToast._timer);
+    showToast._timer = window.setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 2600);
+};
+
 const fulfillmentMeta = {
     pending: {
         label: 'Pending',
@@ -67,13 +107,19 @@ const bindPoDetailsModal = () => {
     }
 
     const $itemsTarget = $('#poDetailsItems');
+    const $panel = $modal.find('.modal-panel').first();
 
     const toggleModal = (open) => {
         if (open) {
-            $modal.removeClass('hidden opacity-0');
+            $modal.removeClass('hidden');
+            requestAnimationFrame(() => {
+                $modal.removeClass('opacity-0');
+                $panel.removeClass('opacity-0 scale-95 translate-y-2');
+            });
         } else {
             $modal.addClass('opacity-0');
-            setTimeout(() => $modal.addClass('hidden'), 200);
+            $panel.addClass('opacity-0 scale-95 translate-y-2');
+            setTimeout(() => $modal.addClass('hidden'), 250);
         }
     };
 
@@ -85,7 +131,8 @@ const bindPoDetailsModal = () => {
 
     $modal.find('[data-close-modal]').on('click', () => toggleModal(false));
 
-    $('.js-view-po').on('click', function () {
+    $(document).off('click.jsViewPO').on('click.jsViewPO', '.js-view-po', function (e) {
+        e.preventDefault();
         const url = $(this).data('show-url');
         if (!url) {
             return;
@@ -97,28 +144,48 @@ const bindPoDetailsModal = () => {
             headers: { Accept: 'application/json' },
             success: (response) => {
                 const data = response.data || {};
+                $('#poDetailsPoNo').text(data.po_no || '');
                 $('#poDetailsNumber').text(data.po_no || '');
                 $('#poDetailsPr').text(data.pr_no || '');
                 $('#poDetailsSupplier').text(data.supplier || '—');
+                $('#poDetailsAddress').text(data.supplier_address || '—');
+                $('#poDetailsTin').text(data.supplier_tin || '—');
+                $('#poDetailsMode').text(data.mode_of_procurement || '—');
+                $('#poDetailsPlace').text(data.place_of_delivery || '—');
+                $('#poDetailsDeliveryTerm').text(data.delivery_term || '—');
+                $('#poDetailsPaymentTerm').text(data.payment_term || '—');
                 $('#poDetailsOrderDate').text(data.order_date || '—');
                 $('#poDetailsDeliveryDate').text(data.delivery_date || '—');
-
+                $('#poDetailsAmountWords').text(data.amount_in_words || '');
+                $('#poDetailsFundCluster').text(data.fund_cluster || '');
+                $('#poDetailsFundsAvailable').text(data.funds_available ? formatCurrency(data.funds_available) : '');
+                $('#poDetailsOrsBursNo').text(data.ors_burs_no || '');
+                $('#poDetailsOrsBursDate').text(data.ors_burs_date || '');
+                $('#poDetailsOrsBursAmount').text(data.ors_burs_amount ? formatCurrency(data.ors_burs_amount) : '');
+                $('#poDetailsConformeName').text(data.conforme_name || '');
+                $('#poDetailsConformeDate').text(data.conforme_date || '');
+                $('#poDetailsAuthorizedOfficial').text(data.authorized_official_name || '');
+                $('#poDetailsDesignation').text(data.authorized_official_designation || '');
+                
                 $itemsTarget.empty();
-                (data.items || []).forEach((item) => {
+                (data.items || []).forEach((item, index) => {
                         const statusHtml = renderFulfillmentStatus(item.fulfillment_status, item.employee_decision);
                         const alternate = item.alternate_description
                             ? `<div class="text-gray-700">${item.alternate_description}</div>`
                             : '<span class="text-gray-400">—</span>';
 
                     $itemsTarget.append(`
-                        <tr class="border-b last:border-0">
-                            <td class="px-3 py-2 text-gray-700">${item.item_description}</td>
-                            <td class="px-3 py-2 text-right text-gray-700">${item.quantity}</td>
-                            <td class="px-3 py-2 text-center text-gray-500">${item.unit}</td>
-                                <td class="px-3 py-2 text-center">${statusHtml}</td>
-                                <td class="px-3 py-2">${alternate}</td>
-                                <td class="px-3 py-2 text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
-                                <td class="px-3 py-2 text-right text-gray-700">${formatCurrency(item.total_cost)}</td>
+                        <tr class="border-b last:border-0 hover:bg-gray-50">
+                            <td class="border-r border-gray-300 px-4 py-2 text-center text-gray-700">${index + 1}</td>
+                            <td class="border-r border-gray-300 px-4 py-2 text-center text-gray-700 font-medium">${item.quantity}</td>
+                            <td class="border-r border-gray-300 px-4 py-2 text-center text-gray-500">${item.unit}</td>
+                            <td class="border-r border-gray-300 px-4 py-2 text-gray-900 font-medium">
+                                <div class="mb-1">${item.item_description}</div>
+                                ${item.alternate_description ? `<div class="text-xs text-amber-700 mt-1 flex items-center gap-1"><i class="fas fa-exchange-alt"></i> Alt: ${item.alternate_description}</div>` : ''}
+                            </td>
+                            <td class="border-r border-gray-300 px-4 py-2 text-center">${statusHtml}</td>
+                            <td class="border-r border-gray-300 px-4 py-2 text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
+                            <td class="px-4 py-2 text-right text-gray-900 font-bold">${formatCurrency(item.total_cost)}</td>
                         </tr>
                     `);
                 });
@@ -167,7 +234,7 @@ const bindPoDetailsModal = () => {
             error: (xhr) => {
                 console.error('Failed to load purchase order details', xhr);
                 const serverMessage = xhr?.responseJSON?.message || xhr?.responseText || xhr?.statusText;
-                alert(serverMessage || 'Unable to load purchase order details.');
+                showToast(serverMessage || 'Unable to load purchase order details.');
             },
         });
     });
@@ -194,8 +261,10 @@ const bindPurchaseOrderForm = () => {
     const $newSupplierWrapper = $('#poSupplierNewWrapper');
     const $newSupplierFields = $newSupplierWrapper.find('[data-new-supplier-field]');
     const $newSupplierName = $('#poNewSupplierName');
+    const $supplierAddressRow = $('#poSupplierAddressRow');
     const $supplierAddress = $('#poSupplierAddress');
     const $supplierTin = $('#poSupplierTin');
+    const $supplierTinRow = $('#poSupplierTinRow');
     const $conformeName = $('#poConformeName');
     const $conformeDate = $('#poConformeDate');
     const $orderDate = $('#poOrderDate');
@@ -255,6 +324,8 @@ const bindPurchaseOrderForm = () => {
 
         $existingSupplierWrapper.toggleClass('hidden', !isExisting);
         $newSupplierWrapper.toggleClass('hidden', isExisting);
+        $supplierAddressRow.toggleClass('hidden', !isExisting);
+        $supplierTinRow.toggleClass('hidden', !isExisting);
 
         $supplierSelect.prop('disabled', !isExisting);
         if (isExisting) {
@@ -434,7 +505,7 @@ const bindPurchaseOrderForm = () => {
             data: $form.serialize(),
             headers: { 'X-CSRF-TOKEN': csrfToken() },
             success: (response) => {
-                window.location.href = response.redirect || config.redirectUrl || '/custodian/purchase-orders';
+                softNavigate(response.redirect || config.redirectUrl || '/custodian/purchase-orders');
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
@@ -509,14 +580,14 @@ const bindPartialOrderActions = () => {
                 'X-HTTP-Method-Override': 'PATCH',
             },
             success: () => {
-                window.location.reload();
+                softNavigate(window.location.href, { replace: true });
             },
             error: (xhr) => {
                 let message = 'Unable to update this item. Please try again.';
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
                     message = Object.values(xhr.responseJSON.errors).flat().join('\n');
                 }
-                alert(message);
+                showToast(message);
             },
             complete: () => {
                 $submitBtn.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -538,11 +609,11 @@ const bindPartialOrderActions = () => {
             url,
             data: { _token: csrfToken() },
             success: () => {
-                window.location.reload();
+                softNavigate(window.location.href, { replace: true });
             },
             error: (xhr) => {
                 const message = xhr.responseJSON?.message || 'Unable to retain the original item right now.';
-                alert(message);
+                showToast(message);
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -570,14 +641,14 @@ const bindAcceptPoActions = () => {
             url,
             data: { _token: csrfToken() },
             success: () => {
-                window.location.reload();
+                softNavigate(window.location.href, { replace: true });
             },
             error: (xhr) => {
                 let message = 'Unable to accept this purchase order. Please try again.';
                 if (xhr.status === 422 && xhr.responseJSON?.message) {
                     message = xhr.responseJSON.message;
                 }
-                alert(message);
+                showToast(message);
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -613,11 +684,11 @@ const bindReceiveItemActions = () => {
             url,
             data: $form.serialize(),
             success: () => {
-                window.location.reload();
+                softNavigate(window.location.href, { replace: true });
             },
             error: (xhr) => {
                 const message = xhr.responseJSON?.message || 'Unable to mark this item as received right now.';
-                alert(message);
+                showToast(message);
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -626,8 +697,300 @@ const bindReceiveItemActions = () => {
     });
 };
 
+const bindCustodianRequestViewFallback = () => {
+    let $modal = $('#custodianPrModal');
+    if (!$modal.length) {
+        $('body').append(`
+            <div id="custodianPrModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+                <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>
+                <div class="relative flex items-center justify-center min-h-screen p-4">
+                    <div class="modal-panel relative flex flex-col bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+                        <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white">
+                            <h3 class="text-xl font-bold">Purchase Request Details</h3>
+                            <button type="button" class="p-2 rounded hover:bg-white/10" data-close-modal>
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6 space-y-4">
+                            <div id="custodianPrNumber" class="text-sm font-semibold text-gray-700"></div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                <div><span class="font-semibold">PR No:</span> <span id="custodianPrNo"></span></div>
+                                <div><span class="font-semibold">Date:</span> <span id="custodianPrDate"></span></div>
+                                <div><span class="font-semibold">Division:</span> <span id="custodianPrDivisionInput"></span></div>
+                                <div><span class="font-semibold">Section:</span> <span id="custodianPrSectionInput"></span></div>
+                            </div>
+                            <textarea id="custodianPrPurposeTextarea" class="w-full rounded border border-gray-300 px-3 py-2 text-sm" rows="3" readonly></textarea>
+                            <div class="overflow-x-auto border rounded">
+                                <table class="w-full text-sm">
+                                    <tbody id="custodianPrItemsTable"></tbody>
+                                </table>
+                            </div>
+                            <div class="text-right font-bold" id="custodianPrGrandTotal"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+        $modal = $('#custodianPrModal');
+    }
+
+    const $panel = $modal.find('.modal-panel');
+    const $items = $('#custodianPrItemsTable');
+
+    const formatDateTime = (value) => {
+        if (!value) {
+            return '—';
+        }
+        const date = new Date(String(value).replace(' ', 'T'));
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+        return date.toLocaleString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const openModal = () => {
+        $modal.removeClass('hidden opacity-0');
+        requestAnimationFrame(() => {
+            $panel.removeClass('opacity-0 scale-95 translate-y-2');
+        });
+    };
+
+    const closeModal = () => {
+        $modal.addClass('opacity-0');
+        $panel.addClass('opacity-0 scale-95 translate-y-2');
+        setTimeout(() => $modal.addClass('hidden'), 200);
+    };
+
+    $modal.off('click.custodianPrFallback').on('click.custodianPrFallback', (event) => {
+        if (event.target.dataset.closeModal !== undefined) {
+            closeModal();
+        }
+    });
+    $modal.find('[data-close-modal]').off('click.custodianPrFallback').on('click.custodianPrFallback', closeModal);
+
+    const openRequestFromTrigger = (triggerElement) => {
+        const showUrl = $(triggerElement).data('show-url');
+        if (!showUrl) {
+            return;
+        }
+
+        $('#custodianPrNumber').text('Loading purchase request...');
+        $items.html('<tr><td colspan="8" class="border border-gray-500 px-4 py-8 text-center text-gray-500">Loading...</td></tr>');
+        openModal();
+
+        $.ajax({
+            method: 'GET',
+            url: showUrl,
+            headers: { Accept: 'application/json' },
+            success: (response) => {
+                const data = response?.data || {};
+
+                $('#custodianPrNumber').text(data.pr_no || 'Purchase Request Review');
+                $('#custodianPrNo').text(data.pr_no || '—');
+                $('#custodianPrDate').text(formatDateTime(data.created_at));
+                $('#custodianPrDivisionInput').text(data.division || '—');
+                $('#custodianPrSectionInput').text(data.section || '—');
+                $('#custodianPrSaiInput').text(data.sai_no || '—');
+                $('#custodianPrAlobsInput').text(data.alobs_no || '—');
+                $('#custodianPrFundClusterInput').text(data.fund_cluster || '—');
+                $('#custodianPrFundsAvailableInput').text(data.funds_available ? formatCurrency(data.funds_available) : '—');
+                $('#custodianPrPurposeTextarea').val(data.purpose || '');
+                $('#custodianPrRequestedPrintedName').text(data.requester || '');
+                $('#custodianPrApprovedPrintedName').text(data.approved_by || '');
+
+                if (data.recommended_by_name) {
+                    $('#custodianPrRecommendedPrintedName').text(data.recommended_by_name);
+                    $('#custodianPrRecommendedDate').text(formatDateTime(data.recommended_at));
+                    $('#custodianPrRecommendationRemarks').text(data.recommendation_remarks || '—');
+                    $('#custodianPrRecommendedBlock').removeClass('hidden');
+                } else {
+                    $('#custodianPrRecommendedPrintedName').text('');
+                    $('#custodianPrRecommendedDate').text('');
+                    $('#custodianPrRecommendationRemarks').text('');
+                    $('#custodianPrRecommendedBlock').addClass('hidden');
+                }
+
+                const items = Array.isArray(data.items) ? data.items : [];
+                if (!items.length) {
+                    $items.html('<tr><td colspan="8" class="border border-gray-500 px-4 py-8 text-center text-gray-500">No items found.</td></tr>');
+                    $('#custodianPrGrandTotal').text(formatCurrency(data.total_estimated_cost || 0));
+                    return;
+                }
+
+                $items.empty();
+                items.forEach((item) => {
+                    $items.append(`
+                            <tr>
+                                <td class="border border-gray-500 px-3 py-2 text-center">${escapeHtml(item.quantity ?? '')}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-center">${escapeHtml(item.unit ?? '')}</td>
+                                <td class="border border-gray-500 px-3 py-2">${escapeHtml(item.item_description ?? '')}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-center">${escapeHtml(item.stock_number ?? '')}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-right">${formatCurrency(item.estimated_unit_cost ?? 0)}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-right">${formatCurrency(item.estimated_total_cost ?? 0)}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-center">${escapeHtml(item.fulfillment_status ?? 'pending')}</td>
+                                <td class="border border-gray-500 px-3 py-2 text-center">—</td>
+                            </tr>
+                    `);
+                });
+
+                $('#custodianPrGrandTotal').text(formatCurrency(data.total_estimated_cost || 0));
+            },
+            error: (xhr) => {
+                const message = xhr?.responseJSON?.message || xhr?.responseText || xhr?.statusText || 'Unable to load purchase request details.';
+                $items.html(`<tr><td colspan="8" class="border border-gray-500 px-4 py-8 text-center text-rose-600">${escapeHtml(message)}</td></tr>`);
+            },
+        });
+    };
+
+    window.__openCustodianRequestModalFallback = openRequestFromTrigger;
+    if (typeof window.__openCustodianRequestModal !== 'function') {
+        window.__openCustodianRequestModal = openRequestFromTrigger;
+    }
+
+    $(document)
+        .off('click.jsViewCustodianPrFallback', '.js-ready-po-pr-view')
+        .on('click.jsViewCustodianPrFallback', '.js-ready-po-pr-view', function (event) {
+            event.preventDefault();
+            openRequestFromTrigger(this);
+        });
+};
+
+const bindPurchaseOrderRegisterPagination = () => {
+    const sectionSelector = '#purchaseOrderRegisterSection';
+    if (!$(sectionSelector).length) {
+        return;
+    }
+
+    let activeRequest = null;
+    let requestToken = 0;
+    let isLoading = false;
+
+    const setLoadingState = (loading) => {
+        const $section = $(sectionSelector);
+        if (!$section.length) {
+            return;
+        }
+
+        $section.toggleClass('opacity-70 pointer-events-none', loading);
+        $section.find('nav[aria-label="Pagination Navigation"] a').toggleClass('pointer-events-none', loading);
+    };
+
+    const swapSection = (html, url, pushState = true) => {
+        const $parsed = $('<div>').append($.parseHTML(html, document, true));
+        const $incoming = $parsed.find(sectionSelector).first();
+        const $current = $(sectionSelector).first();
+
+        if (!$incoming.length || !$current.length) {
+            return;
+        }
+
+        $incoming.addClass('opacity-0 translate-y-1');
+        $current.replaceWith($incoming);
+
+        if (pushState && window.location.href !== url) {
+            window.history.pushState({ purchaseOrderRegisterUrl: url }, '', url);
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $incoming.removeClass('opacity-0 translate-y-1');
+            });
+        });
+    };
+
+    const loadRegisterPage = (url, options = {}) => {
+        const { pushState = true } = options;
+        if (!url || isLoading) {
+            return;
+        }
+
+        if (activeRequest && activeRequest.readyState !== 4) {
+            activeRequest.abort();
+        }
+
+        const currentToken = ++requestToken;
+        isLoading = true;
+        setLoadingState(true);
+
+        activeRequest = $.ajax({
+            method: 'GET',
+            url,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'text/html',
+            },
+            success: (html) => {
+                if (currentToken !== requestToken) {
+                    return;
+                }
+                swapSection(html, url, pushState);
+            },
+            error: (_xhr, textStatus) => {
+                if (textStatus === 'abort') {
+                    return;
+                }
+            },
+            complete: () => {
+                if (currentToken === requestToken) {
+                    isLoading = false;
+                    setLoadingState(false);
+                }
+            },
+        });
+    };
+
+    const captureHandler = (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) {
+            return;
+        }
+
+        const link = target.closest(`${sectionSelector} nav[aria-label="Pagination Navigation"] a[href]`);
+        if (!link) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const url = link.getAttribute('href');
+        if (!url) {
+            return;
+        }
+
+        loadRegisterPage(url, { pushState: true });
+    };
+
+    if (window.__purchaseOrderRegisterCaptureHandler) {
+        document.removeEventListener('click', window.__purchaseOrderRegisterCaptureHandler, true);
+    }
+
+    window.__purchaseOrderRegisterCaptureHandler = captureHandler;
+    document.addEventListener('click', captureHandler, true);
+
+    if (!window.__purchaseOrderRegisterPopstateBound) {
+        window.addEventListener('popstate', () => {
+            if (!$(sectionSelector).length || isLoading) {
+                return;
+            }
+
+            loadRegisterPage(window.location.href, { pushState: false });
+        });
+
+        window.__purchaseOrderRegisterPopstateBound = true;
+    }
+};
+
 $(() => {
     bindPoDetailsModal();
+    bindCustodianRequestViewFallback();
+    bindPurchaseOrderRegisterPagination();
     bindPurchaseOrderForm();
     bindPartialOrderActions();
     bindAcceptPoActions();

@@ -11,13 +11,46 @@ use Illuminate\Support\Facades\DB;
 
 class FundAllocationController extends Controller
 {
-    public function index()
+    private function shouldRespondJson(Request $request): bool
     {
+        return $request->ajax() || $request->expectsJson() || $request->wantsJson();
+    }
+
+    public function index(Request $request)
+    {
+        $summary = FundAllocation::query()
+            ->selectRaw('COUNT(*) as total_clusters')
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as total_budget')
+            ->selectRaw('COALESCE(SUM(remaining_amount), 0) as total_remaining')
+            ->first();
+
+        $totalBudget = (float) ($summary->total_budget ?? 0);
+        $totalRemaining = (float) ($summary->total_remaining ?? 0);
+        $totalAllocated = max($totalBudget - $totalRemaining, 0);
+        $utilizationRate = $totalBudget > 0 ? ($totalAllocated / $totalBudget) * 100 : 0;
+
+        $kpis = [
+            'totalClusters' => (int) ($summary->total_clusters ?? 0),
+            'totalBudget' => $totalBudget,
+            'totalAllocated' => $totalAllocated,
+            'totalRemaining' => $totalRemaining,
+            'utilizationRate' => $utilizationRate,
+        ];
+
         $allocations = FundAllocation::with(['creator.employee'])
             ->orderBy('fund_cluster')
             ->paginate(15);
 
-        return view('custodian.fund_allocations.index', compact('allocations'));
+        if ($request->ajax() || $request->boolean('ajax') || $request->expectsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'tableHtml' => view('custodian.fund_allocations.partials.table', compact('allocations'))->render(),
+                'kpisHtml' => view('custodian.fund_allocations.partials.kpis', compact('kpis'))->render(),
+                'totalRecords' => (int) $allocations->total(),
+            ]);
+        }
+
+        return view('custodian.fund_allocations.index', compact('allocations', 'kpis'));
     }
 
     public function store(Request $request)
@@ -50,7 +83,7 @@ class FundAllocationController extends Controller
             return $allocation;
         });
 
-        if ($request->wantsJson()) {
+        if ($this->shouldRespondJson($request)) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Fund allocation created successfully.',
@@ -128,7 +161,7 @@ class FundAllocationController extends Controller
             ]);
         });
 
-        if ($request->wantsJson()) {
+        if ($this->shouldRespondJson($request)) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Fund allocation updated successfully.',
@@ -138,6 +171,33 @@ class FundAllocationController extends Controller
 
         return redirect()->route('custodian.fund_allocations.index')
             ->with('success', 'Fund allocation updated successfully.');
+    }
+
+    /**
+     * Backward-compatible update entrypoint for clients that send PUT to
+     * the collection endpoint with allocation_id in the payload.
+     */
+    public function updateFromRequest(Request $request)
+    {
+        $id = $request->input('allocation_id');
+
+        if (!$id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Missing allocation reference.',
+            ], 422);
+        }
+
+        $fundAllocation = FundAllocation::find($id);
+
+        if (!$fundAllocation) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Fund allocation not found.',
+            ], 404);
+        }
+
+        return $this->update($request, $fundAllocation);
     }
 
     public function destroy(Request $request, FundAllocation $fundAllocation)
@@ -173,7 +233,7 @@ class FundAllocationController extends Controller
             ]);
         });
 
-        if ($request->wantsJson()) {
+        if ($this->shouldRespondJson($request)) {
             return response()->json([
                 'status' => 'success',
                 'message' => 'Fund allocation deleted successfully.',

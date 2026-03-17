@@ -5,47 +5,57 @@
 @section('content')
 <div class="max-w-5xl mx-auto px-4 pb-8">
     <div class="bg-white rounded-2xl border-2 border-gray-300 overflow-hidden mt-6">
-        <div class="relative border-b border-gray-400 px-6 pt-6 pb-4">
-            <span class="absolute top-4 right-6 text-xs font-semibold uppercase tracking-wide text-gray-500">Annex G-6</span>
-            <div class="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
-                <img src="{{ asset('images/bpi-logo.png') }}" alt="BPI Logo" class="h-16 w-auto object-contain">
+        <div class="relative border-b border-gray-400 px-5 pt-4 pb-3">
+            <span class="absolute top-3 right-5 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">Annex G-6</span>
+            <div class="flex flex-col items-center gap-3 md:flex-row md:items-center md:justify-between">
+                <img src="{{ asset('images/bpi-logo.png') }}" alt="BPI Logo" class="h-12 w-auto object-contain">
                 <div class="text-center">
-                    <p class="text-[11px] uppercase tracking-[0.35em] text-gray-600">Department of Agriculture</p>
-                    <h2 class="mt-2 text-2xl font-black uppercase tracking-[0.35em] text-gray-900">Purchase Request</h2>
-                    <p class="mt-2 text-sm font-semibold uppercase text-gray-700">Bureau of Plant Industry</p>
+                    <p class="text-[10px] uppercase tracking-[0.28em] text-gray-600">Department of Agriculture</p>
+                    <h2 class="mt-1.5 text-xl font-black uppercase tracking-[0.28em] text-gray-900">Purchase Request</h2>
+                    <p class="mt-1 text-sm font-semibold uppercase text-gray-700">Bureau of Plant Industry</p>
                     <p class="text-xs italic text-gray-500">(Agency)</p>
                 </div>
-                <img src="{{ asset('images/pqslogo.png') }}" alt="PQS Logo" class="h-16 w-auto object-contain">
+                <img src="{{ asset('images/pqslogo.png') }}" alt="PQS Logo" class="h-12 w-auto object-contain">
             </div>
         </div>
 
-        <div class="border-b border-gray-400">
-            <div class="grid grid-cols-1 md:grid-cols-[1.15fr,1fr]">
-                <div class="border-b border-gray-400 p-5 space-y-4 md:border-b-0 md:border-r">
-                    <div class="flex items-center justify-between gap-4">
-                        <label class="text-sm font-semibold uppercase tracking-wide text-gray-700">Division :</label>
-                        <div class="flex-1 text-right">
-                            <input type="text" readonly value="{{ $purchaseRequest->division?->division_name ?? '—' }}" class="border-b border-gray-500 px-2 py-1 text-right text-sm text-gray-900 bg-transparent">
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between gap-4">
-                        <label class="text-sm font-semibold uppercase tracking-wide text-gray-700">Section :</label>
-                        <div class="flex-1 text-right">
-                            <input type="text" readonly value="{{ $purchaseRequest->section?->section_name ?? '—' }}" class="border-b border-gray-500 px-2 py-1 text-right text-sm text-gray-900 bg-transparent">
-                        </div>
-                    </div>
+        <div class="border-b border-gray-400 px-5 py-2.5">
+            <div class="grid grid-cols-1 gap-x-5 gap-y-1.5 text-xs text-gray-700 md:grid-cols-[1fr_1.1fr_0.7fr]">
+                {{-- Row 1: Division | PR No. | Date --}}
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">Division :</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900 truncate">{{ $purchaseRequest->division?->division_name ?? '—' }}</span>
                 </div>
-                <div class="p-5">
-                    <div class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-3 text-sm text-gray-700">
-                        <span class="font-semibold uppercase tracking-wide">PR No.:</span>
-                        <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">{{ $purchaseRequest->pr_no }}</span>
-                        <span class="font-semibold uppercase tracking-wide">Date:</span>
-                        <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">{{ optional($purchaseRequest->created_at)->format('M d, Y') }}</span>
-                        <label class="font-semibold uppercase tracking-wide">SAI No.:</label>
-                        <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">{{ $purchaseRequest->sai_no ?? '—' }}</span>
-                        <label class="font-semibold uppercase tracking-wide">ALOBS No.:</label>
-                        <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">{{ $purchaseRequest->alobs_no ?? '—' }}</span>
-                    </div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">PR No.:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">{{ $purchaseRequest->pr_no }}</span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">{{ optional($purchaseRequest->created_at)->format('M d, Y') }}</span>
+                </div>
+                {{-- Row 2: Section | SAI No. | Date --}}
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">Section :</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900 truncate">{{ $purchaseRequest->section?->section_name ?? '—' }}</span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">SAI No.:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">{{ $purchaseRequest->sai_no ?? '—' }}</span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">—</span>
+                </div>
+                {{-- Row 3: (empty) | ALOBS No. | Date --}}
+                <div></div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">ALOBS No.:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">{{ $purchaseRequest->alobs_no ?? '—' }}</span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                    <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">—</span>
                 </div>
             </div>
         </div>

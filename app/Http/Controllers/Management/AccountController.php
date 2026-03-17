@@ -4,13 +4,26 @@ namespace App\Http\Controllers\Management;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AccountController extends Controller
 {
+    /**
+     * Allowed system roles used across route middleware and gates.
+     */
+    private const ALLOWED_ROLES = [
+        'custodian',
+        'bac',
+        'employee',
+        'division_head',
+        'iac',
+    ];
+
     public function index(Request $request)
     {
         $search = trim((string) $request->input('search'));
@@ -20,13 +33,15 @@ class AccountController extends Controller
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
-                $builder->where('username', 'like', "%{$search}%")
-                    ->orWhere('account_id', 'like', "%{$search}%")
+                $prefixSearch = $search.'%';
+                $builder->where('username', 'like', $prefixSearch)
+                    ->orWhere('account_id', 'like', $prefixSearch)
                     ->orWhereHas('employee', function ($employeeQuery) use ($search) {
-                        $employeeQuery->where('employee_id', 'like', "%{$search}%")
-                            ->orWhere('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('middle_name', 'like', "%{$search}%");
+                        $prefixSearch = $search.'%';
+                        $employeeQuery->where('employee_id', 'like', $prefixSearch)
+                            ->orWhere('first_name', 'like', $prefixSearch)
+                            ->orWhere('last_name', 'like', $prefixSearch)
+                            ->orWhere('middle_name', 'like', $prefixSearch);
                     });
             });
         }
@@ -96,13 +111,15 @@ class AccountController extends Controller
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
-                $builder->where('username', 'like', "%{$search}%")
-                    ->orWhere('account_id', 'like', "%{$search}%")
+                $prefixSearch = $search.'%';
+                $builder->where('username', 'like', $prefixSearch)
+                    ->orWhere('account_id', 'like', $prefixSearch)
                     ->orWhereHas('employee', function ($employeeQuery) use ($search) {
-                        $employeeQuery->where('employee_id', 'like', "%{$search}%")
-                            ->orWhere('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('middle_name', 'like', "%{$search}%");
+                        $prefixSearch = $search.'%';
+                        $employeeQuery->where('employee_id', 'like', $prefixSearch)
+                            ->orWhere('first_name', 'like', $prefixSearch)
+                            ->orWhere('last_name', 'like', $prefixSearch)
+                            ->orWhere('middle_name', 'like', $prefixSearch);
                     });
             });
         }
@@ -129,13 +146,15 @@ class AccountController extends Controller
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
-                $builder->where('username', 'like', "%{$search}%")
-                    ->orWhere('account_id', 'like', "%{$search}%")
+                $prefixSearch = $search.'%';
+                $builder->where('username', 'like', $prefixSearch)
+                    ->orWhere('account_id', 'like', $prefixSearch)
                     ->orWhereHas('employee', function ($employeeQuery) use ($search) {
-                        $employeeQuery->where('employee_id', 'like', "%{$search}%")
-                            ->orWhere('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('middle_name', 'like', "%{$search}%");
+                        $prefixSearch = $search.'%';
+                        $employeeQuery->where('employee_id', 'like', $prefixSearch)
+                            ->orWhere('first_name', 'like', $prefixSearch)
+                            ->orWhere('last_name', 'like', $prefixSearch)
+                            ->orWhere('middle_name', 'like', $prefixSearch);
                     });
             });
         }
@@ -151,5 +170,49 @@ class AccountController extends Controller
         return response($html)
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header('Content-Disposition', 'attachment; filename="Accounts-' . date('Y-m-d') . '.xls"');
+    }
+
+    public function update(Request $request, Account $account): JsonResponse
+    {
+        $validated = $request->validate([
+            'role' => ['required', 'string', Rule::in(self::ALLOWED_ROLES)],
+        ]);
+
+        $newRole = strtolower((string) $validated['role']);
+        $currentRole = strtolower((string) $account->role);
+
+        $sessionAccountId = (int) session('account_id');
+        if ($sessionAccountId === (int) $account->account_id && $currentRole !== $newRole) {
+            return response()->json([
+                'message' => 'You cannot change your own role while logged in.',
+                'errors' => [
+                    'role' => ['Self role change is not allowed for safety.'],
+                ],
+            ], 422);
+        }
+
+        if ($currentRole === $newRole) {
+            return response()->json([
+                'message' => 'No changes detected.',
+                'account' => [
+                    'account_id' => $account->account_id,
+                    'username' => $account->username,
+                    'role' => $account->role,
+                ],
+            ]);
+        }
+
+        $account->update([
+            'role' => $newRole,
+        ]);
+
+        return response()->json([
+            'message' => 'Account role updated successfully.',
+            'account' => [
+                'account_id' => $account->account_id,
+                'username' => $account->username,
+                'role' => $account->role,
+            ],
+        ]);
     }
 }

@@ -1,68 +1,120 @@
 @extends('layouts.app')
 
+@section('title', 'All Requests')
+
 @section('content')
-<div class="space-y-8">
-    {{-- Enhanced Header Card --}}
-    <div class="animate-card rounded-2xl bg-white shadow-lg p-6">
-        <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-            <div class="space-y-1">
-                <h1 class="text-3xl font-extrabold text-[#1a3a2d]">{{ $pageTitle }}</h1>
-                <p class="text-sm text-gray-600 md:max-w-2xl">{{ $pageDescription }}</p>
+@php
+    $queueTotal = (int) $purchaseRequests->total();
+    $visibleQueueCount = (int) $purchaseRequests->count();
+    $visibleQueueValue = (float) $purchaseRequests->sum('total_estimated_cost');
+@endphp
+<div id="custodianQueuePage" class="space-y-8 transition-all duration-200 ease-out">
+    <div class="animate-card rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10 overflow-hidden relative">
+        <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.18),_transparent_60%)]"></div>
+        <div class="absolute -right-8 bottom-0 h-32 w-32 rounded-full border border-white/10 bg-white/5 blur-2xl"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-3 max-w-2xl">
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/75">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Procurement Queue
+                </div>
+                <div class="space-y-1">
+                    <h1 class="text-3xl font-extrabold tracking-tight text-white">{{ $pageTitle }}</h1>
+                    <p class="text-sm text-white/75 md:max-w-2xl">{{ $pageDescription }}</p>
+                </div>
             </div>
-            
-            {{-- FIXED: Tab Buttons with readable counts --}}
+
+            <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[420px] lg:max-w-2xl">
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Queue Total</p>
+                    <p class="mt-2 text-2xl font-bold">{{ number_format($queueTotal) }}</p>
+                    <p class="mt-1 text-xs text-white/65">All requests in this queue</p>
+                </div>
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Visible Rows</p>
+                    <p class="mt-2 text-2xl font-bold">{{ number_format($visibleQueueCount) }}</p>
+                    <p class="mt-1 text-xs text-white/65">Records on the current page</p>
+                </div>
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Visible Value</p>
+                    <p class="mt-2 text-2xl font-bold">&#8369;{{ number_format($visibleQueueValue, 2) }}</p>
+                    <p class="mt-1 text-xs text-white/65">Current page total estimate</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-4 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-6 space-y-5">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2d5a4a]/70">Queue Filters</p>
+                <h2 class="mt-1 text-xl font-bold text-[#1a3a2d]">Filter and route procurement requests</h2>
+                <p class="mt-1 text-sm text-gray-500">Review the queue by status, search for specific requests, and export the current view when needed.</p>
+            </div>
+
             <div class="flex flex-wrap items-center gap-2">
                 @foreach($tabs as $key => $label)
                     @php
                         $tabQuery = array_merge(request()->except(['page', 'tab']), ['tab' => $key]);
                         $isActive = $activeTab === $key;
+                        $activeTabClasses = 'bg-[#1a3a2d] text-white shadow-lg shadow-[#1a3a2d]/30 border-[#1a3a2d]';
+                        $inactiveTabClasses = 'border-gray-200 bg-[#fbfcfb] text-gray-600 hover:bg-gray-100 hover:border-gray-300';
+                        $activeCountClasses = 'bg-white/20 text-white';
+                        $inactiveCountClasses = 'bg-gray-200 text-gray-700 group-hover:bg-gray-300';
+                        $tabStatusIds = $tabStatusMap[$key] ?? [];
                     @endphp
-                    <a href="{{ route($routes['index'], $tabQuery) }}"
-                       class="po-tab inline-flex items-center gap-2.5 rounded-full border px-4 py-2 text-sm font-semibold transition-all duration-200 group
+                    <button type="button"
+                       class="po-tab inline-flex cursor-pointer items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 group
                               @if($isActive) 
-                                  bg-[#1a3a2d] text-white shadow-lg shadow-[#1a3a2d]/30 border-[#1a3a2d]
+                                  {{ $activeTabClasses }} is-active
                               @else 
-                                  border-gray-300 text-gray-600 hover:bg-gray-100 hover:border-gray-400 transform hover:scale-105
+                                  {{ $inactiveTabClasses }}
                               @endif"
-                       data-po-tab="{{ $key }}">
+                       data-po-tab="{{ $key }}"
+                       data-status-btn="{{ $key }}"
+                       data-tab-url="{{ route($routes['index'], $tabQuery) }}"
+                       data-status-ids="{{ implode(',', $tabStatusIds) }}"
+                       data-inactive-class="{{ $inactiveTabClasses }}"
+                       data-active-class="{{ $activeTabClasses }}">
                         
                         <span>{{ $label }}</span>
 
                         {{-- FIX: Conditional classes ensure text is always visible --}}
-                        <span class="rounded-full px-2 py-0.5 text-xs font-bold 
+                        <span class="po-tab-count rounded-full px-2 py-0.5 text-xs font-bold 
                                    @if($isActive) 
-                                       bg-white/20 text-white 
+                                       {{ $activeCountClasses }}
                                    @else 
-                                       bg-gray-200 text-gray-700 group-hover:bg-gray-300
-                                   @endif">
+                                       {{ $inactiveCountClasses }}
+                                   @endif"
+                              data-count-inactive-class="{{ $inactiveCountClasses }}"
+                              data-count-active-class="{{ $activeCountClasses }}">
                             {{ $tabCounts[$key] ?? 0 }}
                         </span>
-                    </a>
+                    </button>
                 @endforeach
             </div>
         </div>
-    </div>
 
-    {{-- Enhanced Table Card --}}
-    <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
-            <div class="relative w-full sm:max-w-xs">
-                <i class="fas fa-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="search" id="purchaseRequestSearch" class="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:border-transparent transition-all" placeholder="Search requests..." aria-label="Search purchase requests">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div class="relative w-full xl:max-w-sm">
+                <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                <input type="search" id="purchaseRequestSearch" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search requests..." aria-label="Search purchase requests">
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button type="button" id="purchaseRequestPrintPdf" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 transition-all">
+                <button type="button" id="purchaseRequestPrintPdf" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
                     <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
                 </button>
-                <button type="button" id="purchaseRequestExportExcel" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-100 transition-all">
+                <button type="button" id="purchaseRequestExportExcel" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
                     <i class="fas fa-file-excel text-emerald-600"></i> Export Excel
                 </button>
             </div>
         </div>
+
+        <div class="overflow-hidden rounded-[24px] border border-emerald-950/8 bg-white">
         <div class="overflow-x-auto">
             <table id="custodianPurchaseRequestsTable" class="min-w-full text-sm">
-                <thead class="border-b-2 border-gray-200">
-                    <tr class="text-left text-gray-500 uppercase tracking-wider text-xs">
+                <thead class="bg-[#f5f8f6] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                    <tr class="text-left">
                         <th class="px-4 py-3 font-semibold">PR Number</th>
                         <th class="px-4 py-3 font-semibold">Requested By</th>
                         <th class="px-4 py-3 font-semibold">Division / Section</th>
@@ -74,16 +126,30 @@
                 </thead>
                 <tbody>
                     @forelse ($purchaseRequests as $request)
-                        <tr class="border-b last:border-0 hover:bg-green-50/50 transition-colors duration-200">
-                            <td class="px-4 py-4 font-semibold text-[#1a3a2d]">{{ $request->pr_no }}</td>
-                            <td class="px-4 py-4 text-gray-700 font-medium">{{ $request->requester?->username ?? 'Unknown' }}</td>
-                            <td class="px-4 py-4 text-gray-600">
-                                <div class="text-xs font-semibold">
+                        @php
+                            $searchTokens = collect([
+                                $request->pr_no,
+                                $request->requester?->username,
+                                $request->division?->division_name,
+                                $request->section?->section_name,
+                                $request->status?->status_name,
+                                number_format((float) $request->total_estimated_cost, 2),
+                                optional($request->created_at)->format('M d, Y h:i A'),
+                            ])->filter()->implode(' ');
+                        @endphp
+                        <tr data-row data-status-id="{{ $request->status_id }}" data-search="{{ e(strtolower($searchTokens)) }}" class="border-b border-gray-100/90 last:border-0 hover:bg-[#f6fbf8] transition-colors duration-200">
+                            <td class="px-4 py-4 align-top">
+                                <span class="block font-semibold text-[#1a3a2d]">{{ $request->pr_no }}</span>
+                                <span class="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500">PR Record</span>
+                            </td>
+                            <td class="px-4 py-4 align-top text-gray-700 font-medium">{{ $request->requester?->username ?? 'Unknown' }}</td>
+                            <td class="px-4 py-4 align-top text-gray-600">
+                                <div class="text-xs font-semibold leading-5">
                                     <span class="text-gray-800">{{ $request->division?->division_name ?? '—' }}</span>
                                     <span class="block text-gray-500 font-normal">{{ $request->section?->section_name ?? '—' }}</span>
                                 </div>
                             </td>
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 align-top">
                                 {{-- NEW: Dynamic Status Colors --}}
                                 @php
                                     $statusName = strtolower($request->status?->status_name ?? 'unknown');
@@ -102,10 +168,12 @@
                                     <i class="fas fa-circle text-[8px]"></i>{{ $request->status?->status_name ?? 'Unknown' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-4 font-semibold text-gray-800">₱{{ number_format((float) $request->total_estimated_cost, 2) }}</td>
-                            <td class="px-4 py-4 text-right text-gray-500 text-xs">{{ optional($request->created_at)->format('M d, Y h:i A') }}</td>
-                            <td class="px-4 py-4 text-center">
-                                <button class="js-view-custodian-pr inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-all transform hover:scale-105"
+                            <td class="px-4 py-4 align-top">
+                                <span class="inline-flex rounded-full bg-[#f2f7f4] px-3 py-1.5 text-sm font-semibold text-gray-800">₱{{ number_format((float) $request->total_estimated_cost, 2) }}</span>
+                            </td>
+                            <td class="px-4 py-4 align-top text-right text-gray-500 text-xs leading-5">{{ optional($request->created_at)->format('M d, Y h:i A') }}</td>
+                            <td class="px-4 py-4 align-top text-center">
+                                <button class="js-view-custodian-pr inline-flex items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md"
                                     data-show-url="{{ route($routes['show'], [$routeParam => $request]) }}"
                                     data-update-url="{{ route($routes['update'], [$routeParam => $request]) }}">
                                     <i class="fas fa-edit"></i>
@@ -132,11 +200,10 @@
                 </tbody>
             </table>
         </div>
-        @if ($purchaseRequests->hasPages())
-            <div class="mt-6 border-t pt-4">
-                {{ $purchaseRequests->links() }}
-            </div>
-        @endif
+        <div class="border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+            {{ $purchaseRequests->onEachSide(1)->links('vendor.pagination.procurement') }}
+        </div>
+        </div>
     </div>
 </div>
 

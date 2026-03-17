@@ -14,8 +14,6 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Management\AccountController;
 use App\Http\Controllers\Management\CategoryController;
 use App\Http\Controllers\Management\EmployeeController;
-use App\Http\Controllers\Inventory\IcsController;
-use App\Http\Controllers\Inventory\ParController;
 use App\Http\Controllers\Inventory\PqsController;
 
 Route::get('/', function () {
@@ -63,6 +61,8 @@ Route::middleware('role:custodian')->group(function () {
             ->name('fund_allocations.suggest');
         Route::post('fund-allocations', [App\Http\Controllers\Custodian\FundAllocationController::class, 'store'])
             ->name('fund_allocations.store');
+        Route::put('fund-allocations', [App\Http\Controllers\Custodian\FundAllocationController::class, 'updateFromRequest'])
+            ->name('fund_allocations.update.fallback');
         Route::put('fund-allocations/{fundAllocation}', [App\Http\Controllers\Custodian\FundAllocationController::class, 'update'])
             ->name('fund_allocations.update');
         Route::delete('fund-allocations/{fundAllocation}', [App\Http\Controllers\Custodian\FundAllocationController::class, 'destroy'])
@@ -170,6 +170,7 @@ Route::middleware('role:custodian')->group(function () {
 Route::middleware(['auth.session', 'role:custodian'])->group(function () {
     Route::prefix('management')->group(function () {
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
+    Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::get('accounts/export/pdf', [AccountController::class, 'printPdf'])->name('accounts.print.pdf');
     Route::get('accounts/export/excel', [AccountController::class, 'exportExcel'])->name('accounts.export.excel');
     Route::get('categories', [CategoryController::class, 'index'])->name('categories.index');
@@ -182,6 +183,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::resource('employees', EmployeeController::class)
             ->except(['show'])
             ->names('employees');
+        Route::put('employees/{employee}/modal-update', [EmployeeController::class, 'updateModal'])->name('employees.update.modal');
         Route::get('employees-export/pdf', [EmployeeController::class, 'printPdf'])->name('employees.print.pdf');
         Route::get('employees-export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
     });
@@ -191,16 +193,6 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::get('pqs/export/pdf', [PqsController::class, 'printPdf'])->name('pqs.print.pdf');
         Route::get('pqs/export/excel', [PqsController::class, 'exportExcel'])->name('pqs.export.excel');
         Route::get('pqs/{pqsRecord}', [PqsController::class, 'show'])->name('pqs.show');
-        Route::get('ics', [IcsController::class, 'index'])->name('ics.index');
-        Route::get('ics/export/pdf', [IcsController::class, 'printPdf'])->name('ics.print.pdf');
-        Route::get('ics/export/excel', [IcsController::class, 'exportExcel'])->name('ics.export.excel');
-        Route::get('ics/{icsRecord}', [IcsController::class, 'show'])->name('ics.show');
-        Route::get('ics/{icsRecord}/print', [IcsController::class, 'print'])->name('ics.print');
-        Route::get('par', [ParController::class, 'index'])->name('par.index');
-        Route::get('par/export/pdf', [ParController::class, 'printPdf'])->name('par.print.pdf');
-        Route::get('par/export/excel', [ParController::class, 'exportExcel'])->name('par.export.excel');
-        Route::get('par/{parRecord}', [ParController::class, 'show'])->name('par.show');
-        Route::get('par/{parRecord}/print', [ParController::class, 'print'])->name('par.print');
     });
 });
 

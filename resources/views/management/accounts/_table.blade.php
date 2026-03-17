@@ -1,8 +1,8 @@
 <div class="bg-white border border-gray-100 rounded-2xl shadow-sm" id="accountsTableContainer" data-total="{{ $accounts->total() }}">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50">
-                <tr class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            <thead class="bg-[#f5f8f6]">
+                <tr class="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-[0.18em]">
                     <th class="px-6 py-3">Username</th>
                     <th class="px-6 py-3">Role</th>
                     <th class="px-6 py-3">Employee</th>
@@ -25,10 +25,10 @@
                             default => 'bg-gray-100 text-gray-700',
                         };
                     @endphp
-                    <tr class="hover:bg-gray-50/50 transition-colors">
+                    <tr data-accounts-row data-account-row-id="{{ $account->account_id }}" class="hover:bg-gray-50/70 transition-colors">
                         <td class="px-6 py-4 font-semibold text-gray-900">{{ $account->username }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide {{ $roleColor }}">
+                            <span data-account-role-badge class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide {{ $roleColor }}">
                                 {{ str_replace('_', ' ', $account->role) }}
                             </span>
                         </td>
@@ -43,7 +43,18 @@
                         <td class="px-6 py-4 text-gray-600">{{ $sectionName ?: '—' }}</td>
                         <td class="px-6 py-4 text-right font-mono text-sm text-gray-500">{{ $account->account_id }}</td>
                         <td class="px-6 py-4 text-center">
-                            <button class="text-[#1a3a2d] hover:text-opacity-80 font-semibold text-xs">Edit</button>
+                            <button
+                                type="button"
+                                data-account-edit-btn
+                                data-account-id="{{ $account->account_id }}"
+                                data-account-username="{{ $account->username }}"
+                                data-account-role="{{ $account->role }}"
+                                data-account-update-url="{{ route('accounts.update', $account) }}"
+                                class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-950/15 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-[#1a3a2d] shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-900/30 hover:bg-emerald-100 hover:shadow"
+                            >
+                                <i class="fas fa-pen-to-square text-[11px]"></i>
+                                Edit
+                            </button>
                         </td>
                     </tr>
                 @empty
@@ -60,7 +71,7 @@
 
     @if ($accounts->hasPages())
     <div class="px-6 py-4 border-t border-gray-100" id="accountsPagination">
-        {{ $accounts->onEachSide(1)->links() }}
+        {{ $accounts->onEachSide(1)->links('vendor.pagination.procurement') }}
     </div>
     @endif
 </div>

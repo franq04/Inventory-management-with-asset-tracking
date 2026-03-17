@@ -19,6 +19,21 @@ const initBacPurchaseRequestPage = function () {
 
     let currentPrData = null;
 
+    const softNavigate = (url = window.location.href, options = {}) => {
+        const { replace = false } = options;
+        if (window.Turbo && typeof window.Turbo.visit === 'function') {
+            window.Turbo.visit(url, { action: replace ? 'replace' : 'advance' });
+            return;
+        }
+
+        if (url && url !== window.location.href) {
+            window.location.assign(url);
+            return;
+        }
+
+        window.location.reload();
+    };
+
     // Show toast notification
     function showToast(message, type = 'success') {
         if (!toast) return;
@@ -221,10 +236,10 @@ const initBacPurchaseRequestPage = function () {
         // Basic info
         document.getElementById('bacPrNo').textContent = prNo;
         document.getElementById('bacPrDate').textContent = formatDate(data.created_at);
-        document.getElementById('bacPrDivisionInput').value = data.division || '';
-        document.getElementById('bacPrSectionInput').value = data.section || '';
-        document.getElementById('bacPrSaiInput').value = data.sai_no || '';
-        document.getElementById('bacPrAlobsInput').value = data.alobs_no || '';
+        document.getElementById('bacPrDivisionInput').textContent = data.division || '';
+        document.getElementById('bacPrSectionInput').textContent = data.section || '';
+        document.getElementById('bacPrSaiInput').textContent = data.sai_no || '';
+        document.getElementById('bacPrAlobsInput').textContent = data.alobs_no || '';
         document.getElementById('bacPrPurposeTextarea').value = data.purpose || '';
         
         // Requester info
@@ -570,7 +585,7 @@ const initBacPurchaseRequestPage = function () {
                 
                 // Reload page after short delay
                 setTimeout(() => {
-                    window.location.reload();
+                    softNavigate(window.location.href, { replace: true });
                 }, 1500);
             } else {
                 // Handle validation errors from server
@@ -735,3 +750,9 @@ const initBacPurchaseRequestPage = function () {
 };
 
 document.addEventListener('turbo:load', initBacPurchaseRequestPage);
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBacPurchaseRequestPage, { once: true });
+} else {
+    initBacPurchaseRequestPage();
+}

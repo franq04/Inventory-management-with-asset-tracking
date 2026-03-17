@@ -311,10 +311,10 @@
     </div>
 </div>
 
-<div id="poDetailsModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" data-close-modal></div>
+<div id="poDetailsModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" data-close-modal></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden">
+        <div class="modal-panel relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             <div class="flex-shrink-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white shadow-md">
                 <div class="flex-1">
                     <h3 class="text-2xl font-bold tracking-tight">Purchase Order Details</h3>
@@ -325,52 +325,191 @@
                 </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6 bg-gray-50">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="rounded-xl border-2 border-gray-200 bg-white px-4 py-3 shadow-sm">
-                        <span class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">PR Reference</span>
-                        <span id="poDetailsPr" class="block text-sm font-bold text-gray-900 border-b border-dotted border-gray-300 pb-1"></span>
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <div class="bg-white rounded-2xl border-2 border-gray-300 overflow-hidden">
+                                                            <!-- PO Header (matching print format) -->
+                    <div class="relative border-b-2 border-gray-400 px-6 pt-6 pb-4">
+                        <span class="absolute top-4 right-6 text-xs font-semibold uppercase tracking-wide text-gray-500">APPENDIX 01</span>
+                        <div class="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
+                            <img src="/images/bpi-logo.png" alt="BPI Logo" class="h-16 w-auto object-contain" />
+                            <div class="text-center">
+                                <p class="text-[11px] uppercase tracking-[0.35em] text-gray-600">Department of Agriculture</p>
+                                <h2 class="mt-2 text-2xl font-black uppercase tracking-[0.35em] text-gray-900">PURCHASE ORDER</h2>
+                                <p class="mt-2 text-sm font-semibold uppercase text-gray-700">Bureau of Plant Industry</p>
+                                <p class="text-xs italic text-gray-500">(Agency)</p>
+                            </div>
+                            <img src="/images/pqslogo.png" alt="PQS Logo" class="h-16 w-auto object-contain" />
+                        </div>
                     </div>
-                    <div class="rounded-xl border-2 border-gray-200 bg-white px-4 py-3 shadow-sm">
-                        <span class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">Order Date</span>
-                        <span id="poDetailsOrderDate" class="block text-sm font-bold text-gray-900 border-b border-dotted border-gray-300 pb-1"></span>
-                    </div>
-                    <div class="rounded-xl border-2 border-gray-200 bg-white px-4 py-3 shadow-sm">
-                        <span class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">Supplier</span>
-                        <span id="poDetailsSupplier" class="block text-sm font-bold text-gray-900 border-b border-dotted border-gray-300 pb-1"></span>
-                    </div>
-                    <div class="rounded-xl border-2 border-gray-200 bg-white px-4 py-3 shadow-sm">
-                        <span class="block text-xs font-semibold uppercase tracking-wider text-gray-600 mb-2">Delivery Date</span>
-                        <span id="poDetailsDeliveryDate" class="block text-sm font-bold text-gray-900 border-b border-dotted border-gray-300 pb-1"></span>
-                    </div>
-                </div>
 
-                <div class="bg-white rounded-xl border-2 border-gray-200 shadow-sm overflow-hidden">
-                    <div class="bg-gradient-to-r from-gray-100 to-gray-200 px-5 py-3 border-b-2 border-gray-300">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-gray-700 flex items-center gap-2">
-                            <i class="fas fa-layer-group"></i>
-                            Order Items
-                        </h4>
+                    <!-- PO Details Section -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 border-b-2 border-gray-400 px-6 py-4 text-sm">
+                        <!-- Left Column: Supplier -->
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-[auto,1fr] items-start gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Supplier :</label>
+                                <span id="poDetailsSupplier" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block break-words"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-start gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Address :</label>
+                                <span id="poDetailsAddress" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block break-words"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-start gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">TIN :</label>
+                                <span id="poDetailsTin" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block break-words"></span>
+                            </div>
+                        </div>
+                        <!-- Right Column: PO Info -->
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">P.O. No. :</label>
+                                <span id="poDetailsPoNo" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block font-bold text-red-600"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">PR No. :</label>
+                                <span id="poDetailsPr" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Date :</label>
+                                <span id="poDetailsOrderDate" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Mode of Procurement :</label>
+                                <span id="poDetailsMode" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Gentlemen Clause -->
+                    <div class="px-6 py-3 text-sm italic text-gray-800 border-b border-gray-200">
+                        Gentlemen: Please furnish this Office the following articles subject to the terms and conditions contained herein:
+                    </div>
+
+                    <!-- Delivery & Payment Terms -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 border-b-2 border-gray-400 px-6 py-4 text-sm">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Place of Delivery <span class="text-red-500">*</span>:</label>
+                                <span id="poDetailsPlace" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Date of Delivery <span class="text-red-500">*</span>:</label>
+                                <span id="poDetailsDeliveryDate" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Delivery Term <span class="text-red-500">*</span>:</label>
+                                <span id="poDetailsDeliveryTerm" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                            <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                <label class="font-semibold whitespace-nowrap">Payment Term <span class="text-red-500">*</span>:</label>
+                                <span id="poDetailsPaymentTerm" class="w-full border-b border-dotted border-gray-400 px-2 text-sm text-gray-900 min-h-[1.5rem] block"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Items Table -->
                     <div class="overflow-x-auto">
-                        <table class="min-w-full text-sm">
-                            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 text-xs uppercase text-gray-600 border-b-2 border-gray-200">
-                                <tr>
-                                    <th class="px-4 py-3 text-left font-bold">Description</th>
-                                    <th class="px-4 py-3 text-center font-bold">Quantity</th>
-                                    <th class="px-4 py-3 text-center font-bold">Unit</th>
-                                    <th class="px-4 py-3 text-left font-bold">Status</th>
-                                    <th class="px-4 py-3 text-left font-bold">Alternate Item</th>
-                                    <th class="px-4 py-3 text-right font-bold">Unit Cost</th>
-                                    <th class="px-4 py-3 text-right font-bold">Total Cost</th>
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b-2 border-gray-400 border-t-2 border-gray-400">
+                                    <th class="border-r border-gray-300 px-4 py-2 text-center font-bold w-24">Item No.</th>
+                                    <th class="border-r border-gray-300 px-4 py-2 text-center font-bold w-24">Quantity</th>
+                                    <th class="border-r border-gray-300 px-4 py-2 text-center font-bold w-24">Unit</th>
+                                    <th class="border-r border-gray-300 px-4 py-2 text-left font-bold">Description</th>
+                                    <th class="border-r border-gray-300 px-4 py-2 text-left font-bold">Status</th>
+                                    <th class="border-r border-gray-300 px-4 py-2 text-right font-bold w-32">Unit Cost</th>
+                                    <th class="px-4 py-2 text-right font-bold w-32">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody id="poDetailsItems" class="divide-y divide-gray-200"></tbody>
+                            <tbody id="poDetailsItems" class="align-top divide-y divide-dotted divide-gray-300">
+                                <!-- Items will go here -->
+                            </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
 
+                    <!-- Signatures & Fund Details -->
+                    <div class="border-t-2 border-gray-400">
+                        <div class="grid grid-cols-[auto,1fr] items-center gap-x-4 border-b border-gray-400 px-6 py-3 text-sm">
+                            <label class="font-semibold text-gray-700">(Total Amount in Words)</label>
+                            <div class="w-full border-b border-dotted border-gray-400 bg-transparent px-2 text-sm font-medium text-gray-900 h-5" id="poDetailsAmountWords"></div>
+                        </div>
+
+                        <div class="px-6 py-4 text-[11px] italic text-gray-600 border-b border-gray-400">
+                            In case of failure to make the full delivery within the time specified above, a penalty of one-tenth (1/10) of one percent for every day of delay shall be imposed on the undelivered item/s.
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 border-b border-gray-400 px-6 pt-4 pb-8 text-sm">
+                            <div>
+                                <p class="font-semibold mb-3 text-gray-800">Conforme:</p>
+                                <div class="mb-6 mt-8">
+                                    <div class="w-full border-b border-gray-500 text-center text-sm font-semibold h-6 text-gray-900" id="poDetailsConformeName"></div>
+                                    <label class="mt-1 block text-center text-xs text-gray-600">Signature over Printed Name of Supplier</label>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="w-full border-b border-gray-500 text-center text-sm h-6 text-gray-900" id="poDetailsConformeDate"></div>
+                                    <label class="mt-1 block text-center text-xs text-gray-600">Date</label>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="font-semibold mb-3 text-gray-800">Very truly yours,</p>
+                                <div class="mb-6 mt-8">
+                                    <div class="w-full border-b border-gray-500 text-center text-sm font-semibold h-6 text-gray-900" id="poDetailsAuthorizedOfficial"></div>
+                                    <label class="mt-1 block text-center text-xs text-gray-600">Signature over Printed Name of Authorized Official</label>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="w-full border-b border-gray-500 text-center text-sm font-semibold h-6 text-gray-900" id="poDetailsDesignation"></div>
+                                    <label class="mt-1 block text-center text-xs text-gray-600">Designation</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 text-sm bg-gray-50/50">
+                            <div class="space-y-3 border-r border-gray-400 p-4">
+                                <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                    <label class="font-semibold text-gray-700">Fund Cluster :</label>
+                                    <div class="w-full border-b border-dotted border-gray-400 text-sm h-5 font-semibold text-gray-900" id="poDetailsFundCluster"></div>
+                                </div>
+                                <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                                    <label class="font-semibold text-gray-700">Funds Available :</label>
+                                    <div class="w-full border-b border-dotted border-gray-400 text-sm h-5 font-semibold text-gray-900" id="poDetailsFundsAvailable"></div>
+                                </div>
+                                <div class="pt-8">
+                                    <div class="w-full border-b border-gray-500 h-6"></div>
+                                    <label class="mt-1 block text-center text-xs text-gray-600">Signature over Printed Name of Chief Accountant/Head of Accounting Division/Unit</label>
+                                </div>
+                            </div>
+                            <div class="space-y-3 p-4">
+                                <div class="grid grid-cols-[auto,1fr] items-center gap-x-2 w-full">
+                                    <label class="font-semibold text-gray-700 whitespace-nowrap">ORS/BURS No. :</label>
+                                    <div class="w-full border-b border-dotted border-gray-400 text-sm h-5 font-semibold text-gray-900 min-w-[100px]" id="poDetailsOrsBursNo"></div>
+                                </div>
+                                <div class="grid grid-cols-[auto,1fr] items-center gap-x-2 w-full">
+                                    <label class="font-semibold text-gray-700 whitespace-nowrap">Date of the ORS/BURS :</label>
+                                    <div class="w-full border-b border-dotted border-gray-400 text-sm h-5 font-semibold text-gray-900 min-w-[100px]" id="poDetailsOrsBursDate"></div>
+                                </div>
+                                <div class="grid grid-cols-[auto,1fr] items-center gap-x-2 w-full">
+                                    <label class="font-semibold text-gray-700 whitespace-nowrap">Amount :</label>
+                                    <div class="w-full border-b border-dotted border-gray-400 text-sm h-5 font-semibold text-gray-900 min-w-[100px]" id="poDetailsOrsBursAmount"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status History Section -->
+                <div class="mx-auto max-w-5xl mt-6 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                        <h4 class="font-bold text-gray-700 flex items-center gap-2">
+                            <i class="fas fa-history text-indigo-500"></i>
+                            Status History Log
+                        </h4>
+                    </div>
+                    <div id="poStatusHistory" class="p-4 max-h-64 overflow-y-auto text-sm bg-white">
+                        <!-- Status history items will be populated here -->  
+                    </div>
+                </div>
             <div class="flex-shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t bg-gray-50">
                 <button class="px-6 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm" data-close-modal>
                     <i class="fas fa-times mr-2"></i>Close

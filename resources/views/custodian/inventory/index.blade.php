@@ -1,123 +1,158 @@
 @extends('layouts.app')
 
-@section('title', 'Inventory Assignment')
+@section('title', 'Inventory & Property Assignment')
 
 @section('content')
-<div class="space-y-8 animate-card">
-    {{-- Header --}}
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-3xl font-extrabold text-[#1a3a2d]">Inventory &amp; Property Assignment</h2>
-            <p class="mt-1 text-gray-500">Finalize accepted items by creating PQS records and tracking custodial documents.</p>
+<div id="inventoryAssignmentPage" class="relative space-y-8 transition-all duration-200 ease-out">
+    <div class="animate-card rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10 overflow-hidden relative">
+        <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.18),_transparent_60%)]"></div>
+        <div class="absolute -right-8 bottom-0 h-32 w-32 rounded-full border border-white/10 bg-white/5 blur-2xl"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-3 max-w-2xl">
+                <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/75">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Inventory Assignment
+                </div>
+                <div class="space-y-1">
+                    <h1 class="text-3xl font-extrabold tracking-tight text-white">Inventory &amp; Property Assignment</h1>
+                    <p class="text-sm text-white/75 md:max-w-2xl">Finalize accepted items by creating PQS records and tracking custodial documents.</p>
+                </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3 lg:min-w-[460px]">
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Total Accepted</p>
+                    <p class="mt-2 text-2xl font-bold">{{ number_format($stats['total']) }}</p>
+                </div>
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Ready for PQS</p>
+                    <p class="mt-2 text-2xl font-bold">{{ number_format($stats['readyForPqs']) }}</p>
+                </div>
+                <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Recorded in PQS</p>
+                    <p class="mt-2 text-2xl font-bold">{{ number_format($stats['recordedInPqs']) }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
-    {{-- Enhanced Stat Cards --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        @php
-            $statCards = [
-                ['label' => 'Total Items Accepted', 'value' => $stats['total'], 'icon' => 'fa-boxes-stacked', 'color' => 'blue'],
-                ['label' => 'Items with ICS', 'value' => $stats['withIcs'], 'icon' => 'fa-file-signature', 'color' => 'emerald'],
-                ['label' => 'Items with PAR', 'value' => $stats['withPar'], 'icon' => 'fa-file-contract', 'color' => 'purple'],
-                ['label' => 'Awaiting PQS Record', 'value' => $stats['unassigned'], 'icon' => 'fa-hourglass-half', 'color' => 'amber'],
-            ];
-            $colors = [
-                'blue' => 'bg-blue-100 text-blue-600',
-                'emerald' => 'bg-emerald-100 text-emerald-600',
-                'purple' => 'bg-purple-100 text-purple-600',
-                'amber' => 'bg-amber-100 text-amber-600',
-            ];
-        @endphp
-        @foreach ($statCards as $card)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex items-center gap-5 transition hover:shadow-xl hover:-translate-y-1">
-            <div class="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center {{ $colors[$card['color']] }}">
-                <i class="fa-solid {{ $card['icon'] }} text-2xl"></i>
-            </div>
+    <div class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-4 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-6 space-y-5">
+        <div class="flex flex-col gap-4 border-b border-gray-100 pb-5 xl:flex-row xl:items-end xl:justify-between">
             <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-1 text-3xl font-bold text-gray-900">{{ number_format($card['value']) }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2d5a4a]/70">Assignment Queue</p>
+                <h2 class="mt-1 text-xl font-bold text-[#1a3a2d]">Filter and process properties</h2>
+                <p class="mt-1 text-sm text-gray-500">Jump between status segments, narrow by text or date, and generate PQS records.</p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                @php
+                    $tabs = [
+                        'all' => ['label' => 'All Items', 'icon' => 'fa-list'],
+                        'pending' => ['label' => 'Ready for PQS', 'icon' => 'fa-clock'],
+                        'recorded' => ['label' => 'Recorded in PQS', 'icon' => 'fa-check-circle'],
+                    ];
+                    $activeTabClass = 'bg-[#1a3a2d] text-white shadow-lg shadow-[#1a3a2d]/30 border-[#1a3a2d] is-selected';
+                    $inactiveTabClass = 'border-gray-200 bg-[#fbfcfb] text-gray-600 hover:bg-gray-100 hover:border-gray-300';
+                @endphp
+
+                <input type="hidden" id="inventoryState" value="all">
+
+                @foreach ($tabs as $key => $meta)
+                    <button type="button"
+                        class="inventory-tab group inline-flex min-h-[44px] items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 {{ $key === 'all' ? $activeTabClass : $inactiveTabClass }}"
+                        data-inventory-tab="{{ $key }}"
+                        data-active-class="bg-[#1a3a2d] text-white shadow-lg shadow-[#1a3a2d]/30 border-[#1a3a2d] is-selected"
+                        data-inactive-class="border-gray-200 bg-[#fbfcfb] text-gray-600 hover:bg-gray-100 hover:border-gray-300">
+                        <i class="fa-solid {{ $meta['icon'] }} text-xs"></i>
+                        <span>{{ $meta['label'] }}</span>
+                    </button>
+                @endforeach
             </div>
         </div>
-        @endforeach
-    </div>
 
-    {{-- Main Content Card with Filters and Table --}}
-    <div class="bg-white mt-8 rounded-2xl shadow-lg">
-        <div class="p-6">
-            <form id="inventoryFilters" class="space-y-4">
-                {{-- Top row: Search and Status --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-                    <div class="relative lg:col-span-1">
-                        <label for="inventorySearch" class="text-xs font-semibold text-gray-500">Search</label>
-                        <i class="fas fa-search absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" id="inventorySearch" placeholder="Search item, IA number, or PO number..." class="w-full mt-1 rounded-xl border-gray-200 pl-11 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" />
-                    </div>
-                    <div>
-                        <label for="inventoryState" class="text-xs font-semibold text-gray-500">Status</label>
-                        <select id="inventoryState" class="w-full mt-1 rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
-                            <option value="all">All Items</option>
-                            <option value="pending" selected>Ready for PQS</option>
-                            <option value="recorded">Recorded in PQS</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="date_from" class="text-xs font-semibold text-gray-500">Date Range</label>
-                        <div class="flex gap-2 mt-1 items-center">
-                            <input type="date" name="date_from" id="date_from" value="{{ request('date_from') }}" class="flex-1 rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
-                            <input type="date" name="date_to" id="date_to" value="{{ request('date_to') }}" class="flex-1 rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
-                            <button type="button" id="inventoryApplyDate" class="ml-2 inline-flex items-center gap-2 rounded-xl border border-[#1a3a2d] bg-[#1a3a2d] text-white px-4 py-2 text-sm font-semibold hover:opacity-95">Apply</button>
-                        </div>
-                        <p class="mt-1 text-xs text-gray-400">Click Apply to filter by the selected date range.</p>
-                    </div>
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
+                <div class="relative w-full flex-grow md:max-w-sm">
+                    <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                    <input id="inventorySearch" type="search" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search item, IA number, or PO number..." aria-label="Search properties">
                 </div>
-                {{-- Bottom row: Counts and Exports --}}
-                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                    <div class="flex items-center gap-4 text-xs font-semibold">
-                         <span class="inline-flex items-center gap-2 text-amber-700">
-                            <i class="fas fa-clock"></i>
-                            <span id="inventoryPendingCount">0</span> Pending
-                        </span>
-                        <span class="inline-flex items-center gap-2 text-emerald-700">
-                            <i class="fas fa-check-circle"></i>
-                            <span id="inventoryRecordedCount">0</span> Recorded
-                        </span>
-                    </div>
-                     <div class="flex items-center gap-2">
-                        <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100">
-                            <i class="fas fa-file-pdf text-red-500"></i> Print PDF
-                        </button>
-                        <button type="button" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100">
-                            <i class="fas fa-file-excel text-green-600"></i> Export Excel
-                        </button>
-                    </div>
+                <div class="flex flex-wrap items-center gap-2 text-sm">
+                    <input id="date_from" type="date" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Start Date" value="{{ request('date_from') }}">
+                    <span class="text-gray-400">-</span>
+                    <input id="date_to" type="date" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="End Date" value="{{ request('date_to') }}">
+                    <button id="inventoryApplyDate" type="button" class="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d] text-[#1a3a2d] shadow-sm transition-all hover:bg-[#1a3a2d] hover:text-white hover:shadow-md" title="Apply Date Filter">
+                        <i class="fa-solid fa-filter text-sm"></i>
+                    </button>
                 </div>
-            </form>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <button type="button" class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition-all duration-300 hover:border-red-300 hover:bg-red-100 hover:shadow-md">
+                    <i class="fa-solid fa-file-pdf text-red-500"></i>
+                    <span>Print PDF</span>
+                </button>
+                <button type="button" class="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-800 shadow-sm transition-all duration-300 hover:border-green-300 hover:bg-green-100 hover:shadow-md">
+                    <i class="fa-solid fa-file-excel text-green-600"></i>
+                    <span>Export Excel</span>
+                </button>
+            </div>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-gray-50/50 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                    <tr>
-                        <th class="px-6 py-3 text-left">Item Description</th>
-                        <th class="px-6 py-3 text-left">Category</th>
-                        <th class="px-6 py-3 text-left">Sub-category</th>
-                        <th class="px-6 py-3 text-right">Qty</th>
-                        <th class="px-6 py-3 text-right">Unit Cost</th>
-                        <th class="px-6 py-3 text-right">Total Cost</th>
-                        <th class="px-6 py-3 text-left">Source</th>
-                        <th class="px-6 py-3 text-center">Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryItemsBody" class="divide-y divide-gray-100">
-                    {{-- Initial Loading State --}}
-                    <tr>
-                        <td colspan="8" class="px-6 py-16 text-center text-gray-500">
-                            <i class="fas fa-spinner fa-pulse text-3xl text-gray-300 mb-3"></i>
-                            <p class="font-medium">Loading accepted items...</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="overflow-hidden rounded-[24px] border border-emerald-950/8 bg-white">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <div class="flex items-center gap-4 text-xs font-semibold">
+                    <span class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-700 shadow-sm" title="Pending">
+                        <i class="fas fa-clock"></i>
+                        <span id="inventoryPendingCount">0</span>
+                        <span class="text-[11px] font-semibold uppercase tracking-wide">Pending</span>
+                    </span>
+                    <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-700 shadow-sm" title="Recorded">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="inventoryRecordedCount">0</span>
+                        <span class="text-[11px] font-semibold uppercase tracking-wide">Recorded</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto relative">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-[#f5f8f6] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
+                        <tr>
+                            <th class="whitespace-nowrap px-5 py-3 text-left">Item Description</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-left">Category</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-left">Sub-category</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right">Qty</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right">Unit Cost</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-right">Total Cost</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-left">Source</th>
+                            <th class="whitespace-nowrap px-5 py-3 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryItemsBody" class="relative divide-y divide-gray-100/90">
+                        {{-- Initial Loading State --}}
+                        <tr>
+                            <td colspan="8" class="px-5 py-20 text-center text-gray-500">
+                                <i class="fas fa-spinner fa-pulse mb-4 text-3xl text-gray-300"></i>
+                                <p class="font-medium text-lg">Loading accepted items...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="hidden border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <p id="pageInfo" class="text-sm font-medium text-gray-600">
+                        Showing <span class="font-semibold text-gray-900">1</span> to <span class="font-semibold text-gray-900">10</span> of <span class="font-semibold text-gray-900">0</span> results
+                    </p>
+                    <div class="flex flex-wrap items-center justify-start gap-2 lg:justify-end">
+                        <p id="pageMeta" class="text-sm font-medium text-gray-600"></p>
+                        <nav id="pageLinks" class="flex flex-wrap items-center justify-start gap-2 lg:justify-end" aria-label="Pagination Navigation"></nav>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

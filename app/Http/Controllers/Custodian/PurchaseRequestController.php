@@ -135,7 +135,7 @@ class PurchaseRequestController extends Controller
                     ],
                 ],
                 'include_all_tab' => true,
-                'default_tab' => 'for_review',
+                'default_tab' => 'all',
                 'status_options' => [],
                 'transitions' => [],
                 'remarks_required_statuses' => [],
@@ -207,7 +207,7 @@ class PurchaseRequestController extends Controller
             $query->whereIn('status_id', $trackedStatusIds);
         }
 
-        $purchaseRequests = $query->paginate(10)->withQueryString();
+        $purchaseRequests = $query->paginate(5)->withQueryString();
 
         $statusCountsQuery = PurchaseRequest::select('status_id', DB::raw('COUNT(*) as aggregate'));
         if (! empty($trackedStatusIds)) {
@@ -249,6 +249,15 @@ class PurchaseRequestController extends Controller
         ])->filter()->implode(' ') : $user->name;
 
         $tabLabels = collect($tabs)->mapWithKeys(fn ($definition, $key) => [$key => $definition['label'] ?? ucfirst(str_replace('_', ' ', $key))])->toArray();
+        $tabStatusMap = collect($tabs)->mapWithKeys(function ($definition, $key) {
+            $statuses = $definition['statuses'] ?? [];
+
+            if (! is_array($statuses)) {
+                return [$key => []];
+            }
+
+            return [$key => collect($statuses)->map(fn ($statusId) => (int) $statusId)->values()->all()];
+        })->toArray();
 
         $workflowConfig = [
             'statuses' => $statuses->map(fn ($status) => [
@@ -283,6 +292,7 @@ class PurchaseRequestController extends Controller
             'defaultTab' => $defaultTab,
             'tabCounts' => $tabCounts,
             'tabs' => $tabLabels,
+            'tabStatusMap' => $tabStatusMap,
             'routes' => $context['routes'],
             'routeParam' => 'purchase_request',
             'pageTitle' => $context['page_title'] ?? 'Purchase Requests Queue',

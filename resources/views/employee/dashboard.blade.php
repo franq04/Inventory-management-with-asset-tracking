@@ -265,7 +265,7 @@ $logActionStyles = [
 @include('employee.purchase_requests.partials.details-modal')
 
 @push('scripts')
-@vite('resources/js/purchase-requests.js')
+@vite('resources/js/employee-purchase-requests.js')
 <script>
     window.purchaseRequestWorkflowConfig = {
         storeUrl: '{{ route("employee.purchase-requests.store") }}',

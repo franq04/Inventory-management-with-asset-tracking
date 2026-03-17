@@ -1,7 +1,13 @@
 import $ from 'jquery';
 import Chart from 'chart.js/auto';
 
-(function($) {
+// Track chart instances for Turbo cleanup
+const chartInstances = [];
+
+function initDashboardCharts() {
+    // Destroy any existing charts first
+    chartInstances.forEach(c => c.destroy());
+    chartInstances.length = 0;
 
     const data = window.dashboardData || {};
 
@@ -23,7 +29,7 @@ import Chart from 'chart.js/auto';
         gradient.addColorStop(0, 'rgba(26, 58, 45, 0.4)');
         gradient.addColorStop(1, 'rgba(26, 58, 45, 0)');
         
-        new Chart(ctx, {
+        chartInstances.push(new Chart(ctx, {
             type: 'line',
             data: {
                 labels: data.expenseMonths,
@@ -67,13 +73,13 @@ import Chart from 'chart.js/auto';
                     },
                 },
             },
-        });
+        }));
     }
 
     // Enhanced PQS Trend Chart
     const $pqsCtx = $('#pqsTrendChart');
     if ($pqsCtx.length && data.pqsMonths?.length && (data.pqsCounts?.some(Boolean) || data.pqsValues?.some(Boolean))) {
-        new Chart($pqsCtx[0].getContext('2d'), {
+        chartInstances.push(new Chart($pqsCtx[0].getContext('2d'), {
             data: {
                 labels: data.pqsMonths,
                 datasets: [
@@ -155,7 +161,7 @@ import Chart from 'chart.js/auto';
                     },
                 },
             },
-        });
+        }));
     }
 
     // Enhanced Assignment Breakdown Chart
@@ -170,7 +176,7 @@ import Chart from 'chart.js/auto';
 
         const total = breakdownSegments.reduce((sum, segment) => sum + segment.value, 0);
         if (total > 0) {
-            new Chart($assignmentCtx[0].getContext('2d'), {
+            chartInstances.push(new Chart($assignmentCtx[0].getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: breakdownSegments.map((segment) => segment.label),
@@ -201,7 +207,7 @@ import Chart from 'chart.js/auto';
                         }
                     },
                 },
-            });
+            }));
         } else {
             $assignmentCtx.parent().addClass('flex flex-col items-center justify-center').html(`
                 <div class="text-center text-gray-500">
@@ -211,4 +217,44 @@ import Chart from 'chart.js/auto';
                 </div>`);
         }
     }
-})(jQuery); // Pass jQuery to the IIFE
+}
+
+// Initialize on first load and Turbo navigations
+document.addEventListener('turbo:load', initDashboardCharts);
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDashboardCharts, { once: true });
+} else {
+    initDashboardCharts();
+}
+
+// Destroy charts before Turbo caches the page to avoid canvas reuse errors
+document.addEventListener('turbo:before-cache', () => {
+    chartInstances.forEach(c => c.destroy());
+    chartInstances.length = 0;
+});
+
+if (!window.__pqsDashboardAutoRefreshBound) {
+    document.addEventListener('pqs:auto-refresh', (event) => {
+        const isDashboardPage = Boolean(
+            document.getElementById('expenseChart') ||
+            document.getElementById('pqsTrendChart') ||
+            document.getElementById('assignmentBreakdownChart')
+        );
+
+        if (!isDashboardPage) {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (window.Turbo && typeof window.Turbo.visit === 'function') {
+            window.Turbo.visit(window.location.href, { action: 'replace' });
+            return;
+        }
+
+        window.location.reload();
+    });
+
+    window.__pqsDashboardAutoRefreshBound = true;
+}

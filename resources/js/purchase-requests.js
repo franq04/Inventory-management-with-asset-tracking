@@ -18,6 +18,21 @@ const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (char) => {
     return map[char] ?? char;
 });
 
+const softNavigate = (url = window.location.href, options = {}) => {
+    const { replace = false } = options;
+    if (window.Turbo && typeof window.Turbo.visit === 'function') {
+        window.Turbo.visit(url, { action: replace ? 'replace' : 'advance' });
+        return;
+    }
+
+    if (url && url !== window.location.href) {
+        window.location.assign(url);
+        return;
+    }
+
+    window.location.reload();
+};
+
 const parseDate = (value) => {
     if (!value) {
         return null;
@@ -213,17 +228,69 @@ const updateRowAfterDecision = ($row, item, requestStatusId) => {
     $row.find('[data-item-action]').html(renderItemActions(normalizedItem));
 };
 
-const showToast = (selector, message) => {
+const clearToastTimers = (toast) => {
+    const timerId = toast.data('toastTimerId');
+    if (timerId) {
+        clearTimeout(timerId);
+        toast.removeData('toastTimerId');
+    }
+
+    const hideTimerId = toast.data('toastHideTimerId');
+    if (hideTimerId) {
+        clearTimeout(hideTimerId);
+        toast.removeData('toastHideTimerId');
+    }
+};
+
+const hideToast = (selector) => {
     const toast = $(selector);
     if (!toast.length) {
-        alert(message);
         return;
     }
-    toast.text(message).removeClass('hidden opacity-0');
-    setTimeout(() => {
-        toast.addClass('opacity-0');
-        setTimeout(() => toast.addClass('hidden'), 300);
-    }, 2500);
+
+    clearToastTimers(toast);
+
+    toast.addClass('opacity-0');
+    const nextHideTimerId = setTimeout(() => {
+        toast.addClass('hidden');
+        toast.removeData('toastHideTimerId');
+    }, 300);
+
+    toast.data('toastHideTimerId', nextHideTimerId);
+};
+
+const showToast = (selector, message, isHtml = false) => {
+    const toast = $(selector);
+    if (!toast.length) {
+        const fallbackId = 'pqs-global-toast';
+        let fallback = document.getElementById(fallbackId);
+        if (!fallback) {
+            fallback = document.createElement('div');
+            fallback.id = fallbackId;
+            fallback.className = 'fixed bottom-6 right-6 z-[90] hidden max-w-sm rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg';
+            document.body.appendChild(fallback);
+        }
+
+        fallback.textContent = isHtml ? message.replace(/<[^>]*>?/gm, '') : message;
+        fallback.classList.remove('hidden');
+        window.clearTimeout(showToast._fallbackTimer);
+        showToast._fallbackTimer = window.setTimeout(() => {
+            fallback.classList.add('hidden');
+        }, 3000);
+        return;
+    }
+
+    clearToastTimers(toast);
+
+    if (isHtml) {
+        toast.html(message);
+    } else {
+        toast.text(message);
+    }
+
+    toast.removeClass('hidden opacity-0');
+    const timerId = setTimeout(() => hideToast(selector), 5000);
+    toast.data('toastTimerId', timerId);
 };
 
 // This function only handles showing and hiding the modal.
@@ -231,20 +298,53 @@ const showToast = (selector, message) => {
 // the HTML structure and CSS classes in the Blade file, not by this JavaScript.
 // No changes are needed here to fix the visual overlap issue.
 const toggleModal = ($modal, open = false) => {
+    const $panel = $modal.find('.modal-panel').first();
     if (open) {
-        $modal.removeClass('hidden opacity-0');
-        setTimeout(() => $modal.find('[data-focus]').first().trigger('focus'), 50);
+        $modal.removeClass('hidden');
+        // Double RAF: lets the browser compute the initial opacity-0/scale-95 state
+        // before removing those classes, which triggers the CSS transition.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $modal.scrollTop(0);
+                if ($panel.length) {
+                    $panel.scrollTop(0);
+                    $panel.find('.overflow-y-auto, .overflow-y-scroll').scrollTop(0);
+                }
+                $modal.removeClass('opacity-0');
+                if ($panel.length) {
+                    $panel.removeClass('opacity-0 scale-95 translate-y-2');
+                }
+            });
+        });
+        setTimeout(() => {
+            const focusTarget = $modal.find('[data-focus]').first().get(0);
+
+            if (focusTarget) {
+                try {
+                    focusTarget.focus({ preventScroll: true });
+                } catch (error) {
+                    focusTarget.focus();
+                }
+            }
+
+            $modal.scrollTop(0);
+            if ($panel.length) {
+                $panel.scrollTop(0);
+                $panel.find('.overflow-y-auto, .overflow-y-scroll').scrollTop(0);
+            }
+        }, 300);
     } else {
         $modal.addClass('opacity-0');
-        setTimeout(() => $modal.addClass('hidden'), 200);
+        if ($panel.length) {
+            $panel.addClass('opacity-0 scale-95 translate-y-2');
+        }
+        setTimeout(() => $modal.addClass('hidden'), 300);
     }
 };
 
 const initEmployeePurchaseRequests = () => {
     const config = window.employeePrConfig;
-    if (!config) {
-        return;
-    }
+    const hasEmployeeConfig = Boolean(config);
 
     const $employeeTable = $('#employeePurchaseRequestsTable');
     if ($employeeTable.length) {
@@ -252,7 +352,8 @@ const initEmployeePurchaseRequests = () => {
         const $noResultsRow = $('#employeePrNoResults');
         const $emptyStateRow = $employeeTable.find('tbody tr[data-empty-state]');
         const $searchInput = $('#employeePrSearch');
-        const $statusButtons = $('[data-status-btn]');
+        const $statusTabs = $('#employeePrStatusTabs');
+        const $statusButtons = $statusTabs.find('[data-status-btn]');
         const $resetFilters = $('#employeePrResetFilters');
         const $resultCount = $('#employeePrResultCount');
         const $totalCount = $('#employeePrTotalCount');
@@ -334,8 +435,10 @@ const initEmployeePurchaseRequests = () => {
             $searchInput.on('input', applyEmployeeFilters);
         }
 
-        if ($statusButtons.length) {
-            $statusButtons.on('click', function () {
+        if ($statusTabs.length) {
+            $statusTabs.on('click', '[data-status-btn]', function (event) {
+                event.preventDefault();
+
                 const buttonStatus = String($(this).data('status-btn') ?? '');
                 if (buttonStatus === activeStatus) {
                     activeStatus = '';
@@ -545,9 +648,11 @@ const initEmployeePurchaseRequests = () => {
         }
     };
 
-    $openBtn.on('click', () => {
-        toggleModal($modal, true);
-        $form[0].reset();
+    const resetCreateRequestForm = () => {
+        if ($form.length) {
+            $form[0].reset();
+        }
+
         $itemRows.empty();
         rowIndex = 0;
         $('#fundAllocation').val('');
@@ -555,15 +660,26 @@ const initEmployeePurchaseRequests = () => {
         $errors.addClass('hidden').find('#formErrorsContent').empty();
         ensureAtLeastOneRow();
         updateGrandTotal();
+    };
+
+    $openBtn.on('click', () => {
+        hideToast($toast);
+        toggleModal($modal, true);
+
+        requestAnimationFrame(() => {
+            resetCreateRequestForm();
+        });
     });
 
     $closeElements.on('click', () => {
+        hideToast($toast);
         toggleModal($modal, false);
         $('#fundAllocationWarning').addClass('hidden');
     });
 
     $modal.on('click', (event) => {
         if (event.target.dataset.closeModal !== undefined) {
+            hideToast($toast);
             toggleModal($modal, false);
             $('#fundAllocationWarning').addClass('hidden');
         }
@@ -577,11 +693,16 @@ const initEmployeePurchaseRequests = () => {
 
     $addItemRow.on('click', addItemRow);
 
-    ensureAtLeastOneRow();
-    updateGrandTotal();
+    resetCreateRequestForm();
 
     $form.on('submit', function (event) {
         event.preventDefault();
+
+        if (!hasEmployeeConfig || !config.storeUrl) {
+            showToast($toast, 'Purchase request configuration is unavailable. Please refresh the page and try again.');
+            return;
+        }
+
         $errors.addClass('hidden').find('#formErrorsContent').empty();
         const submitBtn = $form.find('button[type="submit"]');
         const originalText = submitBtn.html();
@@ -595,20 +716,16 @@ const initEmployeePurchaseRequests = () => {
             success: (response) => {
                 toggleModal($modal, false);
                 showToast($toast, response.message ?? 'Purchase request submitted.');
-                setTimeout(() => window.location.reload(), 1200);
+                setTimeout(() => softNavigate(window.location.href, { replace: true }), 1200);
             },
-            error: (xhr) => {
-                if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                    const messages = Object.values(xhr.responseJSON.errors).flat();
-                    $('#formErrorsContent').html(messages.map((msg) => `<div class="mb-1">• ${msg}</div>`).join(''));
-                    $errors.removeClass('hidden');
-                } else {
-                    $('#formErrorsContent').text('An unexpected error occurred. Please try again.');
-                    $errors.removeClass('hidden');
-                }
-                // Scroll to top of modal to show errors
-                $modal.find('.overflow-y-auto').scrollTop(0);
-            },
+                          error: (xhr) => {
+                  if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                      const messages = Object.values(xhr.responseJSON.errors).flat();
+                      showToast($toast, messages.map((msg) => `<div class="mb-1">• ${msg}</div>`).join(''), true);
+                  } else {
+                      showToast($toast, 'An unexpected error occurred. Please try again.');
+                  }
+              },
             complete: () => {
                 submitBtn.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed').html(originalText);
             },
@@ -618,6 +735,36 @@ const initEmployeePurchaseRequests = () => {
     const $detailsModal = $('#employeePrDetailsModal');
     const $detailsClose = $detailsModal.find('[data-close-modal]');
     const $detailsItems = $('#employeePrDetailsItems');
+
+    const renderDetailsLoadingState = () => {
+        $('#employeePrDetailsModalTitle').text('Loading purchase request...');
+        $('#employeePrAnnexContent').html(`
+            <div class="flex min-h-[420px] items-center justify-center bg-white px-6 py-12">
+                <div class="text-center text-gray-500">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4f8f5] text-[#1a3a2d]">
+                        <i class="fas fa-spinner fa-spin text-xl"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-semibold text-gray-700">Loading purchase request details</p>
+                    <p class="mt-1 text-xs text-gray-500">Please wait while we prepare the request document.</p>
+                </div>
+            </div>
+        `);
+    };
+
+    const renderDetailsErrorState = () => {
+        $('#employeePrDetailsModalTitle').text('Unable to load details');
+        $('#employeePrAnnexContent').html(`
+            <div class="flex min-h-[420px] items-center justify-center bg-white px-6 py-12">
+                <div class="max-w-md text-center text-gray-500">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+                        <i class="fas fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-semibold text-gray-700">Failed to load purchase request details</p>
+                    <p class="mt-1 text-xs text-gray-500">Please close the modal and try again.</p>
+                </div>
+            </div>
+        `);
+    };
 
     const populateDetails = (data) => {
         const requestStatusId = data.status_id ?? null;
@@ -668,33 +815,40 @@ const initEmployeePurchaseRequests = () => {
                     </div>
                 </div>
 
-                <div class="border-b border-gray-400">
-                    <div class="grid grid-cols-1 md:grid-cols-[1.15fr,1fr]">
-                        <div class="border-b border-gray-400 p-5 space-y-4 md:border-b-0 md:border-r">
-                            <div class="flex items-center justify-between gap-4">
-                                <label class="text-sm font-semibold uppercase tracking-wide text-gray-700">Division :</label>
-                                <div class="flex-1 text-right">
-                                    <input type="text" readonly value="${data.division ?? '—'}" class="border-b border-gray-500 px-2 py-1 text-right text-sm text-gray-900 bg-transparent w-full">
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-between gap-4">
-                                <label class="text-sm font-semibold uppercase tracking-wide text-gray-700">Section :</label>
-                                <div class="flex-1 text-right">
-                                    <input type="text" readonly value="${data.section ?? '—'}" class="border-b border-gray-500 px-2 py-1 text-right text-sm text-gray-900 bg-transparent w-full">
-                                </div>
-                            </div>
+                <div class="border-b border-gray-400 px-5 py-2.5">
+                    <div class="grid grid-cols-1 gap-x-5 gap-y-1.5 text-xs text-gray-700 md:grid-cols-[1fr_1.1fr_0.7fr]">
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">Division :</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900 truncate">${data.division ?? '—'}</span>
                         </div>
-                        <div class="p-5">
-                            <div class="grid grid-cols-[auto,1fr] gap-x-3 gap-y-3 text-sm text-gray-700">
-                                <span class="font-semibold uppercase tracking-wide">PR No.:</span>
-                                <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">${data.pr_no}</span>
-                                <span class="font-semibold uppercase tracking-wide">Date:</span>
-                                <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">${createdDate}</span>
-                                <label class="font-semibold uppercase tracking-wide">SAI No.:</label>
-                                <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">${data.sai_no ?? '—'}</span>
-                                <label class="font-semibold uppercase tracking-wide">ALOBS No.:</label>
-                                <span class="border-b border-gray-500 px-2 py-1 text-right text-gray-900">${data.alobs_no ?? '—'}</span>
-                            </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">PR No.:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">${data.pr_no ?? '—'}</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">${createdDate}</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">Section :</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900 truncate">${data.section ?? '—'}</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">SAI No.:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">${data.sai_no ?? '—'}</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">—</span>
+                        </div>
+                        <div></div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">ALOBS No.:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">${data.alobs_no ?? '—'}</span>
+                        </div>
+                        <div class="flex items-end gap-2">
+                            <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
+                            <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">—</span>
                         </div>
                     </div>
                 </div>
@@ -769,6 +923,11 @@ const initEmployeePurchaseRequests = () => {
     };
 
     const handleItemDecision = ($button, priId, decision) => {
+        if (!hasEmployeeConfig) {
+            showToast($toast, 'Request action configuration is unavailable. Please refresh the page and try again.');
+            return;
+        }
+
         const urlTemplate = config.decisionUrlTemplate;
         if (!urlTemplate) {
             return;
@@ -802,20 +961,26 @@ const initEmployeePurchaseRequests = () => {
         });
     };
 
-    $('.js-view-employee-pr').on('click', function () {
+    $(document)
+        .off('click.employeeViewPr', '.js-view-employee-pr')
+        .on('click.employeeViewPr', '.js-view-employee-pr', function () {
         const url = $(this).data('show-url');
         if (!url) {
             return;
         }
+
+        renderDetailsLoadingState();
+        toggleModal($detailsModal, true);
+
         $.ajax({
             method: 'GET',
             url,
             headers: { Accept: 'application/json' },
             success: (response) => {
                 populateDetails(response.data);
-                toggleModal($detailsModal, true);
             },
             error: () => {
+                renderDetailsErrorState();
                 showToast($toast, 'Failed to load purchase request details.');
             },
         });
@@ -840,6 +1005,11 @@ const initEmployeePurchaseRequests = () => {
         $waitForm.on('submit', function (event) {
             event.preventDefault();
             if (!activeWaitContext.priId) {
+                return;
+            }
+
+            if (!hasEmployeeConfig) {
+                $waitErrors.removeClass('hidden').text('Request action configuration is unavailable. Please refresh the page and try again.');
                 return;
             }
 
@@ -964,6 +1134,56 @@ const initPurchaseRequestWorkflow = () => {
     };
 
     const toFixed = (value) => toNumber(value, 0).toFixed(2);
+
+    const renderWorkflowLoadingState = () => {
+        $('#custodianPrNumber').text('Loading purchase request...');
+        $('#custodianPrNo').text('—');
+        $('#custodianPrDate').text('—');
+        $('#custodianPrDivisionInput').text('—');
+        $('#custodianPrSectionInput').text('—');
+        $('#custodianPrSaiInput').text('—');
+        $('#custodianPrAlobsInput').text('—');
+        $('#custodianPrFundClusterInput').text('—');
+        $('#custodianPrFundsAvailableInput').text('—');
+        $('#custodianFundCluster').val('');
+        $('#custodianFundsAvailable').val('');
+        $('#custodianPrPurposeTextarea').val('');
+        $('#custodianPrRequestedPrintedName').text('');
+        $('#custodianPrApprovedPrintedName').text('');
+        $recommendedName.text('');
+        $recommendedDate.text('');
+        $recommendedRemarks.text('');
+        $recommendedBlock.addClass('hidden');
+        $statusErrors.addClass('hidden').find('#custodianStatusErrorsContent').empty();
+        $statusRemarks.val('');
+        $grandTotalLabel.text(formatCurrency(0));
+        $itemsTable.html(`
+            <tr>
+                <td colspan="8" class="border border-gray-500 px-4 py-16 text-center text-gray-500">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#f4f8f5] text-[#1a3a2d]">
+                        <i class="fas fa-spinner fa-spin text-xl"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-semibold text-gray-700">Loading purchase request details</p>
+                    <p class="mt-1 text-xs text-gray-500">Please wait while we prepare the review form.</p>
+                </td>
+            </tr>
+        `);
+    };
+
+    const renderWorkflowErrorState = () => {
+        $('#custodianPrNumber').text('Unable to load purchase request');
+        $itemsTable.html(`
+            <tr>
+                <td colspan="8" class="border border-gray-500 px-4 py-16 text-center text-gray-500">
+                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+                        <i class="fas fa-triangle-exclamation text-xl"></i>
+                    </div>
+                    <p class="mt-4 text-sm font-semibold text-gray-700">Failed to load purchase request details</p>
+                    <p class="mt-1 text-xs text-gray-500">Close the modal and try again.</p>
+                </td>
+            </tr>
+        `);
+    };
 
     const getAllowedStatusIds = (currentStatusId) => {
         const current = String(currentStatusId ?? '');
@@ -1214,13 +1434,13 @@ const initPurchaseRequestWorkflow = () => {
     const populateModal = (data) => {
         $('#custodianPrNo').text(data.pr_no);
         $('#custodianPrDate').text(data.created_at ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '');
-        $('#custodianPrDivisionInput').val(data.division ?? '');
-        $('#custodianPrSectionInput').val(data.section ?? '');
-        $('#custodianPrSaiInput').val(data.sai_no ?? '');
-        $('#custodianPrAlobsInput').val(data.alobs_no ?? '');
-        $('#custodianPrFundClusterInput').val(data.fund_cluster ?? '');
+        $('#custodianPrDivisionInput').text(data.division ?? '');
+        $('#custodianPrSectionInput').text(data.section ?? '');
+        $('#custodianPrSaiInput').text(data.sai_no ?? '');
+        $('#custodianPrAlobsInput').text(data.alobs_no ?? '');
+        $('#custodianPrFundClusterInput').text(data.fund_cluster ?? '');
         const formattedFunds = data.funds_available != null ? formatCurrency(data.funds_available) : '';
-        $('#custodianPrFundsAvailableInput').val(formattedFunds);
+        $('#custodianPrFundsAvailableInput').text(formattedFunds);
         $('#custodianFundCluster').val(data.fund_cluster ?? '');
         $('#custodianFundsAvailable').val(
             data.funds_available != null && data.funds_available !== ''
@@ -1284,21 +1504,27 @@ const initPurchaseRequestWorkflow = () => {
         refreshGrandTotal();
     };
 
-    $('.js-view-custodian-pr').on('click', function () {
+    $(document)
+        .off('click.custodianReview', '.js-view-custodian-pr')
+        .on('click.custodianReview', '.js-view-custodian-pr', function () {
         const showUrl = $(this).data('show-url');
         currentUpdateUrl = $(this).data('update-url');
         if (!showUrl) {
             return;
         }
+
+        renderWorkflowLoadingState();
+        toggleModal($modal, true);
+
         $.ajax({
             method: 'GET',
             url: showUrl,
             headers: { Accept: 'application/json' },
             success: (response) => {
                 populateModal(response.data);
-                toggleModal($modal, true);
             },
             error: (xhr) => {
+                renderWorkflowErrorState();
                 console.error('Failed to load purchase request details', xhr);
                 const serverMessage = xhr?.responseJSON?.message || xhr?.responseText || xhr?.statusText;
                 showToast(toastSelector, serverMessage || 'Unable to load purchase request details.');
@@ -1401,7 +1627,7 @@ const initPurchaseRequestWorkflow = () => {
             success: (response) => {
                 toggleModal($modal, false);
                 showToast(toastSelector, response.message ?? 'Status updated.');
-                setTimeout(() => window.location.reload(), 1200);
+                setTimeout(() => softNavigate(window.location.href, { replace: true }), 1200);
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
@@ -1429,18 +1655,20 @@ const initPurchaseRequestWorkflow = () => {
 };
 
 const initCustodianPurchaseRequestUtilities = () => {
-    const $table = $('#custodianPurchaseRequestsTable');
-    if (!$table.length) {
+    const queuePageSelector = '#custodianQueuePage';
+    if (!$(queuePageSelector).length) {
         return;
     }
 
-    const $search = $('#purchaseRequestSearch');
-    const $noResultsRow = $('#purchaseRequestsNoResults');
-    const $pdfBtn = $('#purchaseRequestPrintPdf');
-    const $excelBtn = $('#purchaseRequestExportExcel');
+    let isQueueRequestInFlight = false;
+    let activeQueueRequest = null;
+    let queueRequestToken = 0;
 
     const normalize = (value = '') => String(value).toLowerCase().replace(/\s+/g, ' ').trim();
-    const getFilterableRows = () => $table.find('tbody tr').not('#purchaseRequestsNoResults').filter((_, row) => !row.dataset.staticRow);
+    const getQueuePage = () => $(queuePageSelector);
+    const getTable = () => $('#custodianPurchaseRequestsTable');
+    const getNoResultsRow = () => $('#purchaseRequestsNoResults');
+    const getFilterableRows = () => getTable().find('tbody tr').not('#purchaseRequestsNoResults').filter((_, row) => !row.dataset.staticRow);
 
     const applyFilter = (term) => {
         const filterValue = normalize(term);
@@ -1456,6 +1684,7 @@ const initCustodianPurchaseRequestUtilities = () => {
             }
         });
 
+        const $noResultsRow = getNoResultsRow();
         if ($noResultsRow.length) {
             if (visibleCount === 0 && filterValue) {
                 $noResultsRow.removeClass('hidden');
@@ -1466,9 +1695,96 @@ const initCustodianPurchaseRequestUtilities = () => {
     };
 
     const buildPrintableTable = () => {
+        const $table = getTable();
         const $clone = $table.clone();
         $clone.find('tr').filter((_, row) => $(row).is(':hidden') || row.id === 'purchaseRequestsNoResults' || row.dataset.staticRow).remove();
         return $clone[0]?.outerHTML ?? '';
+    };
+
+    const setQueueLoadingState = (loading) => {
+        const $queuePage = getQueuePage();
+
+        if (!$queuePage.length) {
+            return;
+        }
+
+        $queuePage.toggleClass('opacity-70 translate-y-1 pointer-events-none', loading);
+        $queuePage.find('.po-tab[data-po-tab], nav[aria-label="Pagination Navigation"] a').toggleClass('pointer-events-none', loading);
+    };
+
+    const swapQueuePage = (html, url, pushState = true) => {
+        const $parsed = $('<div>').append($.parseHTML(html, document, true));
+        const $nextQueuePage = $parsed.find(queuePageSelector).first();
+        const $currentQueuePage = getQueuePage();
+
+        if (!$nextQueuePage.length || !$currentQueuePage.length) {
+            // If the queue shell no longer exists (user navigated away), ignore this stale response.
+            return;
+        }
+
+        $nextQueuePage.addClass('opacity-0 translate-y-1');
+        $currentQueuePage.replaceWith($nextQueuePage);
+
+        if (pushState && window.location.href !== url) {
+            window.history.pushState({ custodianQueueUrl: url }, '', url);
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $nextQueuePage.removeClass('opacity-0 translate-y-1');
+            });
+        });
+    };
+
+    const loadQueueContent = (url, options = {}) => {
+        const { pushState = true } = options;
+
+        if (!url) {
+            return;
+        }
+
+        if (activeQueueRequest && activeQueueRequest.readyState !== 4) {
+            activeQueueRequest.abort();
+        }
+
+        const requestToken = ++queueRequestToken;
+
+        isQueueRequestInFlight = true;
+        setQueueLoadingState(true);
+
+        activeQueueRequest = $.ajax({
+            method: 'GET',
+            url,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'text/html',
+            },
+            success: (html) => {
+                if (requestToken !== queueRequestToken) {
+                    return;
+                }
+                if (!$(queuePageSelector).length) {
+                    return;
+                }
+                swapQueuePage(html, url, pushState);
+            },
+            error: (_xhr, textStatus) => {
+                if (textStatus === 'abort') {
+                    return;
+                }
+                if (!$(queuePageSelector).length) {
+                    return;
+                }
+                // Keep the current screen stable on partial-fetch failure.
+                // Avoid redirecting to stale queue URLs during rapid navigation.
+            },
+            complete: () => {
+                if (requestToken === queueRequestToken) {
+                    isQueueRequestInFlight = false;
+                    setQueueLoadingState(false);
+                }
+            },
+        });
     };
 
     const handlePrintPdf = () => {
@@ -1528,18 +1844,79 @@ ${tableHtml}
         URL.revokeObjectURL(url);
     };
 
-    if ($search.length) {
-        $search.on('input', function () {
+    $(document)
+        .off('input.custodianQueueSearch', '#purchaseRequestSearch')
+        .on('input.custodianQueueSearch', '#purchaseRequestSearch', function () {
             applyFilter($(this).val());
         });
+
+    $(document)
+        .off('click.custodianQueuePdf', '#purchaseRequestPrintPdf')
+        .on('click.custodianQueuePdf', '#purchaseRequestPrintPdf', function (event) {
+            event.preventDefault();
+            handlePrintPdf();
+        });
+
+    $(document)
+        .off('click.custodianQueueExcel', '#purchaseRequestExportExcel')
+        .on('click.custodianQueueExcel', '#purchaseRequestExportExcel', function (event) {
+            event.preventDefault();
+            handleExportExcel();
+        });
+
+    $(document)
+        .off('click.custodianQueueTabs', `${queuePageSelector} .po-tab[data-po-tab]`)
+        .on('click.custodianQueueTabs', `${queuePageSelector} .po-tab[data-po-tab]`, function (event) {
+            const href = this.href;
+
+            event.preventDefault();
+
+            if (!href || href === window.location.href) {
+                return;
+            }
+
+            loadQueueContent(href);
+        });
+
+    $(document)
+        .off('click.custodianQueuePagination', `${queuePageSelector} nav[aria-label="Pagination Navigation"] a`)
+        .on('click.custodianQueuePagination', `${queuePageSelector} nav[aria-label="Pagination Navigation"] a`, function (event) {
+            const href = this.href;
+
+            event.preventDefault();
+
+            if (!href || href === window.location.href) {
+                return;
+            }
+
+            loadQueueContent(href);
+        });
+
+    if (!window.__custodianQueuePopstateBound) {
+        window.addEventListener('popstate', () => {
+            if ($(queuePageSelector).length) {
+                loadQueueContent(window.location.href, { pushState: false });
+            }
+        });
+
+        window.__custodianQueuePopstateBound = true;
     }
 
-    if ($pdfBtn.length) {
-        $pdfBtn.on('click', handlePrintPdf);
+    if (!window.__custodianQueueBeforeVisitBound) {
+        document.addEventListener('turbo:before-visit', () => {
+            queueRequestToken += 1;
+            isQueueRequestInFlight = false;
+            if (activeQueueRequest && activeQueueRequest.readyState !== 4) {
+                activeQueueRequest.abort();
+            }
+        });
+
+        window.__custodianQueueBeforeVisitBound = true;
     }
 
-    if ($excelBtn.length) {
-        $excelBtn.on('click', handleExportExcel);
+    const initialSearch = $('#purchaseRequestSearch').val();
+    if (initialSearch) {
+        applyFilter(initialSearch);
     }
 };
 
@@ -1548,3 +1925,22 @@ $(() => {
     initPurchaseRequestWorkflow();
     initCustodianPurchaseRequestUtilities();
 });
+
+if (!window.__pqsPurchaseRequestsAutoRefreshBound) {
+    document.addEventListener('pqs:auto-refresh', (event) => {
+        const isPurchaseRequestsPage = Boolean(
+            document.getElementById('employeePurchaseRequestsTable') ||
+            document.getElementById('custodianPurchaseRequestsTable') ||
+            document.getElementById('custodianQueuePage')
+        );
+
+        if (!isPurchaseRequestsPage) {
+            return;
+        }
+
+        event.preventDefault();
+        softNavigate(window.location.href, { replace: true });
+    });
+
+    window.__pqsPurchaseRequestsAutoRefreshBound = true;
+}

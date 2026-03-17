@@ -6,58 +6,174 @@ const todayIso = () => new Date().toISOString().slice(0, 10);
 
 const escapeHtml = (value) => $('<div>').text(value ?? '').html();
 
-const initInspectionTabs = () => {
-    const $tabs = $('[data-inspection-tab]');
-    const $panels = $('[data-inspection-panel]');
+const softNavigate = (url = window.location.href, options = {}) => {
+    const { replace = false } = options;
+    if (window.Turbo && typeof window.Turbo.visit === 'function') {
+        window.Turbo.visit(url, { action: replace ? 'replace' : 'advance' });
+        return;
+    }
+
+    if (url && url !== window.location.href) {
+        window.location.assign(url);
+        return;
+    }
+
+    window.location.reload();
+};
+
+const ensureToast = () => {
+    let toast = document.getElementById('pqs-global-toast');
+    if (toast) {
+        return toast;
+    }
+
+    toast = document.createElement('div');
+    toast.id = 'pqs-global-toast';
+    toast.className = 'fixed right-6 top-24 z-[90] hidden max-w-sm rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg';
+    document.body.appendChild(toast);
+    return toast;
+};
+
+const showToast = (message, type = 'error') => {
+    const toast = ensureToast();
+    toast.textContent = message;
+    toast.classList.remove('hidden', 'bg-rose-600', 'bg-emerald-600', 'bg-amber-600');
+    toast.classList.add(type === 'success' ? 'bg-emerald-600' : type === 'warning' ? 'bg-amber-600' : 'bg-rose-600');
+
+    window.clearTimeout(showToast._timer);
+    showToast._timer = window.setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 2600);
+};
+
+const inspectionRootSelector = '#inspectionAcceptancePage';
+const tabQueryKey = 'tab';
+
+const getActiveInspectionTabFromUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const knownTabs = ['pending', 'accepted', 'defective', 'returned'];
+    const tabFromQuery = String(params.get(tabQueryKey) || '').toLowerCase();
+    if (knownTabs.includes(tabFromQuery)) {
+        return tabFromQuery;
+    }
+    const matched = knownTabs.find((key) => params.has(`${key}_page`));
+    return matched || 'pending';
+};
+
+const buildTabUrl = (tabKey) => {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set(tabQueryKey, tabKey);
+    ['pending_page', 'accepted_page', 'defective_page', 'returned_page', 'all_page', 'page'].forEach((key) => {
+        nextUrl.searchParams.delete(key);
+    });
+    return nextUrl.toString();
+};
+
+const activateInspectionTab = (tabKey, options = {}) => {
+    const { syncUrl = false, replaceState = false } = options;
+    const $root = $(inspectionRootSelector);
+    if (!$root.length) {
+        return;
+    }
+
+    const $tabs = $root.find('[data-inspection-tab]');
+    const $panels = $root.find('[data-inspection-panel]');
 
     if (!$tabs.length || !$panels.length) {
         return;
     }
 
-    $tabs.on('click', function () {
-        const target = $(this).data('inspection-tab');
-
-        // Reset all tabs (remove selected marker and visual styles)
-        $tabs.removeClass('is-selected shadow-lg');
-
-        // Mark clicked tab as selected and apply visual styles only to it
-        $(this).addClass('is-selected shadow-lg');
-
-        $panels.addClass('hidden');
-        $panels.filter(`[data-inspection-panel="${target}"]`).removeClass('hidden');
-    });
-
-    const params = new URLSearchParams(window.location.search);
-    let activeTabKey = null;
-
     $tabs.each(function () {
-        const key = $(this).data('inspection-tab');
-        if (key && params.has(`${key}_page`)) {
-            activeTabKey = key;
-            return false;
+        const $tab = $(this);
+        const isActive = String($tab.data('inspection-tab')) === String(tabKey);
+        const activeClass = String($tab.data('activeClass') || '').trim();
+        const inactiveClass = String($tab.data('inactiveClass') || '').trim();
+        const activeCountClass = String($tab.data('countActiveClass') || '').trim();
+        const inactiveCountClass = String($tab.data('countInactiveClass') || '').trim();
+        const $count = $tab.find('.inspection-tab-count');
+
+        $tab.removeClass('is-selected');
+        if (activeClass) {
+            $tab.removeClass(activeClass);
+        }
+        if (inactiveClass) {
+            $tab.removeClass(inactiveClass);
+        }
+
+        if ($count.length) {
+            if (activeCountClass) {
+                $count.removeClass(activeCountClass);
+            }
+            if (inactiveCountClass) {
+                $count.removeClass(inactiveCountClass);
+            }
+        }
+
+        if (isActive) {
+            $tab.addClass('is-selected');
+            if (activeClass) {
+                $tab.addClass(activeClass);
+            }
+            if ($count.length && activeCountClass) {
+                $count.addClass(activeCountClass);
+            }
+        } else {
+            if (inactiveClass) {
+                $tab.addClass(inactiveClass);
+            }
+            if ($count.length && inactiveCountClass) {
+                $count.addClass(inactiveCountClass);
+            }
         }
     });
 
-    const $initialTab = activeTabKey
-        ? $tabs.filter(`[data-inspection-tab="${activeTabKey}"]`).first()
-        : $tabs.first();
+    $panels.addClass('hidden');
+    $panels.filter(`[data-inspection-panel="${tabKey}"]`).removeClass('hidden');
 
-    if ($initialTab.length) {
-        $initialTab.trigger('click');
+    $root.find('[data-active-status-label]').text($tabs.filter(`[data-inspection-tab="${tabKey}"]`).first().find('span').first().text() || 'Pending Inspection');
+
+    if (syncUrl) {
+        const nextUrl = buildTabUrl(tabKey);
+        if (window.location.href !== nextUrl) {
+            if (replaceState) {
+                window.history.replaceState({ inspectionTab: tabKey }, '', nextUrl);
+            } else {
+                window.history.pushState({ inspectionTab: tabKey }, '', nextUrl);
+            }
+        }
     }
 };
 
+const initInspectionTabs = () => {
+    const $root = $(inspectionRootSelector);
+    if (!$root.length) {
+        return;
+    }
+
+    $(document)
+        .off('click.inspectionTabs', `${inspectionRootSelector} [data-inspection-tab]`)
+        .on('click.inspectionTabs', `${inspectionRootSelector} [data-inspection-tab]`, function () {
+            activateInspectionTab($(this).data('inspection-tab'), { syncUrl: true });
+        });
+
+    activateInspectionTab(getActiveInspectionTabFromUrl(), { syncUrl: true, replaceState: true });
+};
+
 const prunePendingAccepted = () => {
-    // Remove rows in the pending inspection panel where accepted >= delivered
-    const $panel = $('[data-inspection-panel="pending"]');
-    if (!$panel.length) return;
+    const $panel = $(`${inspectionRootSelector} [data-inspection-panel="pending"]`);
+    if (!$panel.length) {
+        return;
+    }
 
     $panel.find('tbody tr').each(function () {
         const $tr = $(this);
-        // find delivered and accepted columns by position: Delivered (5th col index 4?), but safer to parse cells
-        const deliveredText = $tr.find('td').eq(4).text().trim();
-        const acceptedText = $tr.find('td').eq(5).text().trim();
+        const $cells = $tr.find('td');
+        if ($cells.length < 6) {
+            return;
+        }
 
+        const deliveredText = $cells.eq(4).text().trim();
+        const acceptedText = $cells.eq(5).text().trim();
         const delivered = Number(deliveredText.replace(/[^0-9.-]+/g, '')) || 0;
         const accepted = Number(acceptedText.replace(/[^0-9.-]+/g, '')) || 0;
 
@@ -68,46 +184,50 @@ const prunePendingAccepted = () => {
 };
 
 const initInspectionFilters = () => {
-    const $search = $('#inspectionSearch');
-    const $from = $('#inspectionDateFrom');
-    const $to = $('#inspectionDateTo');
-    const $applyDateFilter = $('#inspectionApplyDateFilter');
+    const $root = $(inspectionRootSelector);
+    if (!$root.length) {
+        return;
+    }
 
     const normalize = (s) => String(s ?? '').toLowerCase();
 
-    const applyFiltersToPanel = ($panel) => {
-        const term = normalize($search.val());
-        const from = $from.val() ? new Date($from.val()) : null;
-        const to = $to.val() ? new Date($to.val()) : null;
-
+    const applyFiltersToPanel = ($panel, term, fromDate, toDate) => {
         $panel.find('tbody tr').each(function () {
             const $tr = $(this);
-            const text = normalize($tr.text());
+            const $cells = $tr.find('td');
+            if ($cells.length < 8) {
+                return;
+            }
 
-            // Date heuristic: look for date-like substrings in the row (YYYY-MM-DD or MMM DD, YYYY)
+            const text = normalize($tr.text());
             let visible = true;
 
             if (term && !text.includes(term)) {
                 visible = false;
             }
 
-            if (visible && (from || to)) {
-                // try to find a date in Warranty column (index 7)
-                const dateCell = $tr.find('td').eq(7).text().trim();
+            if (visible && (fromDate || toDate)) {
+                const dateCell = $cells.eq(7).text().trim();
                 let parsedDate = null;
-                // try ISO
                 const isoMatch = dateCell.match(/(\d{4}-\d{2}-\d{2})/);
-                if (isoMatch) parsedDate = new Date(isoMatch[1]);
+                if (isoMatch) {
+                    parsedDate = new Date(isoMatch[1]);
+                }
 
                 if (!parsedDate) {
-                    // try Month name formats (e.g., Oct 26, 2025)
                     const altMatch = dateCell.match(/([A-Za-z]{3,9}\s+\d{1,2},\s*\d{4})/);
-                    if (altMatch) parsedDate = new Date(altMatch[1]);
+                    if (altMatch) {
+                        parsedDate = new Date(altMatch[1]);
+                    }
                 }
 
                 if (parsedDate) {
-                    if (from && parsedDate < from) visible = false;
-                    if (to && parsedDate > to) visible = false;
+                    if (fromDate && parsedDate < fromDate) {
+                        visible = false;
+                    }
+                    if (toDate && parsedDate > toDate) {
+                        visible = false;
+                    }
                 }
             }
 
@@ -115,20 +235,45 @@ const initInspectionFilters = () => {
         });
     };
 
-    // Apply filters to all panels when inputs change
-    $search.on('input', () => {
-        $('[data-inspection-panel]').each(function () { applyFiltersToPanel($(this)); });
-    });
+    const runFilters = () => {
+        const term = normalize($root.find('#inspectionSearch').val());
+        const fromValue = $root.find('#inspectionDateFrom').val();
+        const toValue = $root.find('#inspectionDateTo').val();
+        const fromDate = fromValue ? new Date(fromValue) : null;
+        const toDate = toValue ? new Date(toValue) : null;
 
-    const applyDateFilters = () => {
-        $('[data-inspection-panel]').each(function () { applyFiltersToPanel($(this)); });
+        $root.find('[data-inspection-panel]').each(function () {
+            applyFiltersToPanel($(this), term, fromDate, toDate);
+        });
     };
 
-    $applyDateFilter.on('click', applyDateFilters);
-    $from.on('keydown', (event) => { if (event.key === 'Enter') applyDateFilters(); });
-    $to.on('keydown', (event) => { if (event.key === 'Enter') applyDateFilters(); });
+    $(document)
+        .off('input.inspectionSearch', `${inspectionRootSelector} #inspectionSearch`)
+        .on('input.inspectionSearch', `${inspectionRootSelector} #inspectionSearch`, runFilters);
 
-    $('#inspectionPrintPdfBtn').on('click', () => {
+    $(document)
+        .off('click.inspectionDate', `${inspectionRootSelector} #inspectionApplyDateFilter`)
+        .on('click.inspectionDate', `${inspectionRootSelector} #inspectionApplyDateFilter`, runFilters);
+
+    $(document)
+        .off('keydown.inspectionDateFrom', `${inspectionRootSelector} #inspectionDateFrom`)
+        .on('keydown.inspectionDateFrom', `${inspectionRootSelector} #inspectionDateFrom`, (event) => {
+            if (event.key === 'Enter') {
+                runFilters();
+            }
+        });
+
+    $(document)
+        .off('keydown.inspectionDateTo', `${inspectionRootSelector} #inspectionDateTo`)
+        .on('keydown.inspectionDateTo', `${inspectionRootSelector} #inspectionDateTo`, (event) => {
+            if (event.key === 'Enter') {
+                runFilters();
+            }
+        });
+
+    runFilters();
+
+    $('#inspectionPrintPdfBtn').off('click.inspectionPrintPdf').on('click.inspectionPrintPdf', () => {
         // Print currently visible rows for active panel
         const $activePanel = $('[data-inspection-panel]').filter(function () { return !$(this).hasClass('hidden'); }).first();
         if (!$activePanel.length) return;
@@ -145,6 +290,163 @@ const initInspectionFilters = () => {
         win.document.close();
         setTimeout(() => { win.print(); win.close(); }, 300);
     });
+};
+
+const bindInspectionPagination = () => {
+    const $root = $(inspectionRootSelector);
+    if (!$root.length) {
+        return;
+    }
+
+    let activeRequest = null;
+    let requestToken = 0;
+    let isLoading = false;
+
+    const setLoadingState = (loading) => {
+        const $currentRoot = $(inspectionRootSelector);
+        if (!$currentRoot.length) {
+            return;
+        }
+
+        $currentRoot.toggleClass('opacity-70 translate-y-1 pointer-events-none', loading);
+        $currentRoot.find('nav[aria-label="Pagination Navigation"] a').toggleClass('pointer-events-none', loading);
+    };
+
+    const hydrate = () => {
+        initInspectionTabs();
+        prunePendingAccepted();
+        initInspectionFilters();
+    };
+
+    const revealRows = ($scope) => {
+        if (!$scope || !$scope.length) {
+            return;
+        }
+
+        const $visibleRows = $scope
+            .find('[data-inspection-panel]:not(.hidden) tbody tr')
+            .filter(function () {
+                return !$(this).hasClass('js-reveal-animated');
+            });
+
+        $visibleRows.each(function (index) {
+            const row = this;
+            const delay = Math.min(index * 35, 280);
+
+            row.classList.add('js-reveal-animated');
+            row.style.opacity = '0';
+            row.style.transform = 'translateY(6px)';
+            row.style.transition = `opacity 220ms ease ${delay}ms, transform 260ms ease ${delay}ms`;
+
+            requestAnimationFrame(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            });
+        });
+    };
+
+    const swapSection = (html, url, pushState = true) => {
+        const $parsed = $('<div>').append($.parseHTML(html, document, true));
+        const $incoming = $parsed.find(inspectionRootSelector).first();
+        const $current = $(inspectionRootSelector).first();
+
+        if (!$incoming.length || !$current.length) {
+            return;
+        }
+
+        const searchValue = String($current.find('#inspectionSearch').val() || '');
+        const fromValue = String($current.find('#inspectionDateFrom').val() || '');
+        const toValue = String($current.find('#inspectionDateTo').val() || '');
+
+        $incoming.addClass('opacity-0 translate-y-1');
+        $current.replaceWith($incoming);
+
+        if (pushState && window.location.href !== url) {
+            window.history.pushState({ inspectionPageUrl: url }, '', url);
+        }
+
+        const $newRoot = $(inspectionRootSelector).first();
+        $newRoot.find('#inspectionSearch').val(searchValue);
+        $newRoot.find('#inspectionDateFrom').val(fromValue);
+        $newRoot.find('#inspectionDateTo').val(toValue);
+
+        hydrate();
+        revealRows($newRoot);
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $newRoot.removeClass('opacity-0 translate-y-1');
+            });
+        });
+    };
+
+    const loadInspectionPage = (url, options = {}) => {
+        const { pushState = true } = options;
+
+        if (!url || isLoading) {
+            return;
+        }
+
+        if (activeRequest && activeRequest.readyState !== 4) {
+            activeRequest.abort();
+        }
+
+        const currentToken = ++requestToken;
+        isLoading = true;
+        setLoadingState(true);
+
+        activeRequest = $.ajax({
+            method: 'GET',
+            url,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                Accept: 'text/html',
+            },
+            success: (html) => {
+                if (currentToken !== requestToken) {
+                    return;
+                }
+                swapSection(html, url, pushState);
+            },
+            error: (_xhr, textStatus) => {
+                if (textStatus === 'abort') {
+                    return;
+                }
+            },
+            complete: () => {
+                if (currentToken === requestToken) {
+                    isLoading = false;
+                    setLoadingState(false);
+                }
+            },
+        });
+    };
+
+    $(document)
+        .off('click.inspectionPagination', `${inspectionRootSelector} nav[aria-label="Pagination Navigation"] a[href]`)
+        .on('click.inspectionPagination', `${inspectionRootSelector} nav[aria-label="Pagination Navigation"] a[href]`, function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            const url = this.getAttribute('href');
+            if (!url || isLoading) {
+                return;
+            }
+
+            loadInspectionPage(url, { pushState: true });
+        });
+
+    if (!window.__inspectionPaginationPopstateBound) {
+        window.addEventListener('popstate', () => {
+            if (!$(inspectionRootSelector).length || isLoading) {
+                return;
+            }
+            loadInspectionPage(window.location.href, { pushState: false });
+        });
+
+        window.__inspectionPaginationPopstateBound = true;
+    }
+
+    revealRows($root);
 };
 
 const initInspectionModal = () => {
@@ -428,7 +730,7 @@ const initInspectionModal = () => {
         const storeUrl = $trigger.data('store-url') || null; // storeUrl may be absent for view-only
 
         if (!formUrl) {
-            alert('Inspection endpoint is not configured for this record.');
+            showToast('Inspection endpoint is not configured for this record.');
             return;
         }
 
@@ -457,7 +759,7 @@ const initInspectionModal = () => {
             error: (xhr) => {
                 toggleModal(false);
                 const message = xhr.responseJSON?.message || 'Unable to load inspection data. Please try again.';
-                alert(message);
+                showToast(message);
             },
             complete: () => {
                 setLoading(false);
@@ -486,7 +788,7 @@ const initInspectionModal = () => {
     $form.on('submit', function (event) {
         event.preventDefault();
         if (!state.storeUrl) {
-            alert('Unable to save inspection without a valid endpoint.');
+            showToast('Unable to save inspection without a valid endpoint.');
             return;
         }
 
@@ -504,8 +806,8 @@ const initInspectionModal = () => {
             },
             success: (response) => {
                 toggleModal(false);
-                alert(response.message ?? 'Inspection results saved.');
-                window.location.reload();
+                showToast(response.message ?? 'Inspection results saved.', 'success');
+                softNavigate(window.location.href, { replace: true });
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
@@ -530,4 +832,5 @@ $(() => {
     // prune pending panel of already accepted/recorded rows and initialize filters
     prunePendingAccepted();
     initInspectionFilters();
+    bindInspectionPagination();
 });

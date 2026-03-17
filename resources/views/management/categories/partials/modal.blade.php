@@ -1,7 +1,7 @@
-<div class="fixed inset-0 z-50 hidden" data-category-modal>
+<div class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300" data-category-modal>
     <div class="absolute inset-0 bg-black/70 backdrop-blur" data-modal-overlay></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="modal-panel relative w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white">
                 <div class="flex-1">
                     <h3 class="text-lg font-bold" data-modal-title>Add Category</h3>

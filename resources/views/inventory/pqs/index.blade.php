@@ -1,71 +1,100 @@
 @extends('layouts.app')
 
-@section('title', 'PQS Registry')
+@section('title', 'PQS Records')
 
 @section('content')
-<div class="space-y-8 animate-card">
-    {{-- Header --}}
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-3xl font-extrabold text-[#1a3a2d]">PQS Registry</h2>
-            <p class="mt-1 text-gray-500">A comprehensive ledger of all property, plant, and equipment.</p>
-        </div>
-        {{-- In the future, an "Add Item" button could go here --}}
-    </div>
+@php
+    $completion = ($stats['total'] > 0) ? (($stats['total'] - $stats['unassigned']) / max($stats['total'], 1)) * 100 : 0;
+@endphp
+<div id="pqsRegistryPage" class="space-y-8 animate-card">
+    <div class="relative overflow-hidden rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-7 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
+        <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.16),_transparent_58%)]"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-2 max-w-2xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Inventory Records
+                </span>
+                <h2 class="text-3xl font-extrabold tracking-tight">PQS Records</h2>
+                <p class="text-sm text-white/75">View and monitor generated PQS records. New PQS creation is handled in Inventory Assignment.</p>
+            </div>
 
-    {{-- Enhanced Stat Cards --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[620px]">
         @php
             $statCards = [
-                ['label' => 'Total Items', 'value' => $stats['total'], 'icon' => 'fa-boxes-stacked', 'color' => 'blue'],
-                ['label' => 'With ICS', 'value' => $stats['withIcs'], 'icon' => 'fa-file-signature', 'color' => 'emerald'],
-                ['label' => 'With PAR', 'value' => $stats['withPar'], 'icon' => 'fa-file-contract', 'color' => 'purple'],
-                ['label' => 'Awaiting Assignment', 'value' => $stats['unassigned'], 'icon' => 'fa-hourglass-half', 'color' => 'amber'],
-            ];
-            $colors = [
-                'blue' => 'bg-blue-100 text-blue-600',
-                'emerald' => 'bg-emerald-100 text-emerald-600',
-                'purple' => 'bg-purple-100 text-purple-600',
-                'amber' => 'bg-amber-100 text-amber-600',
+                ['label' => 'Total Items', 'value' => $stats['total']],
+                ['label' => 'With ICS', 'value' => $stats['withIcs']],
+                ['label' => 'With PAR', 'value' => $stats['withPar']],
+                ['label' => 'Awaiting Assignment', 'value' => $stats['unassigned']],
             ];
         @endphp
         @foreach ($statCards as $card)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex items-center gap-5 transition hover:shadow-xl hover:-translate-y-1">
-            <div class="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center {{ $colors[$card['color']] }}">
-                <i class="fa-solid {{ $card['icon'] }} text-2xl"></i>
-            </div>
-            <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-1 text-3xl font-bold text-gray-900">{{ number_format($card['value']) }}</p>
-            </div>
+        <div class="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 backdrop-blur-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">{{ $card['label'] }}</p>
+            <p class="mt-2 text-3xl font-bold">{{ number_format($card['value']) }}</p>
         </div>
         @endforeach
+            </div>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Main Content Column --}}
         <div class="space-y-6 lg:col-span-2">
             {{-- Enhanced Filters & Actions --}}
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
+            <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
                 <form id="pqsFiltersForm" method="GET" class="space-y-4" action="{{ route('pqs.index') }}">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                         <div class="relative lg:col-span-1">
-                            <label for="search" class="text-xs font-semibold text-gray-500">Search</label>
-                            <i class="fas fa-search absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-gray-400"></i>
-                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Property no., article, officer..." class="w-full mt-1 rounded-xl border-gray-200 pl-11 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" />
+                            <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
+                            <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Property no., article, officer..." class="w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] py-[9px] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                        </div>
+                        <div id="categoryDropdown" class="relative z-20">
+                            <label for="category" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
+
+                            <input type="hidden" name="category" id="category" value="{{ $categoryFilter ?? '' }}" data-auto-submit>
+
+                            <button id="categoryDropdownToggle" type="button" class="mt-1 flex w-full py-[9px] items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50" aria-haspopup="listbox" aria-expanded="false">
+                                <span id="categoryDropdownLabel" class="block truncate text-gray-700 text-sm">
+                                    {{ $categoryFilter ? ($categories->where('cat_id', $categoryFilter)->first()->cat_name ?? 'All Categories') : 'All Categories' }}
+                                </span>
+                                <i id="categoryDropdownChevron" class="fas fa-chevron-down text-[#2d5a4a]/45 text-xs transition-transform duration-200"></i>
+                            </button>
+
+                            <div id="categoryDropdownMenu" class="absolute z-50 mt-2 hidden w-full origin-top-right rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                <div class="px-3 pt-3 pb-2 border-b border-gray-50">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                        <input id="categoryDropdownSearch" type="text" placeholder="Search prefix..." class="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                    </div>
+                                </div>
+
+                                <ul id="categoryDropdownOptions" class="max-h-56 overflow-y-auto py-1 custom-scrollbar" role="listbox">
+                                    <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ !$categoryFilter ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="" data-name="All Categories" role="option" aria-selected="{{ !$categoryFilter ? 'true' : 'false' }}">
+                                        <span class="block truncate">All Categories</span>
+                                        <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ !$categoryFilter ? '' : 'hidden' }}">
+                                            <i class="fas fa-check text-xs"></i>
+                                        </span>
+                                    </li>
+                                    @foreach ($categories as $category)
+                                        <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ (string) $categoryFilter === (string) $category->cat_id ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="{{ $category->cat_id }}" data-name="{{ $category->cat_name }}" role="option" aria-selected="{{ (string) $categoryFilter === (string) $category->cat_id ? 'true' : 'false' }}">
+                                            <span class="block truncate">{{ $category->cat_name }}</span>
+                                            <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ (string) $categoryFilter === (string) $category->cat_id ? '' : 'hidden' }}">
+                                                <i class="fas fa-check text-xs"></i>
+                                            </span>
+                                        </li>
+                                    @endforeach
+
+                                    <li id="categoryDropdownEmpty" class="hidden py-3 px-4 text-center text-sm text-gray-500 italic">
+                                        No categories found
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
                         <div>
-                            <label for="category" class="text-xs font-semibold text-gray-500">Category</label>
-                            <select id="category" name="category" data-auto-submit class="mt-1 w-full rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
-                                <option value="" @selected(!$categoryFilter)>All Categories</option>
-                                @foreach ($categories as $category)
-                                    <option value="{{ $category->cat_id }}" @selected($categoryFilter == $category->cat_id)>{{ $category->cat_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                             <label for="assignment" class="text-xs font-semibold text-gray-500">Assignment Status</label>
-                            <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                             <label for="assignment" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Assignment Status</label>
+                            <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
                                 <option value="" @selected(!$assignmentFilter)>Any</option>
                                 <option value="ics" @selected($assignmentFilter === 'ics')>With ICS</option>
                                 <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
@@ -76,13 +105,13 @@
                      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
                          <span class="text-sm text-gray-500"><span id="pqs-record-count">{{ number_format($records->total()) }}</span> records found</span>
                          <div class="flex flex-wrap items-center gap-2">
-                            <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="p-2.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200" title="Reset Filters">
+                            <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
                                <i class="fas fa-undo"></i>
                            </a>
-                           <button type="button" id="pqsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100">
+                           <button type="button" id="pqsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition-all duration-300 hover:border-red-300 hover:bg-red-100 hover:shadow-md">
                                 <i class="fas fa-file-pdf text-red-500"></i> Print PDF
                             </button>
-                            <button type="button" id="pqsExportExcelBtn" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100">
+                            <button type="button" id="pqsExportExcelBtn" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 shadow-sm transition-all duration-300 hover:border-green-300 hover:bg-green-100 hover:shadow-md">
                                 <i class="fas fa-file-excel text-green-600"></i> Export Excel
                             </button>
                         </div>
@@ -99,8 +128,8 @@
 
         {{-- Side Column --}}
         <div class="space-y-6">
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800">Inventory Snapshot</h3>
+            <div class="rounded-2xl border border-emerald-950/10 bg-white p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.7)]">
+                <h3 class="text-lg font-semibold text-[#1a3a2d]">Inventory Snapshot</h3>
                 <div class="mt-4 space-y-4">
                     <div>
                         <div class="flex justify-between mb-1 text-sm">
@@ -109,24 +138,23 @@
                         </div>
                     </div>
                      <div>
-                        @php $completion = ($stats['total'] > 0) ? (($stats['total'] - $stats['unassigned']) / max($stats['total'], 1)) * 100 : 0; @endphp
                         <div class="flex justify-between mb-1 text-sm">
                             <span class="font-medium text-gray-700">Assignment Completion</span>
                             <span class="text-gray-500 font-semibold">{{ number_format($completion, 1) }}%</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ $completion }}%"></div>
+                        <div class="w-full bg-emerald-100 rounded-full h-2.5">
+                            <div class="bg-emerald-500 h-2.5 rounded-full" style="width: {{ $completion }}%"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800">Recently Acquired</h3>
+            <div class="rounded-2xl border border-emerald-950/10 bg-white p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.7)]">
+                <h3 class="text-lg font-semibold text-[#1a3a2d]">Recently Acquired</h3>
                 <ul class="mt-4 space-y-4">
                     @forelse ($recentAssets as $recent)
                          <li class="flex items-center gap-4">
-                             <div class="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-blue-100 text-blue-600 font-bold">
+                             <div class="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center bg-emerald-100 text-emerald-600 font-bold">
                                 <i class="fas fa-cube"></i>
                             </div>
                             <div class="flex-1 text-sm">
@@ -160,6 +188,14 @@
     const searchInput = document.getElementById('search');
     const categorySelect = document.getElementById('category');
     const assignmentSelect = document.getElementById('assignment');
+    const categoryDropdown = document.getElementById('categoryDropdown');
+    const categoryToggle = document.getElementById('categoryDropdownToggle');
+    const categoryMenu = document.getElementById('categoryDropdownMenu');
+    const categoryLabel = document.getElementById('categoryDropdownLabel');
+    const categorySearchInput = document.getElementById('categoryDropdownSearch');
+    const categoryChevron = document.getElementById('categoryDropdownChevron');
+    const categoryEmpty = document.getElementById('categoryDropdownEmpty');
+    const categoryOptions = Array.from(document.querySelectorAll('.category-option'));
     const selects = Array.from(form.querySelectorAll('[data-auto-submit]'));
     const resultsContainer = document.getElementById('pqsResults');
     const recordCount = document.getElementById('pqs-record-count');
@@ -250,6 +286,116 @@
         debounceTimer = setTimeout(() => fetchRecords(), 400);
     };
 
+    const closeCategoryDropdown = () => {
+        if (!categoryMenu || !categoryToggle || !categoryChevron) {
+            return;
+        }
+
+        categoryMenu.classList.add('hidden');
+        categoryToggle.setAttribute('aria-expanded', 'false');
+        categoryChevron.classList.remove('rotate-180');
+    };
+
+    const openCategoryDropdown = () => {
+        if (!categoryMenu || !categoryToggle || !categoryChevron) {
+            return;
+        }
+
+        categoryMenu.classList.remove('hidden');
+        categoryToggle.setAttribute('aria-expanded', 'true');
+        categoryChevron.classList.add('rotate-180');
+        categorySearchInput?.focus();
+    };
+
+    const filterCategoryOptions = () => {
+        if (!categorySearchInput) {
+            return;
+        }
+
+        const query = categorySearchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        categoryOptions.forEach((option) => {
+            const name = (option.dataset.name || '').toLowerCase();
+            const isVisible = query === '' || name.startsWith(query);
+            option.classList.toggle('hidden', !isVisible);
+
+            if (isVisible) {
+                visibleCount += 1;
+            }
+        });
+
+        if (categoryEmpty) {
+            categoryEmpty.classList.toggle('hidden', visibleCount !== 0);
+        }
+    };
+
+    const setSelectedCategory = (option) => {
+        if (!categorySelect || !categoryLabel) {
+            return;
+        }
+
+        const value = option.dataset.value ?? '';
+        const name = option.dataset.name ?? 'All Categories';
+
+        categorySelect.value = value;
+        categoryLabel.textContent = name;
+
+        categoryOptions.forEach((item) => {
+            const selected = item === option;
+            item.classList.toggle('bg-emerald-50/50', selected);
+            item.classList.toggle('font-medium', selected);
+            item.classList.toggle('text-[#1a3a2d]', selected);
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+
+            const check = item.querySelector('.category-check');
+            if (check) {
+                check.classList.toggle('hidden', !selected);
+            }
+        });
+
+        closeCategoryDropdown();
+
+        if (categorySearchInput) {
+            categorySearchInput.value = '';
+            filterCategoryOptions();
+        }
+
+        fetchRecords();
+    };
+
+    categoryToggle?.addEventListener('click', () => {
+        if (categoryMenu?.classList.contains('hidden')) {
+            openCategoryDropdown();
+            filterCategoryOptions();
+            return;
+        }
+
+        closeCategoryDropdown();
+    });
+
+    categorySearchInput?.addEventListener('input', filterCategoryOptions);
+    categorySearchInput?.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            closeCategoryDropdown();
+        }
+    });
+
+    categoryOptions.forEach((option) => {
+        option.addEventListener('click', () => setSelectedCategory(option));
+    });
+
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Node) || !categoryDropdown) {
+            return;
+        }
+
+        if (!categoryDropdown.contains(target)) {
+            closeCategoryDropdown();
+        }
+    });
+
     searchInput?.addEventListener('input', debouncedFetch);
 
     selects.forEach((select) => {
@@ -269,6 +415,31 @@
         selects.forEach((select) => {
             select.value = '';
         });
+
+        if (categoryLabel) {
+            categoryLabel.textContent = 'All Categories';
+        }
+
+        if (categorySearchInput) {
+            categorySearchInput.value = '';
+            filterCategoryOptions();
+        }
+
+        closeCategoryDropdown();
+
+        categoryOptions.forEach((item) => {
+            const isAll = (item.dataset.value ?? '') === '';
+            item.classList.toggle('bg-emerald-50/50', isAll);
+            item.classList.toggle('font-medium', isAll);
+            item.classList.toggle('text-[#1a3a2d]', isAll);
+            item.setAttribute('aria-selected', isAll ? 'true' : 'false');
+
+            const check = item.querySelector('.category-check');
+            if (check) {
+                check.classList.toggle('hidden', !isAll);
+            }
+        });
+
         fetchRecords();
     });
 
@@ -292,6 +463,8 @@
 
 (() => {
     const modal = document.getElementById('pqsViewModal');
+    const modalPanel = modal ? modal.querySelector('.modal-panel') : null;
+    const modalFocusTarget = modal ? modal.querySelector('[data-focus]') : null;
     const resultsContainer = document.getElementById('pqsResults');
     if (!modal || !resultsContainer) {
         return;
@@ -468,14 +641,51 @@
 
     const closeModal = () => {
         modal.classList.add('opacity-0');
-        setTimeout(() => modal.classList.add('hidden'), 200);
+        if (modalPanel) {
+            modalPanel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        }
+        setTimeout(() => modal.classList.add('hidden'), 300);
         document.body.classList.remove('overflow-hidden');
         document.body.classList.remove('pqs-printing');
     };
 
     const openModal = () => {
         modal.classList.remove('hidden');
-        requestAnimationFrame(() => modal.classList.remove('opacity-0'));
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                modal.scrollTop = 0;
+                if (modalPanel) {
+                    modalPanel.scrollTop = 0;
+                    modalPanel.querySelectorAll('.overflow-y-auto, .overflow-y-scroll').forEach((el) => {
+                        el.scrollTop = 0;
+                    });
+                }
+
+                modal.classList.remove('opacity-0');
+                if (modalPanel) {
+                    modalPanel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+                }
+            });
+        });
+
+        setTimeout(() => {
+            if (modalFocusTarget) {
+                try {
+                    modalFocusTarget.focus({ preventScroll: true });
+                } catch (error) {
+                    modalFocusTarget.focus();
+                }
+            }
+
+            modal.scrollTop = 0;
+            if (modalPanel) {
+                modalPanel.scrollTop = 0;
+                modalPanel.querySelectorAll('.overflow-y-auto, .overflow-y-scroll').forEach((el) => {
+                    el.scrollTop = 0;
+                });
+            }
+        }, 300);
+
         document.body.classList.add('overflow-hidden');
         document.body.classList.remove('pqs-printing');
     };

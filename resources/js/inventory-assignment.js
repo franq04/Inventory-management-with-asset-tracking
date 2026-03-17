@@ -17,6 +17,15 @@ $(() => {
     const $itemsBody = $('#inventoryItemsBody');
     const $search = $('#inventorySearch');
     const $stateFilter = $('#inventoryState');
+    const $paginationContainer = $('#paginationContainer');
+    const $pageLinks = $('#pageLinks');
+    const $pageInfo = $('#pageInfo');
+    const $pageMeta = $('#pageMeta');
+    const pageQueryKey = 'inventory_page';
+    let currentItems = [];
+    let currentPage = 1;
+    const itemsPerPage = 5;
+
     const $dateFrom = $('#date_from');
     const $dateTo = $('#date_to');
     const $applyDateBtn = $('#inventoryApplyDate');
@@ -75,6 +84,28 @@ $(() => {
 
     const escapeAttr = (value = '') => escapeHtml(value);
 
+    const getCurrentPageFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        const page = Number.parseInt(params.get(pageQueryKey) || '1', 10);
+        return Number.isFinite(page) && page > 0 ? page : 1;
+    };
+
+    const syncCurrentPageToUrl = (page, replace = false) => {
+        const nextUrl = new URL(window.location.href);
+        if (page <= 1) {
+            nextUrl.searchParams.delete(pageQueryKey);
+        } else {
+            nextUrl.searchParams.set(pageQueryKey, String(page));
+        }
+
+        const nextState = { inventoryPage: page };
+        if (replace) {
+            window.history.replaceState(nextState, '', nextUrl.toString());
+        } else {
+            window.history.pushState(nextState, '', nextUrl.toString());
+        }
+    };
+
     const applyCategoriesToSelect = (selectedParent = null, selectedChild = null) => {
         $categorySelect.empty();
         const parentPlaceholderSelected = selectedParent ? '' : 'selected';
@@ -110,13 +141,35 @@ $(() => {
     });
 
     const toggleModal = ($modal, open) => {
+        const $panel = $modal.find('.modal-panel').first();
+
         if (open) {
-            $modal.removeClass('hidden opacity-0');
+            $modal.removeClass('hidden');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    $modal.scrollTop(0);
+                    if ($panel.length) {
+                        $panel.scrollTop(0);
+                        $panel.find('.overflow-y-auto, .overflow-y-scroll').scrollTop(0);
+                    }
+                    $modal.removeClass('opacity-0');
+                    if ($panel.length) {
+                        $panel.removeClass('opacity-0 scale-95 translate-y-2');
+                    }
+                });
+            });
             $('body').addClass('overflow-hidden');
-        } else {
-            $modal.addClass('opacity-0');
-            setTimeout(() => $modal.addClass('hidden'), 200);
-            $('body').removeClass('overflow-hidden');
+            return;
+        }
+
+        $modal.addClass('opacity-0');
+        if ($panel.length) {
+            $panel.addClass('opacity-0 scale-95 translate-y-2');
+        }
+
+        setTimeout(() => {
+            $modal.addClass('hidden');
+
             if ($modal.is($createModal)) {
                 $createForm[0].reset();
                 $createErrors.addClass('hidden').empty();
@@ -127,7 +180,11 @@ $(() => {
                 renderSerialInputs(1);
                 $itemAccountableOfficer.text('—');
             }
-        }
+
+            if ($createModal.hasClass('hidden') && $viewModal.hasClass('hidden')) {
+                $('body').removeClass('overflow-hidden');
+            }
+        }, 300);
     };
 
     $(document).on('click', '[data-close-modal]', function () {
@@ -198,9 +255,10 @@ $(() => {
     const renderEmptyRow = (message) => {
         $itemsBody.html(`
             <tr>
-                <td colspan="8" class="px-4 py-10 text-center text-gray-500">
-                    <i class="fas fa-box-open text-2xl text-gray-300 mb-3"></i>
-                    <p>${message}</p>
+                <td colspan="8" class="px-5 py-20 text-center text-gray-500">
+                    <i class="fas fa-folder-open text-5xl text-gray-300 mb-4"></i>
+                    <p class="font-medium text-lg">${message}</p>
+                    <p class="text-sm">Try adjusting your filters or switch to another status tab.</p>
                 </td>
             </tr>
         `);
@@ -209,46 +267,121 @@ $(() => {
     const buildActionButtons = (item) => {
         const createStateAttrs = item.can_create ? '' : 'disabled aria-disabled="true"';
         const viewStateAttrs = item.property_no ? '' : 'disabled aria-disabled="true"';
-    const showUrl = routes.show?.replace('__ID__', item.ia_item_id);
-    const storeUrl = routes.store?.replace('__ID__', item.ia_item_id);
-    const showUrlAttr = showUrl ?? '';
-    const storeUrlAttr = storeUrl ?? '';
+        const showUrl = routes.show?.replace('__ID__', item.ia_item_id);
+        const storeUrl = routes.store?.replace('__ID__', item.ia_item_id);
+        const showUrlAttr = showUrl ?? '';
+        const storeUrlAttr = storeUrl ?? '';
 
         return `
-            <div class="flex flex-col gap-2 sm:flex-row sm:justify-end">
-                <button type="button" class="js-view-pqs inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+            <div class="flex flex-col gap-2 sm:flex-row sm:justify-center">
+                <button type="button" class="js-view-pqs inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
                     data-item-id="${item.ia_item_id}"
                     data-show-url="${showUrlAttr}"
                     ${viewStateAttrs}>
                     <i class="fas fa-eye"></i>
                     View Record
                 </button>
-                <button type="button" class="js-create-pqs inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-[#154c30] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                <button type="button" class="js-create-pqs inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-md"
                     data-item-id="${item.ia_item_id}"
                     data-show-url="${showUrlAttr}"
                     data-store-url="${storeUrlAttr}"
                     ${createStateAttrs}>
                     <i class="fas fa-barcode"></i>
-                    Create PQS Record
+                    Create PQS
                 </button>
             </div>
         `;
     };
 
-    const renderItems = (items) => {
+    const renderPagination = () => {
+        const totalItems = currentItems.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+        if (currentPage > totalPages && totalPages > 0) {
+            currentPage = totalPages;
+        }
+
+        if (totalItems === 0) {
+            $paginationContainer.addClass('hidden');
+            return;
+        }
+        
+        $paginationContainer.removeClass('hidden');
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(currentPage * itemsPerPage, totalItems);
+        
+        $pageInfo.html(`Showing <span class="font-semibold text-gray-900">${start}</span> to <span class="font-semibold text-gray-900">${end}</span> of <span class="font-semibold text-gray-900">${totalItems}</span> results`);
+        $pageMeta.html(`Showing page ${currentPage} of ${Math.max(totalPages, 1)} <span class="text-gray-400">(${totalItems} total records)</span>`);
+        
+        let linksHtml = '';
+
+        if (currentPage <= 1) {
+            linksHtml += '<span aria-disabled="true" class="inline-flex h-10 items-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-400 shadow-sm cursor-default">&laquo; Prev</span>';
+        } else {
+            linksHtml += `<button type="button" data-page="${currentPage - 1}" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">&laquo; Prev</button>`;
+        }
+
+        const pageItems = [];
+        for (let i = 1; i <= totalPages; i += 1) {
+            const onBoundary = i === 1 || i === totalPages;
+            const onWindow = i >= currentPage - 1 && i <= currentPage + 1;
+            if (onBoundary || onWindow) {
+                pageItems.push(i);
+            }
+        }
+
+        let lastRendered = 0;
+        pageItems.forEach((page) => {
+            if (page - lastRendered > 1) {
+                linksHtml += '<span aria-disabled="true" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-gray-200 bg-[#f8faf9] px-3 text-sm font-medium text-gray-400 shadow-sm">...</span>';
+            }
+
+            if (page === currentPage) {
+                linksHtml += `<span aria-current="page" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-[#1a3a2d] bg-[#1a3a2d] px-3 text-sm font-semibold text-white shadow-[0_12px_24px_-14px_rgba(26,58,45,0.8)]">${page}</span>`;
+            } else {
+                linksHtml += `<button type="button" data-page="${page}" aria-label="Go to page ${page}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 shadow-sm transition hover:border-[#1a3a2d]/25 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">${page}</button>`;
+            }
+
+            lastRendered = page;
+        });
+
+        if (currentPage < totalPages) {
+            linksHtml += `<button type="button" data-page="${currentPage + 1}" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">Next &raquo;</button>`;
+        } else {
+            linksHtml += '<span aria-disabled="true" class="inline-flex h-10 items-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-medium text-gray-400 shadow-sm cursor-default">Next &raquo;</span>';
+        }
+        
+        $pageLinks.html(linksHtml);
+    };
+
+    $pageLinks.on('click', 'button[data-page]', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const page = Number($(this).data('page'));
+        if (page && page !== currentPage) {
+            currentPage = page;
+            syncCurrentPageToUrl(currentPage);
+            renderItems();
+        }
+    });
+
+    const renderItems = () => {
+        const items = currentItems;
         if (!items.length) {
             renderEmptyRow('No accepted items found for the selected filters.');
-            $pendingCount.text('0 Pending');
-            $recordedCount.text('0 Recorded');
+            $pendingCount.text('0');
+            $recordedCount.text('0');
+            $paginationContainer.addClass('hidden');
             return;
         }
 
         const pending = items.filter((item) => item.can_create).length;
         const recorded = items.length - pending;
-        $pendingCount.text(`${pending} Pending`);
-        $recordedCount.text(`${recorded} Recorded`);
+        $pendingCount.text(`${pending}`);
+        $recordedCount.text(`${recorded}`);
 
-        const rows = items.map((item) => {
+        const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        const rows = paginatedItems.map((item, index) => {
             const description = escapeHtml(item.item_description ?? '—');
             const category = escapeHtml(item.category ?? '—');
             const subCategory = escapeHtml(item.sub_category ?? '—');
@@ -280,26 +413,36 @@ $(() => {
                 ? `<div class="mt-2 text-xs font-semibold text-[#1a3a2d]">Property No: ${escapeHtml(item.property_no)}</div>`
                 : '';
 
+            const delay = Math.min(index * 35, 280);
+
             return `
-                <tr class="border-b last:border-0 hover:bg-gray-50">
-                    <td class="px-3 py-4 align-top">
+                <tr class="border-b last:border-0 hover:bg-gray-50 js-reveal-animated" style="opacity: 0; transform: translateY(6px); transition: opacity 220ms ease ${delay}ms, transform 260ms ease ${delay}ms;">
+                    <td class="px-5 py-4 align-top">
                         <div class="font-semibold text-gray-800">${description}</div>
                         <div class="text-xs text-gray-500">IA: ${escapeHtml(item.ia_no ?? '—')} • PO: ${escapeHtml(item.po_no ?? '—')}</div>
                         <div class="mt-1">${statusBadge}</div>
                         ${propertyInfo}
                     </td>
-                    <td class="px-3 py-4 align-top text-gray-700">${category}</td>
-                    <td class="px-3 py-4 align-top text-gray-700">${subCategory}</td>
-                    <td class="px-3 py-4 align-top text-right font-semibold text-gray-800">${quantityDisplay}</td>
-                    <td class="px-3 py-4 align-top text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
-                    <td class="px-3 py-4 align-top text-right text-gray-800 font-semibold">${formatCurrency(item.total_cost)}</td>
-                    <td class="px-3 py-4 align-top text-gray-600">${sourceText}</td>
-                    <td class="px-3 py-4 align-top text-right">${buildActionButtons(item)}</td>
+                    <td class="px-5 py-4 align-top text-gray-700">${category}</td>
+                    <td class="px-5 py-4 align-top text-gray-700">${subCategory}</td>
+                    <td class="px-5 py-4 align-top text-right font-semibold text-gray-800">${quantityDisplay}</td>
+                    <td class="px-5 py-4 align-top text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
+                    <td class="px-5 py-4 align-top text-right text-gray-800 font-semibold">${formatCurrency(item.total_cost)}</td>
+                    <td class="px-5 py-4 align-top text-gray-600">${sourceText}</td>
+                    <td class="px-5 py-4 align-top text-right">${buildActionButtons(item)}</td>
                 </tr>
             `;
         });
 
         $itemsBody.html(rows.join(''));
+        renderPagination();
+
+        requestAnimationFrame(() => {
+            $itemsBody.find('tr.js-reveal-animated').each(function() {
+                this.style.opacity = '1';
+                this.style.transform = 'translateY(0)';
+            });
+        });
     };
 
     const fetchItems = () => {
@@ -314,9 +457,9 @@ $(() => {
 
         $itemsBody.html(`
             <tr>
-                <td colspan="8" class="px-4 py-10 text-center text-gray-500">
-                    <i class="fas fa-spinner fa-pulse text-2xl text-gray-300 mb-3"></i>
-                    <p>Loading accepted items...</p>
+                <td colspan="8" class="px-5 py-20 text-center text-gray-500">
+                    <i class="fas fa-spinner fa-pulse mb-4 text-3xl text-gray-300"></i>
+                    <p class="font-medium text-lg">Loading properties...</p>
                 </td>
             </tr>
         `);
@@ -326,10 +469,16 @@ $(() => {
             method: 'GET',
             data: params,
             success: (response) => {
-                renderItems(response.data?.items ?? []);
+                currentItems = response.data?.items ?? [];
+                currentPage = getCurrentPageFromUrl();
+                renderItems();
+                syncCurrentPageToUrl(currentPage, true);
             },
             error: () => {
                 renderEmptyRow('Unable to load items at this time. Please try again later.');
+                $pendingCount.text('0');
+                $recordedCount.text('0');
+                $paginationContainer.addClass('hidden');
             },
         });
     };
@@ -341,6 +490,32 @@ $(() => {
 
     $search.on('input', debounceFetch);
     $stateFilter.on('change', fetchItems);
+
+    window.addEventListener('popstate', () => {
+        currentPage = getCurrentPageFromUrl();
+        if (currentItems.length) {
+            renderItems();
+        }
+    });
+
+    $(document).on('click', '.inventory-tab', function() {
+        const $tab = $(this);
+        const tabKey = $tab.data('inventory-tab');
+        
+        $stateFilter.val(tabKey).trigger('change');
+        
+        $('.inventory-tab').each(function() {
+            const $t = $(this);
+            const activeClass = $t.data('activeClass') || '';
+            const inactiveClass = $t.data('inactiveClass') || '';
+            
+            $t.removeClass(activeClass).removeClass('is-selected').addClass(inactiveClass);
+        });
+        
+        const activeClass = $tab.data('activeClass') || '';
+        const inactiveClass = $tab.data('inactiveClass') || '';
+        $tab.removeClass(inactiveClass).addClass(activeClass).addClass('is-selected');
+    });
 
     // Apply button for date range: only clicking this will apply the date filters
     $applyDateBtn.on('click', () => {

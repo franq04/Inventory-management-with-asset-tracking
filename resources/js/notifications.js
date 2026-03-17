@@ -290,4 +290,14 @@ const initNotifications = () => {
     document.addEventListener('turbo:before-cache', cleanupNotifications, { once: true, signal });
 };
 
-document.addEventListener('turbo:load', initNotifications);
+const bootNotifications = () => {
+    initNotifications();
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootNotifications, { once: true });
+} else {
+    bootNotifications();
+}
+
+document.addEventListener('turbo:load', bootNotifications);

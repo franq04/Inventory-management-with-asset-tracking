@@ -34,15 +34,22 @@ class InventoryAssignmentController extends Controller
             ->whereIn('inspection_status_id', [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED])
             ->count();
 
-        $withIcs = PqsRecord::has('icsRecord')->count();
-        $withPar = PqsRecord::has('parRecord')->count();
-        $unassigned = PqsRecord::doesntHave('icsRecord')->whereDoesntHave('parRecord')->count();
+        $readyForPqs = InspectionReportItem::query()
+            ->where('quantity_accepted', '>', 0)
+            ->whereIn('inspection_status_id', [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED])
+            ->whereNull('property_no')
+            ->count();
+
+        $recordedInPqs = InspectionReportItem::query()
+            ->where('quantity_accepted', '>', 0)
+            ->whereIn('inspection_status_id', [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED])
+            ->whereNotNull('property_no')
+            ->count();
 
         $stats = [
             'total' => $totalAccepted,
-            'withIcs' => $withIcs,
-            'withPar' => $withPar,
-            'unassigned' => $unassigned,
+            'readyForPqs' => $readyForPqs,
+            'recordedInPqs' => $recordedInPqs,
         ];
 
         return view('custodian.inventory.index', [

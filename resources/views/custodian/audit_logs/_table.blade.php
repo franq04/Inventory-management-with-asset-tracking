@@ -1,109 +1,91 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    @forelse ($logs as $log)
-        @php
-            // Dynamic Action Badges
-            $actionLower = strtolower($log->action ?? '');
-            $badgeColor = 'bg-gray-100 text-gray-700';
-            $borderColor = 'border-gray-200';
-            $icon = 'fa-bolt';
-            $iconBg = 'bg-gray-500';
-            
-            if (str_contains($actionLower, 'create') || str_contains($actionLower, 'add')) {
-                $badgeColor = 'bg-emerald-100 text-emerald-700';
-                $borderColor = 'border-emerald-200';
-                $icon = 'fa-plus-circle';
-                $iconBg = 'bg-emerald-500';
-            } elseif (str_contains($actionLower, 'update') || str_contains($actionLower, 'edit')) {
-                $badgeColor = 'bg-blue-100 text-blue-700';
-                $borderColor = 'border-blue-200';
-                $icon = 'fa-pencil-alt';
-                $iconBg = 'bg-blue-500';
-            } elseif (str_contains($actionLower, 'delete') || str_contains($actionLower, 'remove')) {
-                $badgeColor = 'bg-red-100 text-red-700';
-                $borderColor = 'border-red-200';
-                $icon = 'fa-trash-alt';
-                $iconBg = 'bg-red-500';
-            } elseif (str_contains($actionLower, 'login')) {
-                $badgeColor = 'bg-purple-100 text-purple-700';
-                $borderColor = 'border-purple-200';
-                $icon = 'fa-sign-in-alt';
-                $iconBg = 'bg-purple-500';
-            } elseif (str_contains($actionLower, 'logout')) {
-                $badgeColor = 'bg-orange-100 text-orange-700';
-                $borderColor = 'border-orange-200';
-                $icon = 'fa-sign-out-alt';
-                $iconBg = 'bg-orange-500';
-            } elseif (str_contains($actionLower, 'status')) {
-                $badgeColor = 'bg-sky-100 text-sky-700';
-                $borderColor = 'border-sky-200';
-                $icon = 'fa-exchange-alt';
-                $iconBg = 'bg-sky-500';
-            }
-        @endphp
-        
-        <div class="bg-white border-2 {{ $borderColor }} rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div class="p-6">
-                <div class="flex items-start justify-between gap-4 mb-4">
-                    <div class="flex items-center gap-3 flex-1">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                            {{ strtoupper(substr($log->account->username ?? 'S', 0, 1)) }}
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="font-bold text-gray-900 text-lg">{{ $log->account->username ?? 'System' }}</h3>
-                            @if($log->account?->role)
-                            <span class="inline-block text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full mt-1">
-                                {{ ucfirst(str_replace('_', ' ', $log->account->role)) }}
-                            </span>
-                            @endif
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <div class="w-10 h-10 rounded-full {{ $iconBg }} flex items-center justify-center shadow-md">
-                            <i class="fa-solid {{ $icon }} text-white text-lg"></i>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="mb-4">
-                    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold uppercase tracking-wide {{ $badgeColor }} shadow-sm">
-                        {{ $log->action }}
-                    </span>
-                </div>
-                
-                <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
-                    <p class="text-gray-700 text-sm leading-relaxed">{{ $log->description }}</p>
-                </div>
-                
-                <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <div class="flex items-center gap-2 text-gray-600">
-                        <i class="far fa-clock text-sm"></i>
-                        <div>
-                            <div class="text-sm font-semibold">{{ optional($log->log_time)->format('M d, Y') }}</div>
-                            <div class="text-xs text-gray-500">{{ optional($log->log_time)->format('h:i:s A') }} <span class="text-[10px]">(PHT)</span></div>
-                        </div>
-                    </div>
-                    
-                    @if($log->table_name)
-                    <div class="flex items-center gap-2 text-gray-500 text-xs">
-                        <i class="fas fa-database"></i>
-                        <span>{{ $log->table_name }}</span>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    @empty
-        <div class="col-span-full bg-white border border-gray-100 rounded-2xl shadow-lg p-16 text-center">
-            <i class="fas fa-history text-6xl text-gray-300 mb-4"></i>
-            <p class="font-bold text-xl text-gray-700 mb-2">No audit logs found.</p>
-            <p class="text-sm text-gray-500">Try adjusting your search filters or date range.</p>
-        </div>
-    @endforelse
-</div>
+<div class="overflow-hidden rounded-2xl border border-emerald-100 bg-white shadow-[0_12px_35px_-22px_rgba(15,60,45,0.45)]">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-emerald-100">
+            <thead class="bg-emerald-50/70">
+                <tr>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">Timestamp</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">User</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">Role</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">Action</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">Description</th>
+                    <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/80">Entity</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                @forelse ($logs as $log)
+                    @php
+                        $actionLower = strtolower($log->action ?? '');
+                        $actionBadge = 'bg-gray-100 text-gray-700 border-gray-200';
 
-@if ($logs->hasPages())
-<div class="flex justify-center mt-8 pagination-links">
-    {{ $logs->links() }}
+                        if (str_contains($actionLower, 'create') || str_contains($actionLower, 'add')) {
+                            $actionBadge = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                        } elseif (str_contains($actionLower, 'update') || str_contains($actionLower, 'edit')) {
+                            $actionBadge = 'bg-blue-100 text-blue-700 border-blue-200';
+                        } elseif (str_contains($actionLower, 'delete') || str_contains($actionLower, 'remove')) {
+                            $actionBadge = 'bg-red-100 text-red-700 border-red-200';
+                        } elseif (str_contains($actionLower, 'login')) {
+                            $actionBadge = 'bg-violet-100 text-violet-700 border-violet-200';
+                        } elseif (str_contains($actionLower, 'logout')) {
+                            $actionBadge = 'bg-amber-100 text-amber-700 border-amber-200';
+                        } elseif (str_contains($actionLower, 'status')) {
+                            $actionBadge = 'bg-cyan-100 text-cyan-700 border-cyan-200';
+                        }
+
+                        $roleLabel = ucfirst(str_replace('_', ' ', $log->account?->role ?? 'system'));
+                    @endphp
+                    <tr data-audit-row class="transition-colors duration-150 hover:bg-emerald-50/40">
+                        <td class="whitespace-nowrap px-4 py-3 align-top text-sm text-gray-700">
+                            <div class="font-semibold text-gray-900">{{ optional($log->log_time)->format('M d, Y') }}</div>
+                            <div class="text-xs text-gray-500">{{ optional($log->log_time)->format('h:i:s A') }} PHT</div>
+                        </td>
+                        <td class="px-4 py-3 align-top text-sm text-gray-800">
+                            <div class="font-semibold text-gray-900">{{ $log->account->username ?? 'System' }}</div>
+                        </td>
+                        <td class="px-4 py-3 align-top text-sm text-gray-700">
+                            <span class="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+                                {{ $roleLabel }}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 align-top text-sm">
+                            <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide {{ $actionBadge }}">
+                                {{ $log->action }}
+                            </span>
+                        </td>
+                        <td class="max-w-[520px] px-4 py-3 align-top text-sm text-gray-700">
+                            <p class="line-clamp-2">{{ $log->description }}</p>
+                        </td>
+                        <td class="px-4 py-3 align-top text-sm text-gray-700">
+                            {{ $log->table_name ?: 'N/A' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-14 text-center">
+                            <i class="fas fa-history text-4xl text-gray-300"></i>
+                            <p class="mt-3 text-base font-semibold text-gray-700">No audit logs found.</p>
+                            <p class="mt-1 text-sm text-gray-500">Try adjusting your search, action filter, or date range.</p>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="border-t border-emerald-100 bg-[#fbfcfb] px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-gray-500">
+            Showing
+            <span class="font-semibold text-gray-700">{{ number_format($logs->firstItem() ?? 0) }}</span>
+            to
+            <span class="font-semibold text-gray-700">{{ number_format($logs->lastItem() ?? 0) }}</span>
+            of
+            <span class="font-semibold text-gray-700">{{ number_format($logs->total()) }}</span>
+            results
+        </p>
+
+        @if ($logs->hasPages())
+            <div class="pagination-links">
+                {{ $logs->onEachSide(1)->links('vendor.pagination.procurement') }}
+            </div>
+        @endif
+    </div>
 </div>
-@endif

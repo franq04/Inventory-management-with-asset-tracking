@@ -25,6 +25,7 @@
         }
         /* Fix for Alpine.js hiding elements */
         [x-cloak] { display: none !important; }
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans antialiased">
@@ -51,11 +52,13 @@
                     </div>
 
                     <div class="flex items-center space-x-5">
-                        <div class="relative hidden md:block">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                <i class="fas fa-search text-gray-400"></i>
-                            </span>
-                            <input type="text" placeholder="Search..." class="w-full max-w-xs pl-10 pr-4 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[var(--secondary-color)] transition-all">
+                        <div id="auto-refresh-widget" class="hidden md:flex items-center gap-3 rounded-full border border-emerald-100 bg-emerald-50/70 px-4 py-2 text-xs text-emerald-800">
+                            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                            <span id="auto-refresh-status" class="font-semibold uppercase tracking-wide">Auto refresh</span>
+                            <span class="text-emerald-700/80">in</span>
+                            <span id="auto-refresh-countdown" class="font-bold">30s</span>
+                            <span class="text-emerald-700/80">|</span>
+                            <span id="auto-refresh-last" class="text-emerald-700/90">updated just now</span>
                         </div>
 
                         {{-- === REPLACE STATIC BELL WITH DYNAMIC NOTIFICATION COMPONENT === --}}
@@ -168,6 +171,27 @@
             }
         };
 
+        let saveScrollTimeoutId = null;
+
+        const flushScrollPositions = () => {
+            if (saveScrollTimeoutId !== null) {
+                window.clearTimeout(saveScrollTimeoutId);
+                saveScrollTimeoutId = null;
+            }
+            saveScrollPositions();
+        };
+
+        const queueScrollPositionSave = () => {
+            if (saveScrollTimeoutId !== null) {
+                return;
+            }
+
+            saveScrollTimeoutId = window.setTimeout(() => {
+                saveScrollTimeoutId = null;
+                saveScrollPositions();
+            }, 140);
+        };
+
         const saveScrollPositions = () => {
             if (sidebarScroll) {
                 writeSessionNumber(sidebarScrollKey, sidebarScroll.scrollTop);
@@ -188,8 +212,14 @@
             }
         };
 
+        let autoRefreshIntervalId = null;
+
         window.__pqsLayoutCleanup = () => {
-            saveScrollPositions();
+            if (autoRefreshIntervalId !== null) {
+                window.clearInterval(autoRefreshIntervalId);
+                autoRefreshIntervalId = null;
+            }
+            flushScrollPositions();
             controller.abort();
         };
 
@@ -267,8 +297,13 @@
         window.addEventListener('pagehide', saveScrollPositions, { signal });
         if (menuToggle) menuToggle.addEventListener('click', toggleSidebar, { signal });
         if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar, { signal });
-        if (sidebarScroll) sidebarScroll.addEventListener('scroll', saveScrollPositions, { passive: true, signal });
-        if (mainContent) mainContent.addEventListener('scroll', saveScrollPositions, { passive: true, signal });
+        if (sidebarScroll) sidebarScroll.addEventListener('scroll', queueScrollPositionSave, { passive: true, signal });
+        if (mainContent) mainContent.addEventListener('scroll', queueScrollPositionSave, { passive: true, signal });
+
+        // Improve Turbo perceived speed by preloading sidebar destinations on hover/focus.
+        document.querySelectorAll('#sidebar a[href]').forEach((link) => {
+            link.setAttribute('data-turbo-preload', 'true');
+        });
 
         // Close sidebar when clicking main content on small screens (but ignore clicks on the menu toggle)
         if (mainContent) {
@@ -343,6 +378,196 @@
             }, { signal });
         }
 
+        // --- Global Auto Refresh (30s) ---
+        const autoRefreshWidget = document.getElementById('auto-refresh-widget');
+        const autoRefreshStatus = document.getElementById('auto-refresh-status');
+        const autoRefreshCountdown = document.getElementById('auto-refresh-countdown');
+        const autoRefreshLast = document.getElementById('auto-refresh-last');
+        const AUTO_REFRESH_SECONDS = 30;
+        const autoRefreshNextKey = 'pqs.autoRefresh.nextAt';
+        const autoRefreshLastKey = 'pqs.autoRefresh.lastAt';
+        let remainingSeconds = AUTO_REFRESH_SECONDS;
+        let hasDirtyForm = false;
+
+        const formatTime = (date) => {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        };
+
+        const readSessionValue = (key) => {
+            try {
+                return window.sessionStorage.getItem(key);
+            } catch (error) {
+                return null;
+            }
+        };
+
+        const writeSessionValue = (key, value) => {
+            try {
+                window.sessionStorage.setItem(key, value);
+            } catch (error) {
+                // Ignore storage failures.
+            }
+        };
+
+        const getNextRefreshAt = () => {
+            const now = Date.now();
+            const stored = Number.parseInt(readSessionValue(autoRefreshNextKey) || '', 10);
+            if (!Number.isFinite(stored) || stored <= now) {
+                const next = now + (AUTO_REFRESH_SECONDS * 1000);
+                writeSessionValue(autoRefreshNextKey, String(next));
+                return next;
+            }
+
+            return stored;
+        };
+
+        const setNextRefreshAt = (timestamp) => {
+            writeSessionValue(autoRefreshNextKey, String(timestamp));
+        };
+
+        const markLastRefreshNow = () => {
+            writeSessionValue(autoRefreshLastKey, String(Date.now()));
+            if (autoRefreshLast) {
+                autoRefreshLast.textContent = `updated ${formatTime(new Date())}`;
+            }
+        };
+
+        const renderLastRefreshFromSession = () => {
+            if (!autoRefreshLast) {
+                return;
+            }
+
+            const stored = Number.parseInt(readSessionValue(autoRefreshLastKey) || '', 10);
+            if (Number.isFinite(stored) && stored > 0) {
+                autoRefreshLast.textContent = `updated ${formatTime(new Date(stored))}`;
+                return;
+            }
+
+            autoRefreshLast.textContent = 'updated just now';
+        };
+
+        const setRefreshUi = (state) => {
+            if (!autoRefreshWidget || !autoRefreshStatus || !autoRefreshCountdown) {
+                return;
+            }
+
+            if (state === 'active') {
+                autoRefreshWidget.classList.remove('border-amber-100', 'bg-amber-50/80', 'text-amber-800');
+                autoRefreshWidget.classList.add('border-emerald-100', 'bg-emerald-50/70', 'text-emerald-800');
+                autoRefreshStatus.textContent = 'Auto refresh';
+                autoRefreshCountdown.textContent = `${remainingSeconds}s`;
+                return;
+            }
+
+            autoRefreshWidget.classList.remove('border-emerald-100', 'bg-emerald-50/70', 'text-emerald-800');
+            autoRefreshWidget.classList.add('border-amber-100', 'bg-amber-50/80', 'text-amber-800');
+            autoRefreshStatus.textContent = 'Refresh paused';
+            autoRefreshCountdown.textContent = `${remainingSeconds}s`;
+        };
+
+        const hasActiveInputFocus = () => {
+            const active = document.activeElement;
+            if (!active) {
+                return false;
+            }
+
+            const tagName = (active.tagName || '').toLowerCase();
+            if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+                return true;
+            }
+
+            return active.isContentEditable === true;
+        };
+
+        const canAutoRefresh = () => {
+            if (document.visibilityState !== 'visible') {
+                return false;
+            }
+
+            if (hasActiveInputFocus()) {
+                return false;
+            }
+
+            if (hasDirtyForm) {
+                return false;
+            }
+
+            return true;
+        };
+
+        const triggerAutoRefresh = () => {
+            const refreshDetail = {
+                source: 'global-timer',
+                at: Date.now(),
+            };
+
+            const refreshEvent = new CustomEvent('pqs:auto-refresh', {
+                cancelable: true,
+                detail: refreshDetail,
+            });
+
+            const shouldFallbackRefresh = document.dispatchEvent(refreshEvent);
+            if (!shouldFallbackRefresh) {
+                return;
+            }
+
+            if (typeof window.__pqsAutoRefresh === 'function') {
+                try {
+                    const wasHandled = window.__pqsAutoRefresh(refreshDetail);
+                    if (wasHandled === true) {
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Auto-refresh hook failed:', error);
+                }
+            }
+
+            if (window.Turbo && typeof window.Turbo.visit === 'function') {
+                window.Turbo.visit(window.location.href, { action: 'replace' });
+                return;
+            }
+
+            window.location.reload();
+        };
+
+        document.querySelectorAll('form').forEach((form) => {
+            form.addEventListener('input', () => {
+                hasDirtyForm = true;
+            }, { signal });
+
+            form.addEventListener('change', () => {
+                hasDirtyForm = true;
+            }, { signal });
+
+            form.addEventListener('submit', () => {
+                hasDirtyForm = false;
+            }, { signal });
+        });
+
+        if (autoRefreshWidget) {
+            renderLastRefreshFromSession();
+
+            autoRefreshIntervalId = window.setInterval(() => {
+                if (!canAutoRefresh()) {
+                    remainingSeconds = AUTO_REFRESH_SECONDS;
+                    setNextRefreshAt(Date.now() + (AUTO_REFRESH_SECONDS * 1000));
+                    setRefreshUi('paused');
+                    return;
+                }
+
+                const nextRefreshAt = getNextRefreshAt();
+                remainingSeconds = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
+                setRefreshUi('active');
+                if (remainingSeconds > 0) {
+                    return;
+                }
+
+                markLastRefreshNow();
+                setNextRefreshAt(Date.now() + (AUTO_REFRESH_SECONDS * 1000));
+                triggerAutoRefresh();
+            }, 1000);
+        }
+
         document.addEventListener('turbo:before-cache', () => {
             saveScrollPositions();
             userMenuDropdown?.classList.add('hidden');
@@ -351,6 +576,8 @@
                 logoutModal.querySelector('[role="dialog"]')?.classList.add('scale-95');
             }
         }, { once: true, signal });
+
+        // Turbo-specific transition/progress handlers removed.
     })();
 </script>
 <div id="logout-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity duration-300 ease-in-out opacity-0 hidden">

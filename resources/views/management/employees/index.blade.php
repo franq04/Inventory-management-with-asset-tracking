@@ -3,17 +3,19 @@
 @section('title', 'Manage Employees')
 
 @section('content')
-<div class="space-y-8 animate-card">
-    {{-- Header --}}
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-3xl font-extrabold text-[#1a3a2d]">Manage Employees</h2>
-            <p class="mt-1 text-gray-500">Oversee employee records, assignments, and system access.</p>
+<div class="space-y-8 animate-card" id="employeesPage">
+    <div class="relative overflow-hidden rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-7 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
+        <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.16),_transparent_58%)]"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-2xl space-y-2">
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Workforce Registry
+                </span>
+                <h2 class="text-3xl font-extrabold tracking-tight">Manage Employees</h2>
+                <p class="text-sm text-white/75">Oversee employee records, assignments, and system access.</p>
+            </div>
         </div>
-        <a href="{{ route('employees.create') }}" class="bg-[#1a3a2d] text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 hover:shadow-lg flex items-center gap-2">
-            <i class="fas fa-user-plus"></i>
-            Add New Employee
-        </a>
     </div>
 
     {{-- Session Status --}}
@@ -30,13 +32,13 @@
                 ['label' => 'Total Employees', 'value' => $stats['total'], 'icon' => 'fa-users', 'color' => 'blue'],
                 ['label' => 'With Accounts', 'value' => $stats['withAccount'], 'icon' => 'fa-user-check', 'color' => 'emerald'],
                 ['label' => 'Without Accounts', 'value' => $stats['withoutAccount'], 'icon' => 'fa-user-times', 'color' => 'amber'],
-                ['label' => 'Coverage Ratio', 'value' => ($stats['total'] > 0) ? number_format(($stats['withAccount'] / max($stats['total'], 1)) * 100, 1) . '%' : '0%', 'icon' => 'fa-percentage', 'color' => 'purple'],
+                ['label' => 'Coverage Ratio', 'value' => ($stats['total'] > 0) ? number_format(($stats['withAccount'] / max($stats['total'], 1)) * 100, 1) . '%' : '0%', 'icon' => 'fa-percentage', 'color' => 'teal'],
             ];
             $colors = [
                 'blue' => 'bg-blue-100 text-blue-600',
                 'emerald' => 'bg-emerald-100 text-emerald-600',
                 'amber' => 'bg-amber-100 text-amber-600',
-                'purple' => 'bg-purple-100 text-purple-600',
+                'teal' => 'bg-teal-100 text-teal-700',
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -56,18 +58,18 @@
         {{-- Main Content Column --}}
         <div class="space-y-6 lg:col-span-2">
             {{-- Enhanced Filters & Actions --}}
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4">
-                <form method="GET" class="space-y-4">
+            <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
+                <form method="GET" class="space-y-4" id="employeesFiltersForm" action="{{ route('employees.index') }}">
                     <div class="relative w-full">
-                        <label for="search" class="text-xs font-semibold text-gray-500">Search</label>
-                        <i class="fas fa-search absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-gray-400"></i>
+                        <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
+                        <i class="fas fa-search absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
                         <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search by ID, name, email, or contact..."
-                               class="w-full mt-1 rounded-xl border-gray-200 pl-11 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" data-auto-submit />
+                               class="h-11 w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                             <label for="division" class="text-xs font-semibold text-gray-500">Division</label>
-                            <select id="division" name="division" data-auto-submit class="mt-1 w-full rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                             <label for="division" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Division</label>
+                            <select id="division" name="division" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 py-[9px] text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
                                 <option value="" @selected(!$divisionFilter)>All Divisions</option>
                                 @foreach ($divisions as $division)
                                     <option value="{{ $division->division_id }}" @selected($divisionFilter == $division->division_id)>
@@ -77,8 +79,8 @@
                             </select>
                         </div>
                          <div>
-                            <label for="section" class="text-xs font-semibold text-gray-500">Section</label>
-                            <select id="section" name="section" data-auto-submit class="mt-1 w-full rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                            <label for="section" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Section</label>
+                            <select id="section" name="section" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 py-[9px] text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
                                 <option value="" @selected(!$sectionFilter)>All Sections</option>
                                 @foreach ($sections as $section)
                                     <option value="{{ $section->section_id }}" @selected($sectionFilter == $section->section_id)>
@@ -90,18 +92,21 @@
                     </div>
                      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
                         <div class="w-full sm:w-56">
-                            <label for="assignment" class="text-xs font-semibold text-gray-500">Account Assignment</label>
-                            <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-xl border-gray-200 shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                            <label for="assignment" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Account Assignment</label>
+                            <select id="assignment" name="assignment" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 py-[9px] text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
                                 <option value="" @selected(!$assignmentFilter)>Any</option>
                                 <option value="with" @selected($assignmentFilter === 'with')>With account</option>
                                 <option value="without" @selected($assignmentFilter === 'without')>Without account</option>
                             </select>
                         </div>
                          <div class="flex items-center gap-2">
-                            <button type="button" id="employeesPrintPdfBtn" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100">
+                            <a id="employeesResetFilters" href="{{ route('employees.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
+                                <i class="fas fa-undo"></i>
+                            </a>
+                            <button type="button" id="employeesPrintPdfBtn" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition-all duration-300 hover:border-red-300 hover:bg-red-100 hover:shadow-md">
                                 <i class="fas fa-file-pdf text-red-500"></i> Print PDF
                             </button>
-                            <button type="button" id="employeesExportExcelBtn" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100">
+                            <button type="button" id="employeesExportExcelBtn" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-700 shadow-sm transition-all duration-300 hover:border-green-300 hover:bg-green-100 hover:shadow-md">
                                 <i class="fas fa-file-excel text-green-600"></i> Export Excel
                             </button>
                         </div>
@@ -111,80 +116,23 @@
 
             {{-- Employees Table --}}
             <div class="bg-white border border-gray-100 rounded-2xl shadow-sm">
-                <div class="px-6 py-4 border-b border-gray-100">
-                     <h3 class="text-lg font-semibold text-gray-800">Employee Registry</h3>
-                     <p class="text-sm text-gray-500" id="employeeCount">{{ number_format($employees->total()) }} records found</p>
+                <div class="px-6 py-4 border-b border-gray-100 flex items-start justify-between gap-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800">Employee Registry</h3>
+                        <p class="text-sm text-gray-500" id="employeeCount">{{ number_format($employees->total()) }} records found</p>
+                    </div>
+                    <a href="{{ route('employees.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">
+                        <i class="fas fa-user-plus"></i>
+                        Add New Employee
+                    </a>
                 </div>
                 <div class="overflow-x-auto" id="employeeTableContainer">
-                    <table class="min-w-full divide-y divide-gray-100">
-                        <thead class="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            <tr>
-                                <th class="px-6 py-3">Employee</th>
-                                <th class="px-6 py-3">Contact</th>
-                                <th class="px-6 py-3">Section / Division</th>
-                                <th class="px-6 py-3 text-right">Account</th>
-                                <th class="px-6 py-3 text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
-                            @forelse ($employees as $employee)
-                                <tr class="hover:bg-gray-50/50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="font-semibold text-gray-900">{{ trim(($employee->first_name ?? '') . ' ' . ($employee->last_name ?? '')) }}</div>
-                                        <div class="text-xs text-gray-500 font-mono">{{ $employee->employee_id }}</div>
-                                        @if ($employee->position)
-                                            <div class="text-xs text-emerald-600 font-semibold mt-1">{{ $employee->position->position_title }}</div>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div>{{ $employee->email ?: '—' }}</div>
-                                        <div class="text-xs text-gray-500">{{ $employee->contact_no ?: '—' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-medium">{{ optional($employee->section)->section_name ?: 'Unassigned' }}</div>
-                                        <div class="text-xs text-gray-500">{{ optional(optional($employee->section)->division)->division_name ?: '—' }}</div>
-                                    </td>
-                                    <td class="px-6 py-4 text-right">
-                                        @if ($employee->account)
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold uppercase tracking-wide">
-                                                {{ $employee->account->username }}
-                                            </span>
-                                        @else
-                                            <span class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold uppercase tracking-wide">
-                                                None
-                                            </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center justify-center gap-2">
-                                            <a href="{{ route('employees.edit', $employee) }}" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border bg-white text-gray-600 hover:bg-gray-50 hover:text-[#1a3a2d] transition" title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <form method="POST" action="{{ route('employees.destroy', $employee) }}" onsubmit="return confirm('Delete this employee record? This action cannot be undone.');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-lg border bg-white text-red-500 hover:bg-red-50 hover:text-red-700 transition" title="Delete">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center text-sm text-gray-500">
-                                        <i class="fas fa-users-slash text-4xl text-gray-300"></i>
-                                        <p class="mt-3 font-medium">No employees matched your filters.</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                    @include('management.employees._table', ['employees' => $employees])
                 </div>
 
                 @if ($employees->hasPages())
                 <div class="px-6 py-4 border-t border-gray-100" id="employeePagination">
-                    {{ $employees->onEachSide(1)->links() }}
+                    {{ $employees->onEachSide(1)->links('vendor.pagination.procurement') }}
                 </div>
                 @endif
             </div>
@@ -240,91 +188,1144 @@
         </div>
     </div>
 </div>
+
+<div id="employeesViewModal" class="fixed inset-0 z-[120] hidden opacity-0 transition-opacity duration-300" aria-labelledby="employeesViewTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-employee-view-modal></div>
+    <div class="relative flex min-h-full items-center justify-center p-3 sm:p-5">
+        <div class="employee-view-panel relative w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center justify-between rounded-t-2xl bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+                <div>
+                    <h3 id="employeesViewTitle" class="text-lg font-bold tracking-tight">Employee Details</h3>
+                    <p class="text-xs text-white/80">Review profile, then edit or remove record.</p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition-all hover:bg-white/10 hover:text-white" data-close-employee-view-modal data-employee-view-focus>
+                    <span class="sr-only">Close</span>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="max-h-[calc(100vh-10.5rem)] space-y-5 overflow-y-auto px-5 py-4 sm:px-6" id="employeeModalBody">
+                <div id="employeeModalDetailsSection" class="space-y-5 transition-all duration-200 opacity-100 translate-y-0">
+                    <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                        <div class="flex items-start gap-4">
+                            <img id="employeeViewAvatar" src="{{ asset('images/default-avatar.png') }}" alt="Employee profile" class="h-16 w-16 rounded-xl border border-emerald-200 object-cover shadow-sm" />
+                            <div>
+                                <p id="employeeViewName" class="text-lg font-bold text-[#1a3a2d]"></p>
+                                <p id="employeeViewId" class="text-xs font-semibold uppercase tracking-[0.16em] text-[#1a3a2d]/70"></p>
+                                <p id="employeeViewPosition" class="mt-1 text-sm font-medium text-emerald-700"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Record ID</p>
+                            <p id="employeeViewRecordId" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">First Name</p>
+                            <p id="employeeViewFirstName" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Middle Name</p>
+                            <p id="employeeViewMiddleName" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Last Name</p>
+                            <p id="employeeViewLastName" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Suffix</p>
+                            <p id="employeeViewSuffix" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Date of Birth</p>
+                            <p id="employeeViewDateOfBirth" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Gender</p>
+                            <p id="employeeViewGender" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Marital Status</p>
+                            <p id="employeeViewMaritalStatus" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Email</p>
+                            <p id="employeeViewEmail" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Contact</p>
+                            <p id="employeeViewContact" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Division</p>
+                            <p id="employeeViewDivision" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Section</p>
+                            <p id="employeeViewSection" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Account Username</p>
+                            <p id="employeeViewAccount" class="mt-1 text-sm font-semibold text-emerald-700"></p>
+                        </div>
+                        <div class="rounded-xl border border-gray-100 bg-white p-3 sm:col-span-2 lg:col-span-1">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Account Access</p>
+                            <p id="employeeViewAccountAccess" class="mt-1 text-sm font-medium text-gray-800"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="employeeModalEditSection" class="hidden space-y-4 transition-all duration-200 opacity-0 translate-y-1 pointer-events-none">
+                    <div class="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-white p-4">
+                        <div class="flex items-start gap-3">
+                            <img id="employeeEditAvatar" src="{{ asset('images/default-avatar.png') }}" alt="Employee avatar" class="h-12 w-12 rounded-xl border border-emerald-200 object-cover shadow-sm" />
+                            <div>
+                                <p class="text-base font-bold text-[#1a3a2d]">Edit Employee Record</p>
+                                <p class="mt-1 text-sm text-emerald-900/80">Full-profile modal editor with assignment and access details. Save updates instantly without leaving this page.</p>
+                                <div class="mt-3 flex flex-wrap items-center gap-2">
+                                    <input id="employeeEditProfileImage" name="profile_img" type="file" accept="image/*" class="hidden" />
+                                    <label for="employeeEditProfileImage" class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-300 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-800 transition hover:bg-emerald-50">
+                                        <i class="fas fa-camera"></i>
+                                        Change Photo
+                                    </label>
+                                    <span id="employeeEditProfileImageName" class="text-xs text-emerald-800/80">No new file selected</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="employeeModalEditForm" class="space-y-4">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div>
+                                <label for="employeeEditEmployeeId" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Employee ID</label>
+                                <input id="employeeEditEmployeeId" name="employee_id" type="text" readonly class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-3 text-sm text-gray-700" />
+                            </div>
+                            <div>
+                                <label for="employeeEditDateOfBirth" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date of Birth</label>
+                                <input id="employeeEditDateOfBirth" name="date_of_birth" type="date" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                            </div>
+                            <div>
+                                <label for="employeeEditSuffix" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Suffix</label>
+                                <input id="employeeEditSuffix" name="suffix" type="text" maxlength="50" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="Jr., Sr., III" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <div>
+                                <label for="employeeEditFirstName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">First Name</label>
+                                <input id="employeeEditFirstName" name="first_name" type="text" required maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                            </div>
+                            <div>
+                                <label for="employeeEditMiddleName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Middle Name</label>
+                                <input id="employeeEditMiddleName" name="middle_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="employeeEditLastName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Last Name</label>
+                                <input id="employeeEditLastName" name="last_name" type="text" required maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                            </div>
+                            <div>
+                                <label for="employeeEditEmail" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Email</label>
+                                <input id="employeeEditEmail" name="email" type="email" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="name@example.com" />
+                            </div>
+                            <div>
+                                <label for="employeeEditContact" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Contact</label>
+                                <input id="employeeEditContact" name="contact_no" type="text" maxlength="20" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="09XXXXXXXXX" />
+                            </div>
+                            <div>
+                                <label for="employeeEditGender" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Gender</label>
+                                <select id="employeeEditGender" name="gender" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Select gender</option>
+                                    @foreach ($genders as $gender)
+                                        <option value="{{ $gender }}">{{ ucfirst($gender) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="employeeEditMaritalStatus" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Marital Status</label>
+                                <select id="employeeEditMaritalStatus" name="marital_status" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Select status</option>
+                                    @foreach ($maritalStatuses as $status)
+                                        <option value="{{ $status }}">{{ ucfirst($status) }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="employeeEditDivision" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Division</label>
+                                <select id="employeeEditDivision" name="division_id" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Unassigned</option>
+                                    @foreach ($divisions as $division)
+                                        <option value="{{ $division->division_id }}">{{ $division->division_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label for="employeeEditSection" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Section</label>
+                                <select id="employeeEditSection" name="section_id" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Unassigned</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="employeeEditPosition" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Position</label>
+                                <select id="employeeEditPosition" name="position_id" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Unassigned</option>
+                                    @foreach ($positions as $position)
+                                        <option value="{{ $position->position_id }}">{{ $position->position_title }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="employeeEditAccount" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Linked Account</label>
+                                <select id="employeeEditAccount" name="account_id" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                    <option value="">Unassigned</option>
+                                </select>
+                            </div>
+                            <div id="employeeModalCreateAccountWrap" class="hidden sm:col-span-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
+                                <label class="inline-flex items-start gap-2 text-sm font-semibold text-emerald-900">
+                                    <input id="employeeModalCreateAccountToggle" name="create_account" type="checkbox" value="1" class="mt-0.5 h-4 w-4 rounded border-emerald-300 text-emerald-700 focus:ring-emerald-500" />
+                                    <span>Create a new account for this employee</span>
+                                </label>
+
+                                <div id="employeeModalCreateAccountFields" class="mt-3 hidden grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <div>
+                                        <label for="employeeModalNewAccountUsername" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Username</label>
+                                        <input id="employeeModalNewAccountUsername" name="new_account_username" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="Enter username" />
+                                    </div>
+                                    <div>
+                                        <label for="employeeModalNewAccountRole" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Role</label>
+                                        <select id="employeeModalNewAccountRole" name="new_account_role" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                            <option value="employee">Employee</option>
+                                            <option value="custodian">Custodian</option>
+                                            <option value="iac">IAC</option>
+                                            <option value="division_head">Division head</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label for="employeeModalNewAccountPassword" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Password (Optional)</label>
+                                        <input id="employeeModalNewAccountPassword" name="new_account_password" type="password" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="Leave blank to use default password" />
+                                        <p class="mt-1 text-xs text-emerald-900/70">If blank, default password is <span class="font-semibold">password</span>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="employeeModalEditError" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"></p>
+                        <div class="flex justify-end border-t border-gray-100 pt-3">
+                            <button type="submit" id="employeeModalSaveBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#204835]">
+                                <i class="fas fa-save"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 bg-gray-50/70 px-4 py-3">
+                <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                    <button type="button" id="employeeModalDetailsAction" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow">
+                        <i class="fas fa-eye text-xs"></i>
+                        Details
+                    </button>
+                    <button type="button" id="employeeModalEditAction" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100">
+                        <i class="fas fa-pen text-xs"></i>
+                        Edit
+                    </button>
+                    <button type="button" id="employeeViewDeleteBtn" class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50">
+                        <i class="fas fa-trash text-xs"></i>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="employeeDeleteConfirmModal" class="fixed inset-0 z-[140] hidden opacity-0 transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="employeeDeleteConfirmTitle">
+    <div class="absolute inset-0 bg-black/60" data-close-employee-delete-confirm></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-2xl border border-red-100 bg-white p-5 shadow-2xl">
+            <div class="flex items-start gap-3">
+                <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-100 text-red-600">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </span>
+                <div class="min-w-0">
+                    <h4 id="employeeDeleteConfirmTitle" class="text-lg font-bold text-gray-900">Confirm Employee Deletion</h4>
+                    <p class="mt-1 text-sm text-gray-600">You are about to delete <span id="employeeDeleteConfirmName" class="font-semibold text-gray-900"></span>. This action cannot be undone.</p>
+                </div>
+            </div>
+            <div class="mt-5 flex items-center justify-end gap-2">
+                <button type="button" class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-close-employee-delete-confirm>Cancel</button>
+                <button type="button" id="employeeDeleteConfirmBtn" class="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700">
+                    <i class="fas fa-trash mr-1"></i>
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="employeesToast" class="pointer-events-none fixed right-4 top-20 z-[130] hidden min-w-[260px] max-w-md rounded-xl border border-emerald-800 bg-[#1a3a2d] px-5 py-3 text-sm font-semibold text-white shadow-2xl"></div>
 @endsection
 
 @push('scripts')
+@php
+    $sectionsByDivisionData = $divisions->mapWithKeys(function ($division) {
+        return [
+            (string) $division->division_id => $division->sections->map(function ($section) {
+                return [
+                    'id' => (string) $section->section_id,
+                    'name' => $section->section_name,
+                ];
+            })->values(),
+        ];
+    });
+
+    $accountOptionsData = $accounts->map(function ($account) {
+        return [
+            'id' => (string) $account->account_id,
+            'label' => $account->username . ' (' . ucfirst(str_replace('_', ' ', (string) $account->role)) . ')',
+            'employee_id' => (string) ($account->employee->employee_id ?? ''),
+        ];
+    })->values();
+@endphp
 <script>
     (function () {
+        const form = document.getElementById('employeesFiltersForm');
         const tableWrapper = document.getElementById('employeeTableContainer');
         const totalSpan = document.getElementById('employeeCount');
         const paginationDiv = document.getElementById('employeePagination');
+        const searchInput = document.getElementById('search');
+        const divisionSelect = document.getElementById('division');
+        const sectionSelect = document.getElementById('section');
+        const assignmentSelect = document.getElementById('assignment');
+        const resetLink = document.getElementById('employeesResetFilters');
+        const pdfBtn = document.getElementById('employeesPrintPdfBtn');
+        const excelBtn = document.getElementById('employeesExportExcelBtn');
+        const viewModal = document.getElementById('employeesViewModal');
+        const viewPanel = viewModal?.querySelector('.employee-view-panel') ?? null;
+        const viewFocusTarget = viewModal?.querySelector('[data-employee-view-focus]') ?? null;
+        const toastEl = document.getElementById('employeesToast');
 
-        document.querySelectorAll('[data-auto-submit]').forEach(function (element) {
-            const eventType = element.type === 'text' ? 'input' : 'change';
-            element.addEventListener(eventType, function () {
-                const form = element.closest('form');
-                if (!form) return;
-                const params = new URLSearchParams(new FormData(form));
-                const url = `${form.action || window.location.pathname}?${params.toString()}`;
-                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (tableWrapper && data.html) {
-                            tableWrapper.innerHTML = data.html;
-                        }
-                        if (totalSpan && typeof data.total !== 'undefined') {
-                            totalSpan.textContent = `${Number(data.total).toLocaleString()} records found`;
-                        }
-                        if (paginationDiv && data.pagination) {
-                            paginationDiv.innerHTML = data.pagination;
-                            bindPaginationLinks();
-                        }
-                    });
+        const viewName = document.getElementById('employeeViewName');
+        const viewId = document.getElementById('employeeViewId');
+        const viewPosition = document.getElementById('employeeViewPosition');
+        const viewAvatar = document.getElementById('employeeViewAvatar');
+        const viewRecordId = document.getElementById('employeeViewRecordId');
+        const viewFirstName = document.getElementById('employeeViewFirstName');
+        const viewMiddleName = document.getElementById('employeeViewMiddleName');
+        const viewLastName = document.getElementById('employeeViewLastName');
+        const viewSuffix = document.getElementById('employeeViewSuffix');
+        const viewDateOfBirth = document.getElementById('employeeViewDateOfBirth');
+        const viewGender = document.getElementById('employeeViewGender');
+        const viewMaritalStatus = document.getElementById('employeeViewMaritalStatus');
+        const viewEmail = document.getElementById('employeeViewEmail');
+        const viewContact = document.getElementById('employeeViewContact');
+        const viewSection = document.getElementById('employeeViewSection');
+        const viewDivision = document.getElementById('employeeViewDivision');
+        const viewAccount = document.getElementById('employeeViewAccount');
+        const viewAccountAccess = document.getElementById('employeeViewAccountAccess');
+        const detailsSection = document.getElementById('employeeModalDetailsSection');
+        const editSectionPanel = document.getElementById('employeeModalEditSection');
+        const detailsActionBtn = document.getElementById('employeeModalDetailsAction');
+        const editActionBtn = document.getElementById('employeeModalEditAction');
+        const editForm = document.getElementById('employeeModalEditForm');
+        const saveBtn = document.getElementById('employeeModalSaveBtn');
+        const editError = document.getElementById('employeeModalEditError');
+        const editEmployeeId = document.getElementById('employeeEditEmployeeId');
+        const editDateOfBirth = document.getElementById('employeeEditDateOfBirth');
+        const editFirstName = document.getElementById('employeeEditFirstName');
+        const editMiddleName = document.getElementById('employeeEditMiddleName');
+        const editLastName = document.getElementById('employeeEditLastName');
+        const editSuffix = document.getElementById('employeeEditSuffix');
+        const editEmail = document.getElementById('employeeEditEmail');
+        const editContact = document.getElementById('employeeEditContact');
+        const editGender = document.getElementById('employeeEditGender');
+        const editMaritalStatus = document.getElementById('employeeEditMaritalStatus');
+        const editDivision = document.getElementById('employeeEditDivision');
+        const editSectionField = document.getElementById('employeeEditSection');
+        const editPosition = document.getElementById('employeeEditPosition');
+        const editAccount = document.getElementById('employeeEditAccount');
+        const editAvatar = document.getElementById('employeeEditAvatar');
+        const editProfileImageInput = document.getElementById('employeeEditProfileImage');
+        const editProfileImageName = document.getElementById('employeeEditProfileImageName');
+        const createAccountWrap = document.getElementById('employeeModalCreateAccountWrap');
+        const createAccountToggle = document.getElementById('employeeModalCreateAccountToggle');
+        const createAccountFields = document.getElementById('employeeModalCreateAccountFields');
+        const newAccountUsername = document.getElementById('employeeModalNewAccountUsername');
+        const newAccountRole = document.getElementById('employeeModalNewAccountRole');
+        const newAccountPassword = document.getElementById('employeeModalNewAccountPassword');
+        const viewDeleteBtn = document.getElementById('employeeViewDeleteBtn');
+        const deleteConfirmModal = document.getElementById('employeeDeleteConfirmModal');
+        const deleteConfirmBtn = document.getElementById('employeeDeleteConfirmBtn');
+        const deleteConfirmName = document.getElementById('employeeDeleteConfirmName');
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+        const sectionsByDivision = @json($sectionsByDivisionData);
+
+        const allSections = Object.values(sectionsByDivision).flat();
+
+        const accountOptions = @json($accountOptionsData);
+
+        const buildProfileImageUrl = (path) => {
+            if (!path) return `{{ asset('images/default-avatar.png') }}`;
+            if (/^https?:\/\//i.test(path)) return path;
+            return `{{ asset('') }}${String(path).replace(/^\//, '')}`;
+        };
+
+        const formatDateForView = (isoDate) => {
+            if (!isoDate) return 'Not provided';
+            const date = new Date(`${isoDate}T00:00:00`);
+            if (Number.isNaN(date.getTime())) return isoDate;
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            }).format(date);
+        };
+
+        const normalizeNamePart = (value) => String(value || '').trim();
+
+        const buildLegalName = (firstName, middleName, lastName, suffix) => {
+            const first = normalizeNamePart(firstName);
+            const middle = normalizeNamePart(middleName);
+            const last = normalizeNamePart(lastName);
+            const suffixPart = normalizeNamePart(suffix);
+
+            const givenNames = [first, middle].filter(Boolean).join(' ').trim();
+            let legal = '';
+
+            if (last && givenNames) {
+                legal = `${last}, ${givenNames}`;
+            } else {
+                legal = [last, givenNames].filter(Boolean).join(' ');
+            }
+
+            if (suffixPart) {
+                legal = `${legal}${legal ? ' ' : ''}${suffixPart}`;
+            }
+
+            return legal || '—';
+        };
+
+        if (!form || !tableWrapper) return;
+
+        let debounceTimer = null;
+        let activeController = null;
+        let modalDeleteUrl = null;
+        let modalUpdateUrl = null;
+        let activeModalButton = null;
+        let pendingDelete = false;
+        let toastTimer = null;
+
+        const showToast = (message, type = 'success') => {
+            if (!toastEl || !message) return;
+
+            toastEl.textContent = message;
+            toastEl.classList.remove('hidden', 'border-emerald-800', 'bg-[#1a3a2d]', 'border-red-800', 'bg-red-700');
+            if (type === 'error') {
+                toastEl.classList.add('border-red-800', 'bg-red-700');
+            } else {
+                toastEl.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
+            }
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toastEl.classList.add('hidden');
+            }, 2600);
+        };
+
+        const renderSectionsForModal = (divisionId, selectedSection = '') => {
+            if (!editSectionField) return;
+
+            const normalizedDivision = divisionId ? String(divisionId) : '';
+            const options = normalizedDivision && sectionsByDivision[normalizedDivision]
+                ? sectionsByDivision[normalizedDivision]
+                : allSections;
+
+            editSectionField.innerHTML = '<option value="">Unassigned</option>';
+            options.forEach((section) => {
+                const opt = document.createElement('option');
+                opt.value = String(section.id);
+                opt.textContent = section.name;
+                if (selectedSection && String(selectedSection) === String(section.id)) {
+                    opt.selected = true;
+                }
+                editSectionField.appendChild(opt);
             });
+        };
+
+        const renderAccountsForModal = (currentEmployeeCode = '', selectedAccountId = '', currentLabel = '') => {
+            if (!editAccount) return;
+
+            editAccount.innerHTML = '<option value="">Unassigned</option>';
+
+            if (selectedAccountId) {
+                const current = accountOptions.find((account) => String(account.id) === String(selectedAccountId));
+
+                const opt = document.createElement('option');
+                opt.value = String(selectedAccountId);
+                opt.textContent = current?.label || currentLabel || `Account #${selectedAccountId}`;
+                opt.selected = true;
+                editAccount.appendChild(opt);
+            }
+
+            if (selectedAccountId && !editAccount.querySelector(`option[value="${String(selectedAccountId)}"]`)) {
+                const opt = document.createElement('option');
+                opt.value = String(selectedAccountId);
+                opt.textContent = currentLabel || `Account #${selectedAccountId}`;
+                opt.selected = true;
+                editAccount.appendChild(opt);
+            }
+        };
+
+        const toggleDeleteConfirm = (show) => {
+            if (!deleteConfirmModal) return;
+
+            if (show) {
+                deleteConfirmModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    deleteConfirmModal.classList.remove('opacity-0');
+                    deleteConfirmModal.classList.add('opacity-100');
+                });
+                return;
+            }
+
+            deleteConfirmModal.classList.remove('opacity-100');
+            deleteConfirmModal.classList.add('opacity-0');
+            setTimeout(() => {
+                deleteConfirmModal.classList.add('hidden');
+            }, 200);
+        };
+
+        const fieldElements = {
+            first_name: editFirstName,
+            middle_name: editMiddleName,
+            last_name: editLastName,
+            suffix: editSuffix,
+            date_of_birth: editDateOfBirth,
+            gender: editGender,
+            marital_status: editMaritalStatus,
+            contact_no: editContact,
+            email: editEmail,
+            division_id: editDivision,
+            section_id: editSectionField,
+            position_id: editPosition,
+            account_id: editAccount,
+            new_account_username: newAccountUsername,
+            new_account_role: newAccountRole,
+            new_account_password: newAccountPassword,
+            create_account: createAccountToggle,
+        };
+
+        const resetCreateAccountFields = () => {
+            if (createAccountToggle) createAccountToggle.checked = false;
+            if (newAccountUsername) newAccountUsername.value = '';
+            if (newAccountRole) newAccountRole.value = 'employee';
+            if (newAccountPassword) newAccountPassword.value = '';
+            createAccountFields?.classList.add('hidden');
+        };
+
+        const syncCreateAccountVisibility = (hasLinkedAccount = false) => {
+            if (!createAccountWrap) return;
+
+            const accountChosen = Boolean(editAccount?.value);
+            const canCreate = !hasLinkedAccount && !accountChosen;
+            createAccountWrap.classList.toggle('hidden', !canCreate);
+
+            if (!canCreate) {
+                resetCreateAccountFields();
+            }
+        };
+
+        const clearFieldError = (element) => {
+            if (!element) return;
+            element.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            element.removeAttribute('aria-invalid');
+
+            const existing = element.parentElement?.querySelector('[data-modal-field-error]');
+            if (existing) {
+                existing.remove();
+            }
+        };
+
+        const clearModalValidation = () => {
+            Object.values(fieldElements).forEach((element) => clearFieldError(element));
+        };
+
+        const setFieldError = (element, message) => {
+            if (!element) return;
+
+            clearFieldError(element);
+            element.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            element.setAttribute('aria-invalid', 'true');
+
+            if (message) {
+                const msg = document.createElement('p');
+                msg.className = 'mt-1 text-xs font-medium text-red-600';
+                msg.setAttribute('data-modal-field-error', '1');
+                msg.textContent = message;
+                element.parentElement?.appendChild(msg);
+            }
+        };
+
+        const applyValidationErrors = (errors) => {
+            clearModalValidation();
+            const messages = [];
+
+            Object.entries(errors || {}).forEach(([field, values]) => {
+                const message = Array.isArray(values) ? String(values[0] || '') : String(values || '');
+                if (message) {
+                    messages.push(message);
+                }
+
+                if (fieldElements[field]) {
+                    setFieldError(fieldElements[field], message || 'Invalid value.');
+                }
+            });
+
+            if (editError && messages.length) {
+                editError.textContent = messages[0];
+                editError.classList.remove('hidden');
+            }
+        };
+
+        Object.values(fieldElements).forEach((element) => {
+            if (!element) return;
+            const clear = () => clearFieldError(element);
+            element.addEventListener('input', clear);
+            element.addEventListener('change', clear);
         });
+
+        const animateSectionSwitch = (showEdit) => {
+            if (!detailsSection || !editSectionPanel) return;
+
+            const toShow = showEdit ? editSectionPanel : detailsSection;
+            const toHide = showEdit ? detailsSection : editSectionPanel;
+
+            toHide.classList.remove('opacity-100', 'translate-y-0');
+            toHide.classList.add('opacity-0', '-translate-y-1', 'pointer-events-none');
+
+            setTimeout(() => {
+                toHide.classList.add('hidden');
+                toHide.classList.remove('-translate-y-1');
+            }, 180);
+
+            toShow.classList.remove('hidden', 'pointer-events-none', 'opacity-0', 'translate-y-1');
+            toShow.classList.add('opacity-0', 'translate-y-1');
+
+            requestAnimationFrame(() => {
+                toShow.classList.remove('opacity-0', 'translate-y-1');
+                toShow.classList.add('opacity-100', 'translate-y-0');
+            });
+        };
+
+        const toggleViewModal = (show) => {
+            if (!viewModal || !viewPanel) return;
+
+            if (show) {
+                viewModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+
+                requestAnimationFrame(() => {
+                    viewModal.classList.remove('opacity-0');
+                    viewModal.classList.add('opacity-100');
+                    viewPanel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+                    viewFocusTarget?.focus();
+                });
+                return;
+            }
+
+            viewModal.classList.remove('opacity-100');
+            viewModal.classList.add('opacity-0');
+            viewPanel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+
+            setTimeout(() => {
+                viewModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                modalDeleteUrl = null;
+                modalUpdateUrl = null;
+                activeModalButton = null;
+                pendingDelete = false;
+                toggleDeleteConfirm(false);
+                editError?.classList.add('hidden');
+            }, 300);
+        };
+
+        const openViewModal = (button) => {
+            if (!viewName || !viewId || !viewPosition || !viewEmail || !viewContact || !viewSection || !viewDivision || !viewAccount) {
+                return;
+            }
+
+            const legalName = buildLegalName(
+                button.dataset.firstName || '',
+                button.dataset.middleName || '',
+                button.dataset.lastName || '',
+                button.dataset.suffix || ''
+            );
+
+            viewName.textContent = legalName;
+            viewId.textContent = button.dataset.employeeCode || '—';
+            viewPosition.textContent = button.dataset.employeePosition || 'Unassigned';
+            if (viewAvatar) {
+                viewAvatar.src = buildProfileImageUrl(button.dataset.profileImg || '');
+            }
+            if (viewRecordId) viewRecordId.textContent = button.dataset.employeeId || '—';
+            if (viewFirstName) viewFirstName.textContent = button.dataset.firstName || 'Not provided';
+            if (viewMiddleName) viewMiddleName.textContent = button.dataset.middleName || 'Not provided';
+            if (viewLastName) viewLastName.textContent = button.dataset.lastName || 'Not provided';
+            if (viewSuffix) viewSuffix.textContent = button.dataset.suffix || 'None';
+            if (viewDateOfBirth) viewDateOfBirth.textContent = formatDateForView(button.dataset.dateOfBirth || '');
+            if (viewGender) viewGender.textContent = button.dataset.gender || 'Not provided';
+            if (viewMaritalStatus) viewMaritalStatus.textContent = button.dataset.maritalStatus || 'Not provided';
+            viewEmail.textContent = button.dataset.employeeEmail || '—';
+            viewContact.textContent = button.dataset.employeeContact || '—';
+            viewSection.textContent = button.dataset.employeeSection || '—';
+            viewDivision.textContent = button.dataset.employeeDivision || '—';
+            viewAccount.textContent = button.dataset.employeeAccount || 'None';
+            if (viewAccountAccess) {
+                viewAccountAccess.textContent = button.dataset.accountLabel || 'No linked account';
+            }
+
+            if (editEmployeeId) editEmployeeId.value = button.dataset.employeeCode || '';
+            if (editDateOfBirth) editDateOfBirth.value = button.dataset.dateOfBirth || '';
+            if (editFirstName) editFirstName.value = button.dataset.firstName || '';
+            if (editMiddleName) editMiddleName.value = button.dataset.middleName || '';
+            if (editLastName) editLastName.value = button.dataset.lastName || '';
+            if (editSuffix) editSuffix.value = button.dataset.suffix || '';
+            if (editEmail) editEmail.value = button.dataset.emailRaw || '';
+            if (editContact) editContact.value = button.dataset.contactRaw || '';
+            if (editGender) editGender.value = button.dataset.gender || '';
+            if (editMaritalStatus) editMaritalStatus.value = button.dataset.maritalStatus || '';
+            if (editDivision) editDivision.value = button.dataset.divisionId || '';
+            if (editPosition) editPosition.value = button.dataset.positionId || '';
+
+            renderSectionsForModal(button.dataset.divisionId || '', button.dataset.sectionId || '');
+            renderAccountsForModal(button.dataset.employeeCode || '', button.dataset.accountId || '', button.dataset.accountLabel || '');
+
+            if (editAvatar) {
+                const profile = button.dataset.profileImg || '';
+                editAvatar.src = buildProfileImageUrl(profile);
+            }
+
+            const hasLinkedAccount = Boolean(button.dataset.accountId);
+            syncCreateAccountVisibility(hasLinkedAccount);
+            resetCreateAccountFields();
+
+            if (editProfileImageInput) {
+                editProfileImageInput.value = '';
+            }
+            if (editProfileImageName) {
+                editProfileImageName.textContent = 'No new file selected';
+            }
+
+            modalDeleteUrl = button.dataset.employeeDeleteUrl || null;
+            modalUpdateUrl = button.dataset.modalUpdateUrl || null;
+            activeModalButton = button;
+            pendingDelete = false;
+            if (deleteConfirmName) {
+                deleteConfirmName.textContent = legalName !== '—' ? legalName : (button.dataset.employeeName || 'this employee');
+            }
+            editError?.classList.add('hidden');
+            clearModalValidation();
+
+            setModalView('details');
+
+            toggleViewModal(true);
+        };
+
+        const setModalView = (view) => {
+            const showEdit = view === 'edit';
+            animateSectionSwitch(showEdit);
+
+            if (detailsActionBtn) {
+                detailsActionBtn.classList.toggle('bg-[#1a3a2d]', !showEdit);
+                detailsActionBtn.classList.toggle('text-white', !showEdit);
+                detailsActionBtn.classList.toggle('shadow', !showEdit);
+                detailsActionBtn.classList.toggle('border', showEdit);
+                detailsActionBtn.classList.toggle('border-gray-200', showEdit);
+                detailsActionBtn.classList.toggle('bg-white', showEdit);
+                detailsActionBtn.classList.toggle('text-gray-700', showEdit);
+            }
+
+            if (editActionBtn) {
+                editActionBtn.classList.toggle('bg-[#1a3a2d]', showEdit);
+                editActionBtn.classList.toggle('text-white', showEdit);
+                editActionBtn.classList.toggle('shadow', showEdit);
+                editActionBtn.classList.toggle('border', !showEdit);
+                editActionBtn.classList.toggle('border-gray-200', !showEdit);
+                editActionBtn.classList.toggle('bg-white', !showEdit);
+                editActionBtn.classList.toggle('text-gray-700', !showEdit);
+            }
+        };
+
+        const setLoading = (loading) => {
+            tableWrapper.classList.toggle('opacity-60', loading);
+            tableWrapper.classList.toggle('pointer-events-none', loading);
+        };
+
+        const buildUrlFromForm = () => {
+            const params = new URLSearchParams(new FormData(form));
+            return `${window.location.pathname}?${params.toString()}`;
+        };
+
+        const applyUrlToFilters = (url) => {
+            const target = new URL(url, window.location.origin);
+            if (searchInput) searchInput.value = target.searchParams.get('search') || '';
+            if (divisionSelect) divisionSelect.value = target.searchParams.get('division') || '';
+            if (sectionSelect) sectionSelect.value = target.searchParams.get('section') || '';
+            if (assignmentSelect) assignmentSelect.value = target.searchParams.get('assignment') || '';
+        };
+
+        const fetchEmployees = async (url, push = false) => {
+            const target = new URL(url, window.location.origin);
+            target.searchParams.set('ajax', '1');
+
+            if (activeController) {
+                activeController.abort();
+            }
+
+            const controller = new AbortController();
+            activeController = controller;
+            setLoading(true);
+
+            try {
+                const res = await fetch(target.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal,
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Employees fetch failed (status ${res.status})`);
+                }
+
+                const data = await res.json();
+                if (typeof data.html !== 'undefined') {
+                    tableWrapper.innerHTML = data.html;
+                }
+
+                if (totalSpan && typeof data.total !== 'undefined') {
+                    totalSpan.textContent = `${Number(data.total).toLocaleString()} records found`;
+                }
+
+                if (paginationDiv) {
+                    paginationDiv.innerHTML = data.pagination || '';
+                    bindPaginationLinks();
+                }
+
+                target.searchParams.delete('ajax');
+                const nextUrl = `${target.pathname}${target.search ? target.search : ''}`;
+                if (push) {
+                    window.history.pushState({}, '', nextUrl);
+                } else {
+                    window.history.replaceState({}, '', nextUrl);
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Failed to fetch employee table:', err);
+                }
+            } finally {
+                if (activeController === controller) {
+                    activeController = null;
+                }
+                setLoading(false);
+            }
+        };
+
+        const scheduleFetch = (delay = 320) => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => fetchEmployees(buildUrlFromForm(), false), delay);
+        };
 
         function bindPaginationLinks() {
             if (!paginationDiv) return;
-            paginationDiv.querySelectorAll('a').forEach(link => {
-                if (!link.href || !link.href.includes('page=')) return;
+            paginationDiv.querySelectorAll('a[href]').forEach(link => {
+                if (!link.href.includes('page=')) return;
                 if (link.dataset.ajaxBound === 'true') return;
                 link.dataset.ajaxBound = 'true';
                 link.addEventListener('click', function (event) {
                     event.preventDefault();
-                    fetch(link.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (tableWrapper && data.html) {
-                                tableWrapper.innerHTML = data.html;
-                            }
-                            if (totalSpan && typeof data.total !== 'undefined') {
-                                totalSpan.textContent = `${Number(data.total).toLocaleString()} records found`;
-                            }
-                            if (paginationDiv && data.pagination) {
-                                paginationDiv.innerHTML = data.pagination;
-                                bindPaginationLinks();
-                            }
-                        });
+                    fetchEmployees(link.href, true);
                 });
             });
         }
 
+        searchInput?.addEventListener('input', () => scheduleFetch(320));
+        searchInput?.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            if (debounceTimer) clearTimeout(debounceTimer);
+            fetchEmployees(buildUrlFromForm(), false);
+        });
+
+        divisionSelect?.addEventListener('change', () => scheduleFetch(0));
+        sectionSelect?.addEventListener('change', () => scheduleFetch(0));
+        assignmentSelect?.addEventListener('change', () => scheduleFetch(0));
+
+        resetLink?.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (searchInput) searchInput.value = '';
+            if (divisionSelect) divisionSelect.value = '';
+            if (sectionSelect) sectionSelect.value = '';
+            if (assignmentSelect) assignmentSelect.value = '';
+            if (debounceTimer) clearTimeout(debounceTimer);
+            fetchEmployees(resetLink.href, true);
+        });
+
+        tableWrapper.addEventListener('click', (event) => {
+            const viewBtn = event.target instanceof Element ? event.target.closest('[data-view-employee-btn]') : null;
+            if (!viewBtn) return;
+            event.preventDefault();
+            openViewModal(viewBtn);
+        });
+
+        viewModal?.addEventListener('click', (event) => {
+            const closeEl = event.target instanceof Element ? event.target.closest('[data-close-employee-view-modal]') : null;
+            if (!closeEl) return;
+            event.preventDefault();
+            toggleViewModal(false);
+        });
+
+        detailsActionBtn?.addEventListener('click', () => setModalView('details'));
+        editActionBtn?.addEventListener('click', () => setModalView('edit'));
+
+        editDivision?.addEventListener('change', () => {
+            renderSectionsForModal(editDivision.value || '', '');
+        });
+
+        editAccount?.addEventListener('change', () => {
+            const hasLinkedAccount = Boolean(activeModalButton?.dataset.accountId);
+            syncCreateAccountVisibility(hasLinkedAccount);
+        });
+
+        createAccountToggle?.addEventListener('change', () => {
+            createAccountFields?.classList.toggle('hidden', !createAccountToggle.checked);
+            if (!createAccountToggle.checked) {
+                if (newAccountUsername) newAccountUsername.value = '';
+                if (newAccountRole) newAccountRole.value = 'employee';
+                if (newAccountPassword) newAccountPassword.value = '';
+            }
+        });
+
+        editProfileImageInput?.addEventListener('change', () => {
+            const file = editProfileImageInput.files?.[0] || null;
+            if (editProfileImageName) {
+                editProfileImageName.textContent = file ? file.name : 'No new file selected';
+            }
+
+            if (!file || !editAvatar) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const result = event.target?.result;
+                if (typeof result === 'string') {
+                    editAvatar.src = result;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        editForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            if (!modalUpdateUrl) {
+                showToast('Update endpoint is unavailable.', 'error');
+                return;
+            }
+
+            const formData = new FormData(editForm);
+            editError?.classList.add('hidden');
+            clearModalValidation();
+            saveBtn?.setAttribute('disabled', 'disabled');
+
+            try {
+                const response = await fetch(modalUpdateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    body: (() => {
+                        formData.append('_method', 'PUT');
+                        return formData;
+                    })(),
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    if (data?.errors) {
+                        applyValidationErrors(data.errors);
+                    }
+                    throw new Error(data?.message || (data?.errors ? 'Please review highlighted fields.' : `Update failed (status ${response.status}).`));
+                }
+
+                const updated = data?.employee || {};
+                const updatedName = buildLegalName(updated.first_name, updated.middle_name, updated.last_name, updated.suffix);
+                viewName.textContent = updatedName || viewName.textContent;
+                viewEmail.textContent = updated.email || 'Not provided';
+                viewContact.textContent = updated.contact_no || 'Not provided';
+                viewPosition.textContent = activeModalButton?.dataset.employeePosition || 'Unassigned';
+                viewSection.textContent = activeModalButton?.dataset.employeeSection || 'Unassigned';
+                viewDivision.textContent = activeModalButton?.dataset.employeeDivision || '—';
+                viewAccount.textContent = activeModalButton?.dataset.employeeAccount || 'None';
+
+                if (activeModalButton) {
+                    const selectedPositionLabel = editPosition?.selectedOptions?.[0]?.textContent || 'Unassigned';
+                    const selectedSectionLabel = editSectionField?.selectedOptions?.[0]?.textContent || 'Unassigned';
+                    const selectedDivisionLabel = editDivision?.selectedOptions?.[0]?.textContent || '—';
+                    const selectedAccountLabel = editAccount?.selectedOptions?.[0]?.textContent || 'None';
+
+                    activeModalButton.dataset.employeeName = updatedName || activeModalButton.dataset.employeeName || '';
+                    activeModalButton.dataset.employeeCode = updated.employee_id || activeModalButton.dataset.employeeCode || '';
+                    activeModalButton.dataset.firstName = updated.first_name || '';
+                    activeModalButton.dataset.middleName = updated.middle_name || '';
+                    activeModalButton.dataset.lastName = updated.last_name || '';
+                    activeModalButton.dataset.suffix = updated.suffix || '';
+                    activeModalButton.dataset.dateOfBirth = updated.date_of_birth || '';
+                    activeModalButton.dataset.gender = updated.gender || '';
+                    activeModalButton.dataset.maritalStatus = updated.marital_status || '';
+                    activeModalButton.dataset.positionId = updated.position_id || '';
+                    activeModalButton.dataset.sectionId = updated.section_id || '';
+                    activeModalButton.dataset.divisionId = updated.division_id || '';
+                    activeModalButton.dataset.accountId = updated.account_id || '';
+                    activeModalButton.dataset.employeePosition = selectedPositionLabel;
+                    activeModalButton.dataset.employeeSection = selectedSectionLabel;
+                    activeModalButton.dataset.employeeDivision = selectedDivisionLabel;
+                    activeModalButton.dataset.employeeAccount = selectedAccountLabel === 'Unassigned' ? 'None' : selectedAccountLabel;
+                    activeModalButton.dataset.accountLabel = selectedAccountLabel === 'Unassigned' ? '' : selectedAccountLabel;
+                    activeModalButton.dataset.profileImg = updated.profile_img || activeModalButton.dataset.profileImg || '';
+                    activeModalButton.dataset.employeeEmail = updated.email || 'Not provided';
+                    activeModalButton.dataset.emailRaw = updated.email || '';
+                    activeModalButton.dataset.employeeContact = updated.contact_no || 'Not provided';
+                    activeModalButton.dataset.contactRaw = updated.contact_no || '';
+
+                    if (deleteConfirmName) {
+                        deleteConfirmName.textContent = updatedName || activeModalButton.dataset.employeeName || 'this employee';
+                    }
+
+                    viewPosition.textContent = activeModalButton.dataset.employeePosition || 'Unassigned';
+                    viewSection.textContent = activeModalButton.dataset.employeeSection || 'Unassigned';
+                    viewDivision.textContent = activeModalButton.dataset.employeeDivision || '—';
+                    viewAccount.textContent = activeModalButton.dataset.employeeAccount || 'None';
+
+                    const nowHasLinkedAccount = Boolean(activeModalButton.dataset.accountId);
+                    syncCreateAccountVisibility(nowHasLinkedAccount);
+                    resetCreateAccountFields();
+
+                    if (editAvatar) {
+                        editAvatar.src = buildProfileImageUrl(activeModalButton.dataset.profileImg || '');
+                    }
+
+                    const row = activeModalButton.closest('tr');
+                    if (row) {
+                        const nameCell = row.querySelector('td:nth-child(1) .font-semibold');
+                        const emailCell = row.querySelector('td:nth-child(2) .text-sm');
+                        if (nameCell && updatedName) nameCell.textContent = updatedName;
+                        if (emailCell) emailCell.textContent = updated.email || 'N/A';
+                    }
+                }
+
+                showToast(data?.message || 'Employee updated successfully.');
+                setModalView('details');
+                await fetchEmployees(buildUrlFromForm(), false);
+            } catch (err) {
+                console.error('Failed to update employee in modal:', err);
+                if (editError) {
+                    editError.textContent = err.message || 'Unable to save employee changes.';
+                    editError.classList.remove('hidden');
+                }
+                showToast(err.message || 'Unable to save employee changes.', 'error');
+            } finally {
+                saveBtn?.removeAttribute('disabled');
+            }
+        });
+
+        window.addEventListener('popstate', () => {
+            applyUrlToFilters(window.location.href);
+            fetchEmployees(window.location.href, false);
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && deleteConfirmModal && !deleteConfirmModal.classList.contains('hidden')) {
+                pendingDelete = false;
+                toggleDeleteConfirm(false);
+                return;
+            }
+
+            if (event.key === 'Escape' && viewModal && !viewModal.classList.contains('hidden')) {
+                toggleViewModal(false);
+            }
+        });
+
+        viewDeleteBtn?.addEventListener('click', () => {
+            if (!modalDeleteUrl) {
+                showToast('Delete endpoint is unavailable.', 'error');
+                return;
+            }
+
+            pendingDelete = true;
+            toggleDeleteConfirm(true);
+        });
+
+        deleteConfirmModal?.addEventListener('click', (event) => {
+            const closeEl = event.target instanceof Element ? event.target.closest('[data-close-employee-delete-confirm]') : null;
+            if (!closeEl) return;
+            event.preventDefault();
+            pendingDelete = false;
+            toggleDeleteConfirm(false);
+        });
+
+        deleteConfirmBtn?.addEventListener('click', async () => {
+            if (!modalDeleteUrl || !pendingDelete) return;
+
+            deleteConfirmBtn.setAttribute('disabled', 'disabled');
+            try {
+                const response = await fetch(modalDeleteUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ _method: 'DELETE' }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Delete failed (status ${response.status})`);
+                }
+
+                const data = await response.json().catch(() => ({}));
+                toggleDeleteConfirm(false);
+                toggleViewModal(false);
+                await fetchEmployees(buildUrlFromForm(), false);
+                showToast(data?.message || 'Employee record removed.');
+            } catch (err) {
+                console.error('Failed to delete employee:', err);
+                showToast(err.message || 'Failed to delete employee.', 'error');
+            } finally {
+                pendingDelete = false;
+                deleteConfirmBtn.removeAttribute('disabled');
+            }
+        });
+
         bindPaginationLinks();
 
-        // PDF and Excel Export Handlers
-        (function() {
-            const pdfBtn = document.getElementById('employeesPrintPdfBtn');
-            const excelBtn = document.getElementById('employeesExportExcelBtn');
-            const form = document.querySelector('form');
+        pdfBtn?.addEventListener('click', function() {
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            const url = '{{ route("employees.print.pdf") }}' + (params.toString() ? '?' + params.toString() : '');
+            window.open(url, '_blank');
+        });
 
-            if (pdfBtn) {
-                pdfBtn.addEventListener('click', function() {
-                    const formData = new FormData(form);
-                    const params = new URLSearchParams(formData);
-                    const url = '{{ route("employees.print.pdf") }}' + (params.toString() ? '?' + params.toString() : '');
-                    window.open(url, '_blank');
-                });
-            }
-
-            if (excelBtn) {
-                excelBtn.addEventListener('click', function() {
-                    const formData = new FormData(form);
-                    const params = new URLSearchParams(formData);
-                    const url = '{{ route("employees.export.excel") }}' + (params.toString() ? '?' + params.toString() : '');
-                    window.location.href = url;
-                });
-            }
-        })();
+        excelBtn?.addEventListener('click', function() {
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            const url = '{{ route("employees.export.excel") }}' + (params.toString() ? '?' + params.toString() : '');
+            window.location.href = url;
+        });
     })();
 </script>
 @endpush

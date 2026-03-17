@@ -3,180 +3,142 @@
 @section('title', 'Fund Allocations')
 
 @section('content')
-{{-- Page Header --}}
-<div class="animate-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-    <div>
-        <h2 class="text-3xl font-extrabold text-[#1a3a2d]">Fund Allocations</h2>
-        <p class="mt-1 text-gray-500">Manage budget clusters for purchase requests.</p>
-    </div>
-    <button id="openCreateModal" class="w-full sm:w-auto bg-[#1a3a2d] text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 hover:shadow-lg flex items-center justify-center gap-2">
-        <i class="fas fa-plus-circle"></i>
-        New Fund Allocation
-    </button>
-</div>
+@php
+    $kpis = $kpis ?? [
+        'totalClusters' => $allocations->total(),
+        'totalBudget' => 0,
+        'totalAllocated' => 0,
+        'totalRemaining' => 0,
+        'utilizationRate' => 0,
+    ];
+@endphp
 
-{{-- Success Message --}}
-@if(session('success'))
-    <div class="animate-card mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-lg shadow-sm">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-2"></i>
-            <span>{{ session('success') }}</span>
+<style>
+    .fund-refresh-prep {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    .fund-refresh-in {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    @keyframes fundShimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+
+    .fund-skeleton-line {
+        background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+        background-size: 200% 100%;
+        animation: fundShimmer 1.1s ease-in-out infinite;
+    }
+</style>
+
+<div class="space-y-7">
+    <section class="animate-card relative overflow-hidden rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-7 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
+        <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.16),_transparent_58%)]"></div>
+        <div class="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-2xl space-y-2">
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Budget Control
+                </span>
+                <h2 class="text-3xl font-extrabold tracking-tight">Fund Allocations</h2>
+                <p class="text-sm text-white/75">Track and maintain funding clusters used in purchase request operations.</p>
+            </div>
+
+            <div id="fundAllocationKpis">
+                @include('custodian.fund_allocations.partials.kpis', ['kpis' => $kpis])
+            </div>
         </div>
-    </div>
-@endif
+    </section>
 
-{{-- Fund Allocations Table --}}
-<div class="animate-card bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200">
-    <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-            <thead class="bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white">
-                <tr>
-                    <th class="px-6 py-4 text-left font-semibold uppercase tracking-wide">Fund Cluster</th>
-                    <th class="px-6 py-4 text-right font-semibold uppercase tracking-wide">Total Amount</th>
-                    <th class="px-6 py-4 text-right font-semibold uppercase tracking-wide">Allocated</th>
-                    <th class="px-6 py-4 text-right font-semibold uppercase tracking-wide">Remaining</th>
-                    <th class="px-6 py-4 text-center font-semibold uppercase tracking-wide">Utilization</th>
-                    <th class="px-6 py-4 text-left font-semibold uppercase tracking-wide">Created By</th>
-                    <th class="px-6 py-4 text-center font-semibold uppercase tracking-wide">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                @forelse($allocations as $allocation)
-                    @php
-                        $allocated = $allocation->total_amount - $allocation->remaining_amount;
-                        $utilization = $allocation->total_amount > 0 
-                            ? ($allocated / $allocation->total_amount) * 100 
-                            : 0;
-                        $utilizationColor = $utilization >= 90 ? 'bg-red-500' : ($utilization >= 70 ? 'bg-amber-500' : 'bg-green-500');
-                    @endphp
-                    <tr class="hover:bg-gray-50 transition-colors" data-id="{{ $allocation->id }}">
-                        <td class="px-6 py-4">
-                            <div class="font-semibold text-gray-900">{{ $allocation->fund_cluster }}</div>
-                            <div class="text-xs text-gray-500">Created: {{ $allocation->created_at->format('M d, Y') }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-right font-semibold text-gray-900">
-                            ₱{{ number_format($allocation->total_amount, 2) }}
-                        </td>
-                        <td class="px-6 py-4 text-right font-semibold text-gray-700">
-                            ₱{{ number_format($allocated, 2) }}
-                        </td>
-                        <td class="px-6 py-4 text-right font-bold text-green-700">
-                            ₱{{ number_format($allocation->remaining_amount, 2) }}
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-2">
-                                <div class="w-32 bg-gray-200 rounded-full h-2">
-                                    <div class="{{ $utilizationColor }} h-2 rounded-full transition-all" style="width: {{ min($utilization, 100) }}%"></div>
-                                </div>
-                                <span class="text-xs font-semibold text-gray-600">{{ number_format($utilization, 1) }}%</span>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4 text-gray-700">
-                            @php
-                                $employee = $allocation->creator?->employee;
-                                $creatorName = $employee 
-                                    ? trim(($employee->first_name ?? '') . ' ' . ($employee->middle_name ?? '') . ' ' . ($employee->last_name ?? '')) 
-                                    : ($allocation->creator?->name ?? 'Unknown');
-                            @endphp
-                            {{ $creatorName }}
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-2">
-                                <button class="edit-allocation text-blue-600 hover:text-blue-800 px-3 py-1 rounded-lg hover:bg-blue-50 transition" 
-                                        data-id="{{ $allocation->id }}"
-                                        data-cluster="{{ $allocation->fund_cluster }}"
-                                        data-total="{{ $allocation->total_amount }}"
-                                        data-allocated="{{ $allocated }}">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                @if($allocated == 0)
-                                    <button class="delete-allocation text-red-600 hover:text-red-800 px-3 py-1 rounded-lg hover:bg-red-50 transition"
-                                            data-id="{{ $allocation->id }}"
-                                            data-cluster="{{ $allocation->fund_cluster }}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @else
-                                    <button class="text-gray-400 px-3 py-1 cursor-not-allowed" title="Cannot delete: has active allocations">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                @endif
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                            <i class="fas fa-folder-open text-4xl mb-2"></i>
-                            <p class="text-lg">No fund allocations found.</p>
-                            <p class="text-sm">Create your first fund allocation to get started.</p>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-
-    @if($allocations->hasPages())
-        <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-            {{ $allocations->links() }}
+    @if(session('success'))
+        <div class="animate-card rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-800 shadow-sm">
+            <div class="flex items-center gap-2 text-sm font-semibold">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
         </div>
     @endif
+
+    <section class="animate-card rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
+        <div class="mb-4 flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-semibold text-[#1a3a2d]">Budget Cluster Registry</h3>
+                <p class="text-sm text-gray-500"><span id="fundAllocationCount" class="font-semibold text-gray-700">{{ number_format($allocations->total()) }}</span> records available</p>
+            </div>
+            <button id="openCreateModal" class="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg sm:w-auto">
+                <i class="fas fa-plus-circle"></i>
+                New Fund Allocation
+            </button>
+        </div>
+
+        <div id="fundAllocationTable">
+            @include('custodian.fund_allocations.partials.table', ['allocations' => $allocations])
+        </div>
+    </section>
 </div>
 
-{{-- Toast Notification --}}
-<div id="fundAllocationToast" class="fixed bottom-6 right-6 hidden px-5 py-3 rounded-xl shadow-lg text-white bg-[#1a3a2d] text-sm font-semibold animate-card"></div>
+<div id="fundAllocationToast" class="fixed right-6 top-6 z-[90] hidden rounded-xl bg-[#1a3a2d] px-5 py-3 text-sm font-semibold text-white shadow-lg"></div>
 
-{{-- Create/Edit Modal --}}
-<div id="allocationModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" data-close-modal></div>
-    <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl">
-            <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white">
+<div id="allocationModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300" aria-labelledby="modalTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="modal-panel relative flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center justify-between border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-6 py-4 text-white">
                 <h3 class="text-xl font-bold" id="modalTitle">New Fund Allocation</h3>
-                <button class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all" data-close-modal>
+                <button class="rounded-lg p-2 text-white/80 transition-all hover:bg-white/10 hover:text-white" data-close-modal data-focus>
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
 
-            <form id="allocationForm" class="p-6 space-y-4">
+            <form id="allocationForm" class="space-y-4 p-6">
                 @csrf
                 <input type="hidden" id="allocationId" name="allocation_id">
                 <input type="hidden" id="formMethod" value="POST">
 
-                <div id="formErrors" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg text-sm">
+                <div id="formErrors" class="hidden rounded-lg border-l-4 border-red-500 bg-red-100 px-4 py-3 text-sm text-red-700">
                     <div class="flex items-start">
-                        <i class="fas fa-exclamation-circle mt-0.5 mr-2"></i>
+                        <i class="fas fa-exclamation-circle mr-2 mt-0.5"></i>
                         <div class="flex-1" id="formErrorsContent"></div>
                     </div>
                 </div>
 
                 <div>
-                    <label for="fundCluster" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="fundCluster" class="mb-2 block text-sm font-semibold text-gray-700">
                         Fund Cluster <span class="text-red-600">*</span>
                     </label>
                     <input type="text" id="fundCluster" name="fund_cluster"
-                           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:border-[#1a3a2d] focus:ring-2 focus:ring-[#1a3a2d]/20"
+                           class="w-full rounded-xl border border-emerald-950/15 bg-[#f8faf9] px-4 py-2.5 text-sm text-gray-800 focus:border-[#1a3a2d] focus:bg-white focus:ring-2 focus:ring-[#1a3a2d]/20"
                            placeholder="e.g., FY2025-GEN-001">
                 </div>
 
                 <div>
-                    <label for="totalAmount" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="totalAmount" class="mb-2 block text-sm font-semibold text-gray-700">
                         Total Amount <span class="text-red-600">*</span>
                     </label>
                     <div class="relative">
-                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-semibold">₱</span>
+                        <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-semibold text-gray-500">₱</span>
                         <input type="number" id="totalAmount" name="total_amount" step="0.01" min="0"
-                               class="w-full border border-gray-300 rounded-lg pl-8 pr-4 py-2 focus:border-[#1a3a2d] focus:ring-2 focus:ring-[#1a3a2d]/20"
+                               class="w-full rounded-xl border border-emerald-950/15 bg-[#f8faf9] py-2.5 pl-8 pr-4 text-sm text-gray-800 focus:border-[#1a3a2d] focus:bg-white focus:ring-2 focus:ring-[#1a3a2d]/20"
                                placeholder="0.00">
                     </div>
-                    <p class="text-xs text-gray-500 mt-1" id="allocatedNote"></p>
+                    <p class="mt-1 text-xs text-gray-500" id="allocatedNote"></p>
                 </div>
 
                 <div class="flex gap-3 pt-4">
-                    <button type="button" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition" data-close-modal>
+                    <button type="button" class="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 font-semibold text-gray-700 transition hover:bg-gray-50" data-close-modal>
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 px-4 py-2 bg-[#1a3a2d] text-white font-semibold rounded-lg hover:bg-opacity-90 transition">
+                    <button type="submit" class="flex-1 rounded-xl bg-[#1a3a2d] px-4 py-2.5 font-semibold text-white transition hover:bg-[#204835]">
                         <span id="submitText">Create Allocation</span>
                     </button>
                 </div>
@@ -185,35 +147,247 @@
     </div>
 </div>
 
+<div id="deleteAllocationModal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-300" aria-labelledby="deleteAllocationTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-delete-modal></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="delete-modal-panel relative w-full max-w-md rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="border-b bg-gradient-to-r from-[#173628] to-[#2d5a4a] px-6 py-4 text-white">
+                <h3 id="deleteAllocationTitle" class="text-lg font-bold tracking-tight">Delete Fund Allocation</h3>
+                <p class="mt-1 text-sm text-white/80">This action cannot be undone.</p>
+            </div>
+            <div class="space-y-3 px-6 py-5">
+                <p class="text-sm text-gray-600">You are about to delete this fund cluster:</p>
+                <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700" id="deleteAllocationClusterName">—</div>
+            </div>
+            <div class="flex gap-3 border-t border-gray-100 px-6 py-4">
+                <button type="button" class="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 font-semibold text-gray-700 transition hover:bg-gray-50" data-close-delete-modal data-delete-focus>
+                    Cancel
+                </button>
+                <button type="button" id="confirmDeleteAllocationBtn" class="flex-1 rounded-xl border border-red-300 bg-red-600 px-4 py-2.5 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70">
+                    Delete Allocation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+(() => {
+    const bootFundAllocationsPage = () => {
+        const $ = window.jQuery || window.$;
+        if (!$) {
+            window.setTimeout(bootFundAllocationsPage, 50);
+            return;
+        }
+
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    const indexEndpoint = "{{ route('custodian.fund_allocations.index') }}";
     const $modal = $('#allocationModal');
+    const $modalPanel = $modal.find('.modal-panel').first();
+    const $deleteModal = $('#deleteAllocationModal');
+    const $deleteModalPanel = $deleteModal.find('.delete-modal-panel').first();
     const $form = $('#allocationForm');
     const $errors = $('#formErrors');
     const $errorsContent = $('#formErrorsContent');
     const $toast = $('#fundAllocationToast');
+    const $focusTarget = $modal.find('[data-focus]').first();
+    const $kpiContainer = $('#fundAllocationKpis');
+    const $tableContainer = $('#fundAllocationTable');
+    const $recordCount = $('#fundAllocationCount');
+    const $deleteClusterName = $('#deleteAllocationClusterName');
+    const $confirmDeleteBtn = $('#confirmDeleteAllocationBtn');
+    const $deleteFocusTarget = $deleteModal.find('[data-delete-focus]').first();
+    const tableLoadingOverlayId = 'fundTableLoadingOverlay';
+    let pendingDelete = null;
+    let activeEditId = null;
 
-    const showToast = (message) => {
-        $toast.text(message).removeClass('hidden');
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
+        },
+        timeout: 15000,
+    });
+
+    const showToast = (message, type = 'success') => {
+        $toast
+            .removeClass('hidden bg-[#1a3a2d] bg-red-600 bg-amber-600')
+            .addClass(type === 'error' ? 'bg-red-600' : 'bg-[#1a3a2d]')
+            .text(message);
         setTimeout(() => $toast.addClass('hidden'), 3000);
+    };
+
+    const buildTableLoadingOverlay = () => `
+        <div id="${tableLoadingOverlayId}" class="absolute inset-0 z-20 bg-white/80 backdrop-blur-[1px] px-6 py-6">
+            <div class="space-y-3 rounded-xl border border-gray-100 bg-white/95 p-4 shadow-sm">
+                <div class="fund-skeleton-line h-3 w-36 rounded"></div>
+                <div class="grid grid-cols-7 gap-3">
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                    <div class="fund-skeleton-line h-3 rounded"></div>
+                </div>
+                <div class="space-y-2 pt-2">
+                    <div class="fund-skeleton-line h-9 w-full rounded-lg"></div>
+                    <div class="fund-skeleton-line h-9 w-full rounded-lg"></div>
+                    <div class="fund-skeleton-line h-9 w-full rounded-lg"></div>
+                    <div class="fund-skeleton-line h-9 w-full rounded-lg"></div>
+                    <div class="fund-skeleton-line h-9 w-full rounded-lg"></div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    const setTableLoading = (isLoading) => {
+        $tableContainer.toggleClass('opacity-60 relative', isLoading);
+
+        if (isLoading) {
+            if (!document.getElementById(tableLoadingOverlayId)) {
+                $tableContainer.append(buildTableLoadingOverlay());
+            }
+            return;
+        }
+
+        $(`#${tableLoadingOverlayId}`).remove();
+    };
+
+    const animateRefresh = () => {
+        const rowElements = $tableContainer.find('tr[data-fund-row]').toArray();
+        rowElements.forEach((row, index) => {
+            row.classList.add('fund-refresh-prep');
+            setTimeout(() => {
+                row.classList.add('fund-refresh-in');
+                row.classList.remove('fund-refresh-prep');
+            }, index * 35);
+        });
+
+        const kpiCards = $kpiContainer.children().first().children().toArray();
+        kpiCards.forEach((card, index) => {
+            card.classList.add('fund-refresh-prep');
+            setTimeout(() => {
+                card.classList.add('fund-refresh-in');
+                card.classList.remove('fund-refresh-prep');
+            }, index * 45);
+        });
+    };
+
+    const fetchFundAllocations = (url = null) => {
+        const target = new URL(url || window.location.href || indexEndpoint, window.location.origin);
+        target.searchParams.set('ajax', '1');
+
+        setTableLoading(true);
+
+        $.ajax({
+            method: 'GET',
+            url: target.toString(),
+            success: (response) => {
+                if (response?.tableHtml) {
+                    $tableContainer.html(response.tableHtml);
+                }
+                if (response?.kpisHtml) {
+                    $kpiContainer.html(response.kpisHtml);
+                }
+                if (typeof response?.totalRecords === 'number') {
+                    $recordCount.text(Number(response.totalRecords).toLocaleString('en-PH'));
+                }
+
+                animateRefresh();
+
+                target.searchParams.delete('ajax');
+                const nextQuery = target.searchParams.toString();
+                const nextUrl = `${target.pathname}${nextQuery ? `?${nextQuery}` : ''}`;
+                window.history.replaceState(null, '', nextUrl);
+            },
+            error: (xhr) => {
+                const msg = xhr.responseJSON?.message || `Unable to refresh fund allocation data (HTTP ${xhr.status || 'ERR'}).`;
+                showToast(msg, 'error');
+            },
+            complete: () => {
+                setTableLoading(false);
+                $tableContainer.removeClass('opacity-60');
+                $(`#${tableLoadingOverlayId}`).remove();
+            }
+        });
     };
 
     const toggleModal = ($el, show) => {
         if (show) {
             $el.removeClass('hidden');
-            setTimeout(() => $el.addClass('opacity-100'), 10);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    $el.scrollTop(0);
+                    if ($modalPanel.length) {
+                        $modalPanel.scrollTop(0);
+                    }
+                    $el.removeClass('opacity-0').addClass('opacity-100');
+                    $modalPanel.removeClass('opacity-0 scale-95 translate-y-2');
+                });
+            });
+            setTimeout(() => {
+                const focusEl = $focusTarget.get(0);
+                if (focusEl) {
+                    try {
+                        focusEl.focus({ preventScroll: true });
+                    } catch (error) {
+                        focusEl.focus();
+                    }
+                }
+            }, 300);
+            document.body.classList.add('overflow-hidden');
         } else {
-            $el.removeClass('opacity-100');
-            setTimeout(() => $el.addClass('hidden'), 200);
+            $el.removeClass('opacity-100').addClass('opacity-0');
+            $modalPanel.addClass('opacity-0 scale-95 translate-y-2');
+            setTimeout(() => $el.addClass('hidden'), 300);
+            document.body.classList.remove('overflow-hidden');
         }
     };
 
-    $('#openCreateModal').on('click', () => {
+    const toggleDeleteModal = (show) => {
+        if (show) {
+            $deleteModal.removeClass('hidden');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    $deleteModal.removeClass('opacity-0').addClass('opacity-100');
+                    $deleteModalPanel.removeClass('opacity-0 scale-95 translate-y-2');
+                });
+            });
+            setTimeout(() => {
+                const focusEl = $deleteFocusTarget.get(0);
+                if (focusEl) {
+                    try {
+                        focusEl.focus({ preventScroll: true });
+                    } catch (error) {
+                        focusEl.focus();
+                    }
+                }
+            }, 300);
+            document.body.classList.add('overflow-hidden');
+            return;
+        }
+
+        $deleteModal.removeClass('opacity-100').addClass('opacity-0');
+        $deleteModalPanel.addClass('opacity-0 scale-95 translate-y-2');
+        setTimeout(() => $deleteModal.addClass('hidden'), 300);
+        pendingDelete = null;
+        if ($modal.hasClass('hidden')) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    };
+
+    $(document)
+        .off('click.fundCreate', '#openCreateModal')
+        .on('click.fundCreate', '#openCreateModal', () => {
         $('#modalTitle').text('New Fund Allocation');
         $('#submitText').text('Create Allocation');
         $('#formMethod').val('POST');
         $('#allocationId').val('');
+        $form.removeData('allocationId');
+        activeEditId = null;
         $('#allocatedNote').text('');
         $form[0].reset();
         $errors.addClass('hidden');
@@ -234,9 +408,27 @@
         });
     });
 
-    $('[data-close-modal]').on('click', () => toggleModal($modal, false));
+    $modal.on('click', '[data-close-modal]', () => toggleModal($modal, false));
+    $deleteModal.on('click', '[data-close-delete-modal]', () => toggleDeleteModal(false));
 
-    $('.edit-allocation').on('click', function() {
+    $(document).on('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        if (!$deleteModal.hasClass('hidden')) {
+            toggleDeleteModal(false);
+            return;
+        }
+
+        if (!$modal.hasClass('hidden')) {
+            toggleModal($modal, false);
+        }
+    });
+
+    $(document)
+        .off('click.fundEdit', '.edit-allocation')
+        .on('click.fundEdit', '.edit-allocation', function() {
         const id = $(this).data('id');
         const cluster = $(this).data('cluster');
         const total = $(this).data('total');
@@ -245,7 +437,10 @@
         $('#modalTitle').text('Edit Fund Allocation');
         $('#submitText').text('Update Allocation');
         $('#formMethod').val('PUT');
-        $('#allocationId').val(id);
+        const normalizedId = String(id || '').trim();
+        $('#allocationId').val(normalizedId);
+        $form.data('allocationId', normalizedId);
+        activeEditId = normalizedId;
         $('#fundCluster').val(cluster);
         $('#totalAmount').val(total);
         $('#allocatedNote').text(`Already allocated: ₱${parseFloat(allocated).toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
@@ -253,33 +448,64 @@
         toggleModal($modal, true);
     });
 
-    $('.delete-allocation').on('click', function() {
+    $(document)
+        .off('click.fundDelete', '.delete-allocation')
+        .on('click.fundDelete', '.delete-allocation', function() {
         const id = $(this).data('id');
         const cluster = $(this).data('cluster');
 
-        if (!confirm(`Delete fund allocation "${cluster}"?\n\nThis action cannot be undone.`)) {
+        pendingDelete = { id, cluster };
+        $deleteClusterName.text(cluster || 'Unknown Cluster');
+        toggleDeleteModal(true);
+    });
+
+    $confirmDeleteBtn.on('click', () => {
+        if (!pendingDelete?.id) {
+            toggleDeleteModal(false);
             return;
         }
 
+        const originalLabel = $confirmDeleteBtn.text();
+        $confirmDeleteBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-2"></i>Deleting...');
+
         $.ajax({
             method: 'DELETE',
-            url: `/custodian/fund-allocations/${id}`,
-            headers: { 'X-CSRF-TOKEN': csrfToken },
+            url: `/custodian/fund-allocations/${pendingDelete.id}`,
             success: (response) => {
+                toggleDeleteModal(false);
                 showToast(response.message ?? 'Fund allocation deleted successfully.');
-                setTimeout(() => location.reload(), 1200);
+                fetchFundAllocations(window.location.href);
             },
             error: (xhr) => {
-                alert(xhr.responseJSON?.message || 'Failed to delete allocation.');
+                toggleDeleteModal(false);
+                showToast(xhr.responseJSON?.message || 'Failed to delete allocation.', 'error');
+            },
+            complete: () => {
+                $confirmDeleteBtn.prop('disabled', false).text(originalLabel);
             }
         });
+    });
+
+    $tableContainer.on('click', '[data-fund-pagination] a', function(e) {
+        e.preventDefault();
+        const href = $(this).attr('href');
+        if (!href) {
+            return;
+        }
+        fetchFundAllocations(href);
     });
 
     $form.on('submit', function(e) {
         e.preventDefault();
         $errors.addClass('hidden');
         const method = $('#formMethod').val();
-        const id = $('#allocationId').val();
+        const id = String(activeEditId || $('#allocationId').val() || $form.data('allocationId') || '').trim();
+
+        if (method === 'PUT' && !id) {
+            showToast('Unable to update: missing allocation reference. Please reopen Edit and try again.', 'error');
+            return;
+        }
+
         const url = method === 'PUT' ? `/custodian/fund-allocations/${id}` : '/custodian/fund-allocations';
 
         const submitBtn = $form.find('button[type="submit"]');
@@ -290,11 +516,10 @@
             method: method,
             url: url,
             data: $form.serialize(),
-            headers: { 'X-CSRF-TOKEN': csrfToken },
             success: (response) => {
                 toggleModal($modal, false);
                 showToast(response.message ?? 'Fund allocation saved successfully.');
-                setTimeout(() => location.reload(), 1200);
+                fetchFundAllocations(window.location.href);
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
@@ -302,13 +527,25 @@
                     $errorsContent.html(messages.map(msg => `<div class="mb-1">• ${msg}</div>`).join(''));
                     $errors.removeClass('hidden');
                 } else {
-                    $errorsContent.text(xhr.responseJSON?.message || 'An error occurred.');
-                    $errors.removeClass('hidden');
+                    const message = xhr.responseJSON?.message || `An error occurred while saving allocation (HTTP ${xhr.status || 'ERR'}).`;
+                    showToast(message, 'error');
                 }
+            },
+            complete: () => {
                 submitBtn.prop('disabled', false).html(originalText);
             }
         });
     });
+
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootFundAllocationsPage, { once: true });
+        return;
+    }
+
+    bootFundAllocationsPage();
+})();
 </script>
 @endpush
 @endsection

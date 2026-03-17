@@ -1,4 +1,4 @@
-<div id="pqsViewModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200 ease-out">
+<div id="pqsViewModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
 
     <style>
         .pqs-template {
@@ -116,10 +116,10 @@
     <div class="relative flex min-h-screen items-center justify-center p-4">
 
         {{-- FIX: Main modal panel now uses flexbox and max-height to ensure it fits the screen --}}
-        <div class="pqs-modal-shell relative flex w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)]">
+        <div class="pqs-modal-shell modal-panel relative flex w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
 
             {{-- Modal Header (Flex item, does not shrink) --}}
-            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-8 py-6 text-white">
+            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-8 py-5 text-white">
                 <div class="space-y-3">
                     <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Property Custodial Record</span>
                     {{-- REMOVED: Redundant h2 element as requested --}}
@@ -140,17 +140,17 @@
                         Pending Document
                     </span>
                     {{-- Print button removed per request --}}
-                    <button type="button" class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-modal>
+                    <button type="button" class="rounded-full p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-modal data-focus>
                         <i class="fas fa-times text-lg"></i>
                     </button>
                 </div>
             </div>
 
             {{-- Scrollable content area: includes print-ready template and on-screen summary --}}
-            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-6 py-8 sm:px-8">
-                <div class="mx-auto w-full max-w-5xl space-y-8 pqs-print-wrapper">
+            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-6 py-7 sm:px-8">
+                <div class="mx-auto w-full max-w-5xl space-y-6 pqs-print-wrapper">
                     <div id="pqsPrintArea" class="rounded-2xl border-2 border-gray-400 bg-white shadow-sm" style="min-height:auto;">
-                        <div id="pqsParTemplate" class="hidden px-6 py-8 text-gray-900 pqs-template pqs-template-par">
+                        <div id="pqsParTemplate" class="hidden px-6 py-7 text-gray-900 pqs-template pqs-template-par">
                             <div class="relative mb-6 flex items-center justify-center">
                                 <img src="{{ asset('images/bpi-logo.png') }}" alt="Department of Agriculture" class="absolute left-0 top-0 h-16 w-16 object-contain">
                                 <div class="text-center">
@@ -176,7 +176,7 @@
                                 <span id="pqsParNumber" class="flex-1 border-b border-gray-500 pb-0.5 text-sm">____________________</span>
                             </div>
 
-                            <div class="mt-6 overflow-hidden rounded border border-gray-600">
+                            <div class="mt-5 overflow-hidden rounded border border-gray-600">
                                 <table class="w-full text-xs text-gray-900">
                                     <thead class="bg-gray-100 uppercase">
                                         <tr>
@@ -197,21 +197,11 @@
                                             <td id="pqsParDateAcquired" class="border border-gray-600 px-3 py-2 text-center">—</td>
                                             <td id="pqsParAmount" class="border border-gray-600 px-3 py-2 text-right">—</td>
                                         </tr>
-                                        @for ($i = 0; $i < 8; $i++)
-                                            <tr>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                            </tr>
-                                        @endfor
                                     </tbody>
                                 </table>
                             </div>
 
-                            <div class="mt-6 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
+                            <div class="mt-5 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
                                 <div class="space-y-3">
                                     <p class="font-semibold uppercase">Received by:</p>
                                     <span id="pqsParReceivedBy" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
@@ -233,7 +223,7 @@
                             </div>
                         </div>
 
-                        <div id="pqsIcsTemplate" class="hidden px-6 py-8 text-gray-900 pqs-template pqs-template-ics">
+                        <div id="pqsIcsTemplate" class="hidden px-6 py-7 text-gray-900 pqs-template pqs-template-ics">
                             <div class="relative mb-6 flex items-center justify-center">
                                 <img src="{{ asset('images/bpi-logo.png') }}" alt="Department of Agriculture" class="absolute left-0 top-0 h-16 w-16 object-contain">
                                 <div class="text-center">
@@ -259,7 +249,7 @@
                                 <span id="pqsIcsNumber" class="flex-1 border-b border-gray-500 pb-0.5 text-sm">____________________</span>
                             </div>
 
-                            <div class="mt-6 overflow-hidden rounded border border-gray-600">
+                            <div class="mt-5 overflow-hidden rounded border border-gray-600">
                                 <table class="w-full text-xs text-gray-900">
                                     <thead class="bg-gray-100 uppercase">
                                         <tr>
@@ -282,22 +272,11 @@
                                             <td id="pqsIcsInventoryNo" class="border border-gray-600 px-3 py-2 text-center">—</td>
                                             <td id="pqsIcsUsefulLife" class="border border-gray-600 px-3 py-2 text-center">—</td>
                                         </tr>
-                                        @for ($i = 0; $i < 8; $i++)
-                                            <tr>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                                <td class="border border-gray-300 px-3 py-5"></td>
-                                            </tr>
-                                        @endfor
                                     </tbody>
                                 </table>
                             </div>
 
-                            <div class="mt-6 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
+                            <div class="mt-5 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
                                 <div class="space-y-3">
                                     <p class="font-semibold uppercase">Received from:</p>
                                     <span id="pqsIcsReceivedFrom" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
@@ -324,7 +303,7 @@
                         </div>
                     </div>
 
-                    <div class="space-y-8">
+                    <div class="space-y-6">
                         <section>
                             <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Property Record Snapshot</h4>
                             <div class="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 text-sm text-gray-800 md:grid-cols-2">

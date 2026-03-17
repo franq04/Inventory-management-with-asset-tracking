@@ -120,7 +120,8 @@ class PurchaseOrderController extends Controller
             ->whereIn('status_id', $this->convertiblePurchaseRequestStatuses())
             ->whereDoesntHave('purchaseOrder')
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(3, ['*'], 'approved_page')
+            ->withQueryString();
 
         $purchaseOrderQuery = $this->purchaseOrderIndexQuery($searchTerm->toString());
 
@@ -130,7 +131,7 @@ class PurchaseOrderController extends Controller
         });
 
         $pipelineStages = $this->buildPipeline($ordersForPipeline);
-        $purchaseOrders = $purchaseOrderQuery->paginate(10)->withQueryString();
+        $purchaseOrders = $purchaseOrderQuery->paginate(5)->withQueryString();
         $registerSummaries = $purchaseOrders->getCollection()
             ->mapWithKeys(fn (PurchaseOrder $order) => [$order->po_no => $this->summarizeOrderForRegister($order)])
             ->all();
@@ -424,6 +425,21 @@ class PurchaseOrderController extends Controller
     {
         $purchaseOrder->load(['items', 'supplier', 'purchaseRequest', 'status']);
 
+        $officialAccountId = $purchaseOrder->authorized_by ?: $purchaseOrder->ordered_by;
+        $officialAccount = $officialAccountId
+            ? Account::query()->with('employee.position')->find($officialAccountId)
+            : null;
+
+        $authorizedOfficialName = null;
+        if ($officialAccount?->employee) {
+            $authorizedOfficialName = $officialAccount->employee->full_name;
+        }
+        if (empty($authorizedOfficialName)) {
+            $authorizedOfficialName = $officialAccount?->username;
+        }
+
+        $authorizedOfficialDesignation = $officialAccount?->employee?->position?->position_title;
+
         // Get status history for this PO
         $statusHistory = StatusHistory::query()
             ->where('table_name', 'purchase_orders')
@@ -467,9 +483,25 @@ class PurchaseOrderController extends Controller
                 'po_no' => $purchaseOrder->po_no,
                 'pr_no' => $purchaseOrder->pr_no,
                 'supplier' => $purchaseOrder->supplier?->supplier_name,
+                'supplier_address' => $purchaseOrder->supplier?->address,
+                'supplier_tin' => $purchaseOrder->supplier?->tin,
+                'mode_of_procurement' => $purchaseOrder->mode_of_procurement,
+                'place_of_delivery' => $purchaseOrder->place_of_delivery,
+                'delivery_term' => $purchaseOrder->delivery_term,
+                'payment_term' => $purchaseOrder->payment_term,
                 'status' => $purchaseOrder->status?->status_name,
                 'order_date' => optional($purchaseOrder->order_date)->toDateString(),
                 'delivery_date' => optional($purchaseOrder->delivery_date)->toDateString(),
+                'amount_in_words' => $purchaseOrder->amount_in_words,
+                'fund_cluster' => $purchaseOrder->fund_cluster,
+                'funds_available' => $purchaseOrder->funds_available,
+                'ors_burs_no' => $purchaseOrder->ors_burs_no,
+                'ors_burs_date' => optional($purchaseOrder->ors_burs_date)->toDateString(),
+                'ors_burs_amount' => $purchaseOrder->ors_burs_amount,
+                'conforme_name' => $purchaseOrder->conforme_name,
+                'conforme_date' => optional($purchaseOrder->conforme_date)->toDateString(),
+                'authorized_official_name' => $authorizedOfficialName,
+                'authorized_official_designation' => $authorizedOfficialDesignation,
                 'items' => $purchaseOrder->items->map(function (PurchaseOrderItem $item) {
                     return [
                         'item_description' => $item->item_description,

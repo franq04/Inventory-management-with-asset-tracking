@@ -116,14 +116,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
-                            <label for="poSupplierAddress" class="font-semibold">Address :</label>
-                            <input type="text" id="poSupplierAddress" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
-                        </div>
-                        <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
-                            <label for="poSupplierTin" class="font-semibold">TIN :</label>
-                            <input type="text" id="poSupplierTin" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
-                        </div>
                         {{-- Only show supplier name, address and TIN for saved suppliers per request --}}
                     </div>
 
@@ -167,6 +159,17 @@
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poMode" class="font-semibold">Mode of Procurement :</label>
                         <input type="text" id="poMode" name="mode_of_procurement" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="e.g., Shopping">
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 pt-1">
+                    <div id="poSupplierAddressRow" class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                        <label for="poSupplierAddress" class="font-semibold">Address :</label>
+                        <input type="text" id="poSupplierAddress" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
+                    </div>
+                    <div id="poSupplierTinRow" class="grid grid-cols-[auto,1fr] items-center gap-x-2">
+                        <label for="poSupplierTin" class="font-semibold">TIN :</label>
+                        <input type="text" id="poSupplierTin" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
                     </div>
                 </div>
             </div>
