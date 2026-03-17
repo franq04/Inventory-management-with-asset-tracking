@@ -55,6 +55,30 @@
     $currentUserRole = auth()->user()->role ?? null;
     $totalPipelineOrders = collect($pipelineStages)->sum('count');
     $readyForPoCount = $approvedRequests->count();
+    $overviewTabs = [
+        'ready' => [
+            'label' => 'Ready for PO',
+            'count' => $readyForPoCount,
+            'icon' => 'fa-file-circle-check',
+        ],
+        'pipeline' => [
+            'label' => 'Order Pipeline',
+            'count' => $totalPipelineOrders,
+            'icon' => 'fa-diagram-project',
+        ],
+        'register' => [
+            'label' => 'PO Register',
+            'count' => $purchaseOrders->total(),
+            'icon' => 'fa-table-list',
+        ],
+    ];
+    $activeOverviewTab = request()->query('po_tab', 'pipeline');
+    if (! array_key_exists($activeOverviewTab, $overviewTabs)) {
+        $activeOverviewTab = 'pipeline';
+    }
+    if ($activeOverviewTab === 'ready' && $readyForPoCount === 0) {
+        $activeOverviewTab = 'pipeline';
+    }
 @endphp
 
 {{-- Page Header --}}
@@ -106,9 +130,39 @@
             </div>
         </div>
 
+    {{-- Section Tabs --}}
+    <div id="purchaseOrderOverviewTabs" class="animate-card rounded-[26px] border border-emerald-950/8 bg-white/95 p-4 shadow-[0_16px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur sm:p-5">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex flex-wrap items-center gap-2">
+                @foreach ($overviewTabs as $key => $tab)
+                    @php
+                        $isOverviewActive = $activeOverviewTab === $key;
+                    @endphp
+                    <button
+                        type="button"
+                        data-po-overview-tab="{{ $key }}"
+                        data-active-class="bg-[#1a3a2d] text-white border-[#1a3a2d] shadow-[0_10px_28px_-16px_rgba(26,58,45,0.85)]"
+                        data-inactive-class="bg-[#f8fbf9] text-[#2d5a4a] border-emerald-950/10 hover:bg-white hover:border-[#1a3a2d]/30"
+                        data-count-active-class="bg-white/20 text-white"
+                        data-count-inactive-class="bg-emerald-100 text-emerald-700"
+                        class="inline-flex items-center gap-2.5 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 {{ $isOverviewActive ? 'bg-[#1a3a2d] text-white border-[#1a3a2d] shadow-[0_10px_28px_-16px_rgba(26,58,45,0.85)]' : 'bg-[#f8fbf9] text-[#2d5a4a] border-emerald-950/10 hover:bg-white hover:border-[#1a3a2d]/30' }}"
+                    >
+                        <i class="fas {{ $tab['icon'] }} text-xs"></i>
+                        <span>{{ $tab['label'] }}</span>
+                        <span class="po-overview-tab-count rounded-full px-2 py-0.5 text-xs font-bold {{ $isOverviewActive ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-700' }}">{{ number_format($tab['count']) }}</span>
+                    </button>
+                @endforeach
+            </div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-950/10 bg-[#f8fbf9] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#2d5a4a]/80">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                Active View:
+                <span data-po-overview-label class="text-[#1a3a2d]">{{ $overviewTabs[$activeOverviewTab]['label'] ?? 'Order Pipeline' }}</span>
+            </div>
+        </div>
+    </div>
+
     {{-- Ready for Purchase Ordering --}}
-    @if ($approvedRequests->total() > 0)
-    <div class="animate-card rounded-[28px] border border-emerald-950/8 bg-white/95 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
+    <div id="purchaseOrderReadySection" data-po-overview-panel="ready" class="animate-card rounded-[28px] border border-emerald-950/8 bg-white/95 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur {{ $activeOverviewTab === 'ready' ? '' : 'hidden' }}">
         <div class="px-6 py-6 sm:px-8 lg:px-10">
             <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between mb-6">
                 <div>
@@ -121,7 +175,7 @@
                     {{ $approvedRequests->total() }} request{{ $approvedRequests->total() === 1 ? '' : 's' }}
                 </span>
             </div>
-
+            @if ($approvedRequests->total() > 0)
           <div id="po-table-container" class="overflow-hidden rounded-[24px] border border-emerald-950/8 bg-white">
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm">
@@ -170,12 +224,18 @@
                 {{ $approvedRequests->onEachSide(1)->links('vendor.pagination.procurement') }}
             </div>
         </div>
+            @else
+            <div class="rounded-xl border-2 border-dashed border-emerald-200 bg-emerald-50/40 px-6 py-12 text-center">
+                <i class="fa-solid fa-file-circle-check text-4xl text-emerald-300 mb-3"></i>
+                <p class="font-medium text-gray-700">No approved requests are waiting for PO creation.</p>
+                <p class="text-sm text-gray-500 mt-1">New approved purchase requests will appear here automatically.</p>
+            </div>
+            @endif
         </div>
     </div>
-    @endif
 
     {{-- Order Pipeline --}}
-    <div id="purchaseOrderPipelineSection" class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-6 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-8 lg:p-10 space-y-6">
+    <div id="purchaseOrderPipelineSection" data-po-overview-panel="pipeline" class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-6 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-8 lg:p-10 space-y-6 {{ $activeOverviewTab === 'pipeline' ? '' : 'hidden' }}">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2d5a4a]/70">Delivery Tracking</p>
@@ -512,7 +572,7 @@
     </div>
 
     {{-- Purchase Order Register --}}
-    <div id="purchaseOrderRegisterSection" class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-6 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-8 lg:p-10 space-y-6">
+    <div id="purchaseOrderRegisterSection" data-po-overview-panel="register" class="rounded-[28px] border border-emerald-950/8 bg-white/95 p-6 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur sm:p-8 lg:p-10 space-y-6 {{ $activeOverviewTab === 'register' ? '' : 'hidden' }}">
         <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#2d5a4a]/70">Full Listing</p>
@@ -523,6 +583,7 @@
 
         <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <form method="GET" class="relative w-full xl:max-w-sm">
+                <input type="hidden" name="po_tab" value="register">
                 <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
                 <input type="search" name="search" value="{{ $search }}" placeholder="Search PO number, PR number or supplier..." class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" aria-label="Search purchase orders">
             </form>
@@ -884,43 +945,264 @@
 @vite('resources/js/inspection.js')
 <script>
 (() => {
+    const queryKey = 'po_tab';
+    const tabs = Array.from(document.querySelectorAll('[data-po-overview-tab]'));
+    const panels = Array.from(document.querySelectorAll('[data-po-overview-panel]'));
+    const label = document.querySelector('[data-po-overview-label]');
+
+    if (!tabs.length || !panels.length) {
+        return;
+    }
+
+    const availablePanels = new Set(panels.map((panel) => String(panel.dataset.poOverviewPanel || '').trim()).filter(Boolean));
+
+    const getTabFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = String(params.get(queryKey) || '').trim();
+        if (fromQuery && availablePanels.has(fromQuery)) {
+            return fromQuery;
+        }
+
+        const currentActive = tabs.find((tab) => tab.classList.contains('bg-[#1a3a2d]'));
+        const fallback = String(currentActive?.dataset.poOverviewTab || '').trim();
+        if (fallback && availablePanels.has(fallback)) {
+            return fallback;
+        }
+
+        return availablePanels.has('pipeline') ? 'pipeline' : (Array.from(availablePanels)[0] || null);
+    };
+
+    const animatePanel = (panel, mode = 'show') => {
+        panel.getAnimations().forEach((animation) => animation.cancel());
+
+        if (mode === 'show') {
+            panel.classList.remove('hidden');
+            panel.classList.remove('pointer-events-none');
+            panel.animate(
+                [
+                    { opacity: 0, transform: 'translateY(6px)' },
+                    { opacity: 1, transform: 'translateY(0)' },
+                ],
+                { duration: 190, easing: 'ease-out', fill: 'both' }
+            );
+            return;
+        }
+
+        panel.classList.add('pointer-events-none');
+        const animation = panel.animate(
+            [
+                { opacity: 1, transform: 'translateY(0)' },
+                { opacity: 0, transform: 'translateY(4px)' },
+            ],
+            { duration: 140, easing: 'ease-in', fill: 'both' }
+        );
+
+        animation.onfinish = () => {
+            panel.classList.add('hidden');
+            panel.classList.remove('pointer-events-none');
+            panel.style.opacity = '';
+            panel.style.transform = '';
+        };
+    };
+
+    const activateOverviewTab = (tabKey, options = {}) => {
+        if (!tabKey || !availablePanels.has(tabKey)) {
+            return;
+        }
+
+        const { syncUrl = false, replaceState = false } = options;
+        tabs.forEach((tab) => {
+            const isActive = String(tab.dataset.poOverviewTab) === String(tabKey);
+            const activeClass = String(tab.dataset.activeClass || '').trim();
+            const inactiveClass = String(tab.dataset.inactiveClass || '').trim();
+            const activeCountClass = String(tab.dataset.countActiveClass || '').trim();
+            const inactiveCountClass = String(tab.dataset.countInactiveClass || '').trim();
+            const count = tab.querySelector('.po-overview-tab-count');
+
+            tab.classList.remove('is-selected');
+            if (activeClass) tab.classList.remove(...activeClass.split(/\s+/));
+            if (inactiveClass) tab.classList.remove(...inactiveClass.split(/\s+/));
+
+            if (count) {
+                if (activeCountClass) count.classList.remove(...activeCountClass.split(/\s+/));
+                if (inactiveCountClass) count.classList.remove(...inactiveCountClass.split(/\s+/));
+            }
+
+            if (isActive) {
+                tab.classList.add('is-selected');
+                if (activeClass) tab.classList.add(...activeClass.split(/\s+/));
+                if (count && activeCountClass) count.classList.add(...activeCountClass.split(/\s+/));
+                if (label) {
+                    const tabText = tab.querySelector('span')?.textContent?.trim();
+                    if (tabText) {
+                        label.textContent = tabText;
+                    }
+                }
+            } else {
+                if (inactiveClass) tab.classList.add(...inactiveClass.split(/\s+/));
+                if (count && inactiveCountClass) count.classList.add(...inactiveCountClass.split(/\s+/));
+            }
+        });
+
+        panels.forEach((panel) => {
+            const isActivePanel = String(panel.dataset.poOverviewPanel) === String(tabKey);
+            if (isActivePanel) {
+                animatePanel(panel, 'show');
+            } else if (!panel.classList.contains('hidden')) {
+                animatePanel(panel, 'hide');
+            }
+        });
+
+        if (syncUrl) {
+            const nextUrl = new URL(window.location.href);
+            nextUrl.searchParams.set(queryKey, tabKey);
+
+            if (replaceState) {
+                window.history.replaceState({ poTab: tabKey }, '', nextUrl);
+            } else {
+                window.history.pushState({ poTab: tabKey }, '', nextUrl);
+            }
+        }
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+            activateOverviewTab(String(tab.dataset.poOverviewTab || '').trim(), { syncUrl: true });
+        });
+    });
+
+    activateOverviewTab(getTabFromUrl(), { syncUrl: true, replaceState: true });
+
+    if (!window.__purchaseOrdersOverviewTabPopstateBound) {
+        window.addEventListener('popstate', () => {
+            activateOverviewTab(getTabFromUrl(), { syncUrl: false });
+        });
+        window.__purchaseOrdersOverviewTabPopstateBound = true;
+    }
+})();
+
+(() => {
     // Tab switching logic for pill-style pipeline tabs
-    const tabs = document.querySelectorAll('.pipeline-tab');
-    const panels = document.querySelectorAll('.pipeline-panel');
+    const queryKey = 'po_stage';
+    const tabs = Array.from(document.querySelectorAll('.pipeline-tab'));
+    const panels = Array.from(document.querySelectorAll('.pipeline-panel'));
+
+    if (!tabs.length || !panels.length) {
+        return;
+    }
 
     const activeClasses = ['bg-[#1a3a2d]', 'text-white', 'shadow-lg', 'shadow-[#1a3a2d]/30', 'border-[#1a3a2d]'];
     const inactiveClasses = ['border-gray-200', 'bg-[#fbfcfb]', 'text-gray-600', 'hover:bg-gray-100', 'hover:border-gray-300'];
+    const knownStages = new Set(tabs.map((tab) => String(tab.dataset.tab || '').trim()).filter(Boolean));
 
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const targetPanel = this.dataset.tab;
+    const getStageFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        const stageFromQuery = String(params.get(queryKey) || '').trim();
+        if (stageFromQuery && knownStages.has(stageFromQuery)) {
+            return stageFromQuery;
+        }
 
-            // Update tab states
-            tabs.forEach(t => {
-                t.classList.remove(...activeClasses);
-                t.classList.add(...inactiveClasses);
-                const badge = t.querySelector('span:last-child');
-                if (badge) {
-                    badge.classList.remove('bg-white/20', 'text-white');
-                }
-            });
-            this.classList.remove(...inactiveClasses);
-            this.classList.add(...activeClasses);
-            const activeBadge = this.querySelector('span:last-child');
-            if (activeBadge) {
-                activeBadge.classList.add('bg-white/20', 'text-white');
+        const current = tabs.find((tab) => tab.classList.contains('bg-[#1a3a2d]'));
+        const fallback = String(current?.dataset.tab || '').trim();
+        if (fallback && knownStages.has(fallback)) {
+            return fallback;
+        }
+
+        return tabs[0] ? String(tabs[0].dataset.tab || '').trim() : null;
+    };
+
+    const animatePanel = (panel, mode = 'show') => {
+        panel.getAnimations().forEach((animation) => animation.cancel());
+
+        if (mode === 'show') {
+            panel.classList.remove('hidden');
+            panel.classList.remove('pointer-events-none');
+            panel.animate(
+                [
+                    { opacity: 0, transform: 'translateY(5px)' },
+                    { opacity: 1, transform: 'translateY(0)' },
+                ],
+                { duration: 180, easing: 'ease-out', fill: 'both' }
+            );
+            return;
+        }
+
+        panel.classList.add('pointer-events-none');
+        const animation = panel.animate(
+            [
+                { opacity: 1, transform: 'translateY(0)' },
+                { opacity: 0, transform: 'translateY(4px)' },
+            ],
+            { duration: 130, easing: 'ease-in', fill: 'both' }
+        );
+
+        animation.onfinish = () => {
+            panel.classList.add('hidden');
+            panel.classList.remove('pointer-events-none');
+            panel.style.opacity = '';
+            panel.style.transform = '';
+        };
+    };
+
+    const activatePipelineStage = (stageKey, options = {}) => {
+        if (!stageKey || !knownStages.has(stageKey)) {
+            return;
+        }
+
+        const { syncUrl = false, replaceState = false } = options;
+
+        tabs.forEach((tab) => {
+            const isActive = String(tab.dataset.tab) === String(stageKey);
+
+            tab.classList.remove(...activeClasses);
+            tab.classList.add(...inactiveClasses);
+            const badge = tab.querySelector('span:last-child');
+            if (badge) {
+                badge.classList.remove('bg-white/20', 'text-white');
             }
 
-            // Update panel visibility
-            panels.forEach(p => {
-                if (p.dataset.panel === targetPanel) {
-                    p.classList.remove('hidden');
-                } else {
-                    p.classList.add('hidden');
+            if (isActive) {
+                tab.classList.remove(...inactiveClasses);
+                tab.classList.add(...activeClasses);
+                if (badge) {
+                    badge.classList.add('bg-white/20', 'text-white');
                 }
-            });
+            }
+        });
+
+        panels.forEach((panel) => {
+            if (panel.dataset.panel === stageKey) {
+                animatePanel(panel, 'show');
+            } else if (!panel.classList.contains('hidden')) {
+                animatePanel(panel, 'hide');
+            }
+        });
+
+        if (syncUrl) {
+            const nextUrl = new URL(window.location.href);
+            nextUrl.searchParams.set(queryKey, stageKey);
+            if (replaceState) {
+                window.history.replaceState({ poStage: stageKey }, '', nextUrl);
+            } else {
+                window.history.pushState({ poStage: stageKey }, '', nextUrl);
+            }
+        }
+    };
+
+    tabs.forEach((tab) => {
+        tab.addEventListener('click', function () {
+            activatePipelineStage(String(this.dataset.tab || '').trim(), { syncUrl: true });
         });
     });
+
+    activatePipelineStage(getStageFromUrl(), { syncUrl: true, replaceState: true });
+
+    if (!window.__purchaseOrdersPipelineStagePopstateBound) {
+        window.addEventListener('popstate', () => {
+            activatePipelineStage(getStageFromUrl(), { syncUrl: false });
+        });
+        window.__purchaseOrdersPipelineStagePopstateBound = true;
+    }
 })();
 
 (() => {
