@@ -172,12 +172,6 @@
 
             <div id="alertBox" class="hidden mb-4 p-3 rounded-lg text-sm font-medium"></div>
 
-            @if (session('logout') === 'success')
-                <div id="logoutMessage" class="mb-4 p-3 rounded-lg bg-green-100 text-green-800 text-center font-medium transition-all duration-500 ease-out">
-                    You have been successfully logged out.
-                </div>
-            @endif
-
             <form id="loginForm" class="space-y-6">
                 @csrf
                 
@@ -210,6 +204,8 @@
         </div>
     </div>
 
+    <div id="loginPageToast" class="pointer-events-none fixed right-4 top-6 z-[130] hidden min-w-[260px] max-w-md rounded-xl border border-emerald-800 bg-[#1a3a2d] px-5 py-3 text-sm font-semibold text-white shadow-2xl opacity-0 translate-y-2 transition-all duration-300 ease-out"></div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const usernameInput = document.getElementById('login-username');
@@ -219,7 +215,60 @@
             const eyeSlashIcon = document.getElementById('eye-slash-icon');
             const interactiveOrb = document.getElementById('interactive-orb');
             const loginForm = document.getElementById('loginForm');
-            const logoutMessage = document.getElementById('logoutMessage');
+            const loginPageToast = document.getElementById('loginPageToast');
+            let loginToastTimer = null;
+
+            const showLoginToast = (message, type = 'success') => {
+                if (!loginPageToast || !message) {
+                    return;
+                }
+
+                if (loginToastTimer) {
+                    clearTimeout(loginToastTimer);
+                    loginToastTimer = null;
+                }
+
+                loginPageToast.getAnimations().forEach((animation) => animation.cancel());
+
+                loginPageToast.textContent = message;
+                loginPageToast.classList.remove('hidden', 'border-emerald-800', 'bg-[#1a3a2d]', 'border-red-800', 'bg-red-700', 'opacity-0', 'translate-y-2');
+
+                if (type === 'error') {
+                    loginPageToast.classList.add('border-red-800', 'bg-red-700');
+                } else {
+                    loginPageToast.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
+                }
+
+                const enterDuration = 280;
+                const holdDuration = 1600;
+                const exitDuration = 220;
+
+                const enterAnimation = loginPageToast.animate([
+                    { opacity: 0, transform: 'translateY(10px) scale(0.98)' },
+                    { opacity: 1, transform: 'translateY(0) scale(1)' },
+                ], {
+                    duration: enterDuration,
+                    easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+                    fill: 'forwards',
+                });
+
+                enterAnimation.onfinish = () => {
+                    loginToastTimer = setTimeout(() => {
+                        const exitAnimation = loginPageToast.animate([
+                            { opacity: 1, transform: 'translateY(0) scale(1)' },
+                            { opacity: 0, transform: 'translateY(8px) scale(0.98)' },
+                        ], {
+                            duration: exitDuration,
+                            easing: 'ease-in',
+                            fill: 'forwards',
+                        });
+
+                        exitAnimation.onfinish = () => {
+                            loginPageToast.classList.add('hidden');
+                        };
+                    }, holdDuration);
+                };
+            };
 
             // --- Interactive Orb Logic ---
             if (usernameInput && interactiveOrb) {
@@ -264,15 +313,9 @@
                  });
             }
 
-            // --- Logic to hide the logout message after 3 seconds ---
-            if (logoutMessage) {
-                setTimeout(() => {
-                    logoutMessage.classList.add('opacity-0');
-                    setTimeout(() => {
-                        logoutMessage.style.display = 'none';
-                    }, 500);
-                }, 3000);
-            }
+            @if (session('toast'))
+                showLoginToast(@json(session('toast.message')), @json(session('toast.type', 'success')));
+            @endif
         });
     </script>
 </body>
