@@ -98,6 +98,8 @@
         </div>
     </div>
 
+    <div id="globalAppToast" class="pointer-events-none fixed right-4 top-20 z-[130] hidden min-w-[260px] max-w-md rounded-xl border border-emerald-800 bg-[#1a3a2d] px-5 py-3 text-sm font-semibold text-white shadow-2xl opacity-0 translate-y-2 transition-all duration-300 ease-out"></div>
+
     @stack('scripts')
 <script>
     (() => {
@@ -116,6 +118,61 @@
         const userMenuButton = document.getElementById('user-menu-button');
         const userMenuDropdown = document.getElementById('user-menu-dropdown');
         const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+        const globalAppToast = document.getElementById('globalAppToast');
+        const globalToastStorageKey = 'pqs.globalToast';
+        let globalToastTimerId = null;
+
+        const showGlobalToast = (message, type = 'success') => {
+            if (!globalAppToast || !message) {
+                return;
+            }
+
+            globalAppToast.textContent = message;
+            globalAppToast.classList.remove('hidden', 'border-emerald-800', 'bg-[#1a3a2d]', 'border-red-800', 'bg-red-700', 'opacity-0', 'translate-y-2');
+            if (type === 'error') {
+                globalAppToast.classList.add('border-red-800', 'bg-red-700');
+            } else {
+                globalAppToast.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
+            }
+
+            requestAnimationFrame(() => {
+                globalAppToast.classList.add('opacity-100', 'translate-y-0');
+            });
+
+            if (globalToastTimerId !== null) {
+                window.clearTimeout(globalToastTimerId);
+            }
+
+            globalToastTimerId = window.setTimeout(() => {
+                globalAppToast.classList.remove('opacity-100', 'translate-y-0');
+                globalAppToast.classList.add('opacity-0', 'translate-y-2');
+                window.setTimeout(() => {
+                    globalAppToast.classList.add('hidden');
+                }, 220);
+            }, 2600);
+        };
+
+        const consumeStoredToast = () => {
+            try {
+                const raw = window.sessionStorage.getItem(globalToastStorageKey);
+                if (!raw) {
+                    return;
+                }
+
+                window.sessionStorage.removeItem(globalToastStorageKey);
+                const payload = JSON.parse(raw);
+                const message = String(payload?.message || '').trim();
+                const type = String(payload?.type || 'success').trim();
+
+                if (message) {
+                    showGlobalToast(message, type);
+                }
+            } catch (error) {
+                window.sessionStorage.removeItem(globalToastStorageKey);
+            }
+        };
+
+        consumeStoredToast();
 
         // ✨ NEW: Modal Element Selectors
         const logoutTriggers = document.querySelectorAll('.logout-trigger');
@@ -124,6 +181,10 @@
         const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
         const modalBackdrop = document.getElementById('modal-backdrop');
         let logoutUrl = ''; // To store the logout URL when a link is clicked
+
+        const closeUserMenuDropdown = () => {
+            userMenuDropdown?.classList.add('hidden');
+        };
 
         // --- Sidebar Logic ---
         const isDesktop = () => window.innerWidth >= 768;
@@ -325,7 +386,7 @@
             }, { signal });
             document.addEventListener('click', (event) => {
                 if (!userMenuButton.contains(event.target) && !userMenuDropdown.contains(event.target)) {
-                    userMenuDropdown.classList.add('hidden');
+                    closeUserMenuDropdown();
                 }
             }, { signal });
         }
@@ -360,6 +421,7 @@
             logoutTriggers.forEach(trigger => {
                 trigger.addEventListener('click', (e) => {
                     e.preventDefault();
+                    closeUserMenuDropdown();
                     logoutUrl = trigger.href; // Capture the URL from the link
                     showModal();
                 }, { signal });
@@ -570,7 +632,7 @@
 
         document.addEventListener('turbo:before-cache', () => {
             saveScrollPositions();
-            userMenuDropdown?.classList.add('hidden');
+            closeUserMenuDropdown();
             if (logoutModal) {
                 logoutModal.classList.add('hidden', 'opacity-0');
                 logoutModal.querySelector('[role="dialog"]')?.classList.add('scale-95');

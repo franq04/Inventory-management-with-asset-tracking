@@ -88,6 +88,9 @@ class AuthController extends Controller
         }
         Auth::logout();
         Session::flush();
-        return redirect()->route('login')->with('logout', 'success');
+        return redirect()->route('login')->with('toast', [
+            'message' => 'You have been successfully logged out.',
+            'type' => 'success',
+        ]);
     }
 }
