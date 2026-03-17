@@ -163,7 +163,7 @@
                     <p class="text-xs text-gray-600">* Quantities cannot exceed delivered amounts</p>
                     <div class="flex items-center gap-3">
                         <button type="button" class="px-5 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all text-sm shadow-sm" data-close-modal>Cancel</button>
-                        <button type="submit" class="px-6 py-3 rounded-lg bg-[#1a3a2d] text-white font-semibold shadow-md hover:bg-[#1a3a2d]/90 transition-all text-sm">
+                        <button type="submit" data-loading-text="Saving inspection..." class="px-6 py-3 rounded-lg bg-[#1a3a2d] text-white font-semibold shadow-md hover:bg-[#1a3a2d]/90 transition-all text-sm">
                             <i class="fas fa-save mr-2"></i>Save Inspection
                         </button>
                     </div>

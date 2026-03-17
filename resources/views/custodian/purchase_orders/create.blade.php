@@ -304,7 +304,7 @@
         {{-- Action Buttons --}}
         <div class="flex justify-end gap-3">
             <a href="{{ route('custodian.orders.index') }}" class="rounded-lg bg-gray-100 px-5 py-2.5 font-semibold text-gray-700 transition hover:bg-gray-200">Cancel</a>
-            <button type="submit" class="rounded-lg bg-[#1a3a2d] px-5 py-2.5 font-semibold text-white transition hover:bg-opacity-90 shadow-md hover:shadow-lg">
+            <button type="submit" data-loading-text="Generating purchase order..." class="rounded-lg bg-[#1a3a2d] px-5 py-2.5 font-semibold text-white transition hover:bg-opacity-90 shadow-md hover:shadow-lg">
                 <i class="fas fa-file-invoice-dollar mr-2"></i>Generate Purchase Order
             </button>
         </div>

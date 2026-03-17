@@ -33,13 +33,18 @@ class AuthController extends Controller
         }
 
         if ($account && $valid) {
+            $employee = $account->employee;
+            $sessionProfilePath = $employee?->profile_img
+                ? preg_replace('/^storage\//', '', ltrim($employee->profile_img, '/'))
+                : null;
+
             // Log in using Laravel guard (for Auth::user()) and set custom session
             Auth::login($account);
             // Set session
             Session::put('account_id', $account->account_id);
             Session::put('username', $account->username);
             Session::put('role', $account->role);
-            Session::put('profile_img', $account->profile_img);
+            Session::put('profile_img', $sessionProfilePath);
 
             // Log action
             AuditLog::create([

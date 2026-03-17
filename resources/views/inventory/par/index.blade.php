@@ -78,7 +78,7 @@
                             <a id="parResetFilters" href="{{ route('par.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 transition">
                                 <i class="fas fa-undo"></i> Reset
                             </a>
-                             <button type="submit" class="bg-[#1a3a2d] text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 flex items-center gap-2">
+                             <button type="submit" data-loading-text="Applying filters..." class="bg-[#1a3a2d] text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 flex items-center gap-2">
                                 <i class="fas fa-filter"></i> Apply
                             </button>
                             <button type="button" id="parPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">

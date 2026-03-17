@@ -15,6 +15,8 @@ use App\Http\Controllers\Management\AccountController;
 use App\Http\Controllers\Management\CategoryController;
 use App\Http\Controllers\Management\EmployeeController;
 use App\Http\Controllers\Inventory\PqsController;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -28,9 +30,136 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth.session'])->group(function () {
+    $toProfileImageUrl = static function (?string $path): string {
+        if (! $path) {
+            return asset('images/default-avatar.png');
+        }
+
+        $normalized = ltrim($path, '/');
+        if (str_starts_with($normalized, 'storage/')) {
+            return asset($normalized);
+        }
+
+        return asset('storage/' . $normalized);
+    };
+
+    $toSessionProfilePath = static function (?string $path): ?string {
+        if (! $path) {
+            return null;
+        }
+
+        return preg_replace('/^storage\//', '', ltrim($path, '/'));
+    };
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+
+    Route::get('/my-profile/json', function () use ($toProfileImageUrl) {
+        $account = \Illuminate\Support\Facades\Auth::user();
+        if (!$account) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+        $employee = $account->employee;
+        return response()->json([
+            'username'       => $account->username,
+            'role'           => $account->role,
+            'profile_img'    => $toProfileImageUrl($employee?->profile_img),
+            'full_name'      => $employee?->full_name ?? $account->username,
+            'first_name'     => $employee?->first_name ?? '',
+            'middle_name'    => $employee?->middle_name ?? '',
+            'last_name'      => $employee?->last_name ?? '',
+            'suffix'         => $employee?->suffix ?? '',
+            'email'          => $employee?->email ?? '—',
+            'contact_no'     => $employee?->contact_no ?? '—',
+            'gender'         => $employee?->gender ?? '—',
+            'date_of_birth'  => $employee?->date_of_birth?->format('F j, Y') ?? '—',
+            'date_of_birth_iso' => $employee?->date_of_birth?->format('Y-m-d') ?? '',
+            'marital_status' => $employee?->marital_status ?? '—',
+            'position'       => $employee?->position?->position_title ?? '—',
+            'section'        => $employee?->section?->section_name ?? '—',
+            'division'       => $employee?->section?->division?->division_name ?? '—',
+            'employee_id'    => $employee?->employee_id ?? '—',
+        ]);
+    })->name('my-profile.json');
+
+    Route::put('/my-profile', function (Request $request) use ($toProfileImageUrl, $toSessionProfilePath) {
+        $account = \Illuminate\Support\Facades\Auth::user();
+        if (! $account) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        $employee = $account->employee;
+        if (! $employee) {
+            return response()->json(['error' => 'No employee profile is linked to this account.'], 422);
+        }
+
+        $validated = $request->validate([
+            'username' => ['required', 'string', 'max:255', Rule::unique('accounts', 'username')->ignore($account->account_id, 'account_id')],
+            'first_name' => ['required', 'string', 'max:255'],
+            'middle_name' => ['nullable', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'suffix' => ['nullable', 'string', 'max:255'],
+            'gender' => ['nullable', Rule::in(['male', 'female'])],
+            'date_of_birth' => ['nullable', 'date'],
+            'marital_status' => ['nullable', Rule::in(['single', 'married', 'widowed', 'divorced', 'separated'])],
+            'email' => ['nullable', 'email', 'max:255'],
+            'contact_no' => ['nullable', 'string', 'max:50'],
+            'profile_img' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $accountPayload = [
+            'username' => $validated['username'],
+        ];
+
+        $employeePayload = [
+            'first_name' => $validated['first_name'],
+            'middle_name' => $validated['middle_name'] ?? null,
+            'last_name' => $validated['last_name'],
+            'suffix' => $validated['suffix'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'marital_status' => $validated['marital_status'] ?? null,
+            'email' => $validated['email'] ?? null,
+            'contact_no' => $validated['contact_no'] ?? null,
+        ];
+
+        if ($request->hasFile('profile_img')) {
+            $employeePayload['profile_img'] = $request->file('profile_img')->store('profile_images', 'public');
+        }
+
+        $account->update($accountPayload);
+        $employee->update($employeePayload);
+
+        session(['username' => $account->username]);
+        session(['profile_img' => $toSessionProfilePath($employee->profile_img)]);
+
+        $employee->loadMissing(['position', 'section.division']);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'profile' => [
+                'username' => $account->username,
+                'role' => $account->role,
+                'profile_img' => $toProfileImageUrl($employee->profile_img),
+                'full_name' => $employee->full_name ?: $account->username,
+                'first_name' => $employee->first_name ?? '',
+                'middle_name' => $employee->middle_name ?? '',
+                'last_name' => $employee->last_name ?? '',
+                'suffix' => $employee->suffix ?? '',
+                'email' => $employee->email ?? '—',
+                'contact_no' => $employee->contact_no ?? '—',
+                'gender' => $employee->gender ?? '—',
+                'date_of_birth' => optional($employee->date_of_birth)->format('F j, Y') ?? '—',
+                'date_of_birth_iso' => optional($employee->date_of_birth)->format('Y-m-d') ?? '',
+                'marital_status' => $employee->marital_status ?? '—',
+                'position' => $employee->position?->position_title ?? '—',
+                'section' => $employee->section?->section_name ?? '—',
+                'division' => $employee->section?->division?->division_name ?? '—',
+                'employee_id' => $employee->employee_id ?? '—',
+            ],
+        ]);
+    })->name('my-profile.update');
 });
 
     Route::middleware(['auth.session', 'role:division_head'])->group(function () {

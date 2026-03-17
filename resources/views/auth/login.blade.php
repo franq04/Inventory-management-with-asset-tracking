@@ -196,7 +196,7 @@
                 </div>
                 
                 <div>
-                    <button type="submit" class="shimmer-btn group w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-[var(--secondary-color)] hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-color)] transition-all duration-300 ease-in-out active:scale-[0.98]">
+                    <button id="loginSubmitBtn" type="submit" data-no-global-loading="true" class="shimmer-btn group w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-[var(--secondary-color)] hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-color)] transition-all duration-300 ease-in-out active:scale-[0.98]">
                         Sign In
                     </button>
                 </div>
@@ -215,6 +215,7 @@
             const eyeSlashIcon = document.getElementById('eye-slash-icon');
             const interactiveOrb = document.getElementById('interactive-orb');
             const loginForm = document.getElementById('loginForm');
+            const loginSubmitBtn = document.getElementById('loginSubmitBtn');
             const loginPageToast = document.getElementById('loginPageToast');
             let loginToastTimer = null;
 
@@ -309,6 +310,13 @@
                            usernameInput.parentElement.classList.remove('shake');
                            passwordInput.parentElement.classList.remove('shake');
                         }, 500);
+                        return;
+                    }
+
+                    if (loginSubmitBtn) {
+                        loginSubmitBtn.disabled = true;
+                        loginSubmitBtn.classList.add('opacity-80', 'cursor-not-allowed', 'pointer-events-none');
+                        loginSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i><span>Signing in...</span>';
                     }
                  });
             }

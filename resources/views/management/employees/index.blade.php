@@ -412,7 +412,7 @@
                         </div>
                         <p id="employeeModalEditError" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"></p>
                         <div class="flex justify-end border-t border-gray-100 pt-3">
-                            <button type="submit" id="employeeModalSaveBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#204835]">
+                            <button type="submit" id="employeeModalSaveBtn" data-loading-text="Saving employee changes..." class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#204835]">
                                 <i class="fas fa-save"></i>
                                 Save Changes
                             </button>

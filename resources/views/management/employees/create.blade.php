@@ -247,7 +247,7 @@
             <div class="flex items-center justify-end gap-3">
             <button type="button" id="prevBtn" class="hidden rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Previous</button>
             <button type="button" id="nextBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">Next Step <i class="fas fa-arrow-right"></i></button>
-            <button type="submit" id="submitBtn" class="hidden items-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">
+            <button type="submit" id="submitBtn" data-loading-text="Saving employee..." class="hidden items-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">
                 <i class="fas fa-save mr-2"></i>Save Employee
             </button>
             </div>

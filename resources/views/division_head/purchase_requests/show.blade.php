@@ -91,7 +91,7 @@
                 <form method="POST" action="{{ route('division_head.requests.recommend', $purchaseRequest) }}" 
                       onsubmit="return confirm('Recommend this purchase request to BAC?');">
                     @csrf
-                    <button type="submit" 
+                        <button type="submit" data-loading-text="Submitting recommendation..." 
                             class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-xs sm:text-sm hover:bg-emerald-700 transition-colors">
                         <i class="fas fa-thumbs-up mr-1"></i> Recommend
                     </button>
@@ -101,7 +101,7 @@
                       onsubmit="return confirm('Cancel this purchase request? This action cannot be undone.');">
                     @csrf
                     <input type="hidden" name="remarks" value="Cancelled by Division Head">
-                    <button type="submit" 
+                            <button type="submit" data-loading-text="Canceling request..." 
                             class="px-3 sm:px-4 py-2 rounded-lg bg-rose-600 text-white font-semibold text-xs sm:text-sm hover:bg-rose-700 transition-colors">
                         <i class="fas fa-ban mr-1"></i> Cancel
                     </button>

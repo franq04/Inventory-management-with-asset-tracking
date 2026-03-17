@@ -37,18 +37,18 @@
         <div class="mt-6 flex flex-wrap items-center gap-2 sm:gap-3">
             <form method="POST" action="{{ route('bac.requests.review', $purchaseRequest) }}">
                 @csrf
-                <button type="submit" class="px-3 sm:px-4 py-2 rounded-lg bg-amber-500 text-white font-semibold text-xs sm:text-sm hover:bg-amber-600 transition-colors">Move to Review</button>
+                <button type="submit" data-loading-text="Moving to review..." class="px-3 sm:px-4 py-2 rounded-lg bg-amber-500 text-white font-semibold text-xs sm:text-sm hover:bg-amber-600 transition-colors">Move to Review</button>
             </form>
 
             <form method="POST" action="{{ route('bac.requests.approve', $purchaseRequest) }}" onsubmit="return confirm('Mark as Approved? This action is final.');">
                 @csrf
-                <button type="submit" class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-xs sm:text-sm hover:bg-emerald-700 transition-colors">Approve</button>
+                <button type="submit" data-loading-text="Approving..." class="px-3 sm:px-4 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-xs sm:text-sm hover:bg-emerald-700 transition-colors">Approve</button>
             </form>
 
             <form method="POST" action="{{ route('bac.requests.cancel', $purchaseRequest) }}" onsubmit="return confirm('Cancel this purchase request?');">
                 @csrf
                 <input type="hidden" name="remarks" value="Cancelled by BAC">
-                <button type="submit" class="px-3 sm:px-4 py-2 rounded-lg bg-rose-600 text-white font-semibold text-xs sm:text-sm hover:bg-rose-700 transition-colors">Cancel</button>
+                <button type="submit" data-loading-text="Canceling request..." class="px-3 sm:px-4 py-2 rounded-lg bg-rose-600 text-white font-semibold text-xs sm:text-sm hover:bg-rose-700 transition-colors">Cancel</button>
             </form>
 
             <a href="{{ route('bac.requests.index') }}" class="text-xs sm:text-sm text-gray-500 hover:text-[#1a3a2d] font-medium">Back to queue</a>

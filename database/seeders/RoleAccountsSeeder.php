@@ -26,7 +26,7 @@ class RoleAccountsSeeder extends Seeder
             ['username' => 'iac.lead', 'plain_password' => 'IACLead@2025', 'role' => 'iac'],
             ['username' => 'iac.member', 'plain_password' => 'IACMember@2025', 'role' => 'iac'],
         ];
-
+    
         $nextAccountId = ((int) Account::query()->max('account_id')) + 1;
 
         foreach ($accounts as $accountData) {
