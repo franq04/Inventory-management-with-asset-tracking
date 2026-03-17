@@ -10,7 +10,6 @@ use App\Models\Notification;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Section;
-use App\Models\Division;
 use App\Models\Status;
 use App\Models\StatusHistory;
 use App\Services\FundAllocationService;
@@ -67,8 +66,11 @@ class PurchaseRequestController extends Controller
 
         $totalRequests = (int) $purchaseRequests->total();
 
-        $account->loadMissing('employee.section.division');
-        $employeeSection = $account->employee?->section;
+        $accountProfile = Account::query()
+            ->with('employee.section.division')
+            ->find($account->account_id);
+
+        $employeeSection = $accountProfile?->employee?->section;
         $employeeDivision = $employeeSection?->division;
 
         $defaultDivision = $employeeDivision?->division_id;
@@ -210,7 +212,7 @@ class PurchaseRequestController extends Controller
             return $purchaseRequest;
         });
 
-        $this->notifyCustodiansOfNewRequest($purchaseRequest, $account);
+        $this->notifyDivisionHeadsOfNewRequest($purchaseRequest, $account);
 
         return response()->json([
             'status' => 'success',
@@ -473,9 +475,16 @@ class PurchaseRequestController extends Controller
         return $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
     }
 
-    protected function notifyCustodiansOfNewRequest(PurchaseRequest $purchaseRequest, $account): void
+    protected function notifyDivisionHeadsOfNewRequest(PurchaseRequest $purchaseRequest, $account): void
     {
-        $custodianIds = Account::where('role', 'custodian')->pluck('account_id');
+        $divisionHeadIds = Account::query()
+            ->select('accounts.account_id')
+            ->join('employees', 'employees.account_id', '=', 'accounts.account_id')
+            ->join('sections', 'sections.section_id', '=', 'employees.section_id')
+            ->where('accounts.role', 'division_head')
+            ->where('sections.division_id', (int) $purchaseRequest->division_id)
+            ->pluck('accounts.account_id')
+            ->unique();
 
         $message = sprintf(
             'New purchase request %s submitted by %s.',
@@ -483,7 +492,7 @@ class PurchaseRequestController extends Controller
             $account->username
         );
 
-        foreach ($custodianIds as $recipientId) {
+        foreach ($divisionHeadIds as $recipientId) {
             Notification::create([
                 'recipient_id' => $recipientId,
                 'sender_id' => $account->account_id,

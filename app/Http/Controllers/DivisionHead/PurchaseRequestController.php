@@ -26,6 +26,44 @@ use Illuminate\Validation\ValidationException;
  */
 class PurchaseRequestController extends Controller
 {
+    protected function currentDivisionId(): ?int
+    {
+        $accountId = Auth::id();
+        if (! $accountId) {
+            return null;
+        }
+
+        $account = Account::query()
+            ->with('employee.section')
+            ->find($accountId);
+
+        $employee = $account?->employee;
+
+        return $employee?->section?->division_id
+            ? (int) $employee->section->division_id
+            : null;
+    }
+
+    protected function applyDivisionScope($query)
+    {
+        $divisionId = $this->currentDivisionId();
+
+        if (! $divisionId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('division_id', $divisionId);
+    }
+
+    protected function ensureDivisionAccess(PurchaseRequest $purchaseRequest): void
+    {
+        $divisionId = $this->currentDivisionId();
+
+        if (! $divisionId || (int) $purchaseRequest->division_id !== $divisionId) {
+            abort(403, 'You are not allowed to access purchase requests outside your division.');
+        }
+    }
+
     /**
      * Display purchase requests for Division Head review.
      */
@@ -57,6 +95,7 @@ class PurchaseRequestController extends Controller
 
         $query = PurchaseRequest::with(['status', 'requester.employee', 'division', 'section'])
             ->orderByDesc('created_at');
+        $this->applyDivisionScope($query);
 
         $selectedStatuses = $tabs[$activeTab]['statuses'];
         $query->whereIn('status_id', $selectedStatuses);
@@ -65,7 +104,9 @@ class PurchaseRequestController extends Controller
 
         $tabCounts = [];
         foreach ($tabs as $key => $definition) {
-            $tabCounts[$key] = PurchaseRequest::whereIn('status_id', $definition['statuses'])->count();
+            $tabCounts[$key] = $this->applyDivisionScope(
+                PurchaseRequest::whereIn('status_id', $definition['statuses'])
+            )->count();
         }
 
         $statuses = Status::whereIn('status_id', [
@@ -91,6 +132,8 @@ class PurchaseRequestController extends Controller
         if (Gate::denies('division-head-recommend')) {
             abort(403, 'Only Division Heads can access this page.');
         }
+
+        $this->ensureDivisionAccess($purchaseRequest);
 
         $purchaseRequest->load([
             'items',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Custodian;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Models\Account;
 use App\Models\Notification;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
@@ -20,6 +21,50 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseRequestController extends Controller
 {
+    protected function currentUserDivisionId(): ?int
+    {
+        $accountId = Auth::id();
+        if (! $accountId) {
+            return null;
+        }
+
+        $account = Account::query()
+            ->with('employee.section')
+            ->find($accountId);
+
+        $employee = $account?->employee;
+
+        return $employee?->section?->division_id
+            ? (int) $employee->section->division_id
+            : null;
+    }
+
+    protected function applyDivisionHeadScope($query, array $context)
+    {
+        if (($context['role'] ?? null) !== 'division_head') {
+            return $query;
+        }
+
+        $divisionId = $this->currentUserDivisionId();
+        if (! $divisionId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('division_id', $divisionId);
+    }
+
+    protected function ensureDivisionHeadCanAccessPurchaseRequest(PurchaseRequest $purchaseRequest, array $context): void
+    {
+        if (($context['role'] ?? null) !== 'division_head') {
+            return;
+        }
+
+        $divisionId = $this->currentUserDivisionId();
+        if (! $divisionId || (int) $purchaseRequest->division_id !== $divisionId) {
+            abort(403, 'You are not allowed to access purchase requests outside your division.');
+        }
+    }
+
     protected function workflowContext(): array
     {
         $role = strtolower(Auth::user()?->role ?? session('role', 'custodian'));
@@ -199,6 +244,7 @@ class PurchaseRequestController extends Controller
 
         $query = PurchaseRequest::with(['status', 'requester', 'division', 'section'])
             ->orderByDesc('created_at');
+        $this->applyDivisionHeadScope($query, $context);
 
         $selectedStatuses = $tabs[$activeTab]['statuses'] ?? null;
         if (is_array($selectedStatuses)) {
@@ -210,6 +256,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequests = $query->paginate(5)->withQueryString();
 
         $statusCountsQuery = PurchaseRequest::select('status_id', DB::raw('COUNT(*) as aggregate'));
+        $this->applyDivisionHeadScope($statusCountsQuery, $context);
         if (! empty($trackedStatusIds)) {
             $statusCountsQuery->whereIn('status_id', $trackedStatusIds);
         }
@@ -227,8 +274,8 @@ class PurchaseRequestController extends Controller
                 );
             } else {
                 $tabCounts[$key] = ! empty($trackedStatusIds)
-                    ? (int) PurchaseRequest::whereIn('status_id', $trackedStatusIds)->count()
-                    : (int) PurchaseRequest::count();
+                    ? (int) $this->applyDivisionHeadScope(PurchaseRequest::whereIn('status_id', $trackedStatusIds), $context)->count()
+                    : (int) $this->applyDivisionHeadScope(PurchaseRequest::query(), $context)->count();
             }
         }
 
@@ -307,6 +354,9 @@ class PurchaseRequestController extends Controller
 
     public function show(Request $request, PurchaseRequest $purchaseRequest)
     {
+        $context = $this->workflowContext();
+        $this->ensureDivisionHeadCanAccessPurchaseRequest($purchaseRequest, $context);
+
         $purchaseRequest->load([
             'items',
             'status',
@@ -378,6 +428,8 @@ class PurchaseRequestController extends Controller
     public function updateStatus(Request $request, PurchaseRequest $purchaseRequest)
     {
         $context = $this->workflowContext();
+        $this->ensureDivisionHeadCanAccessPurchaseRequest($purchaseRequest, $context);
+
         $canEditFunds = $context['can_edit_fund_fields'] ?? false;
         $remarksRequiredStatuses = $context['remarks_required_statuses'] ?? [Status::PR_CANCELLED];
         $allowedTransitions = $context['transitions'] ?? [];

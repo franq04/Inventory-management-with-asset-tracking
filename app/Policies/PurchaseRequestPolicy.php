@@ -18,6 +18,26 @@ use App\Models\Status;
  */
 class PurchaseRequestPolicy
 {
+    protected function resolveDivisionId(Account $user): ?int
+    {
+        $user->loadMissing('employee.section');
+
+        return $user->employee?->section?->division_id
+            ? (int) $user->employee->section->division_id
+            : null;
+    }
+
+    protected function canDivisionHeadAccessPurchaseRequest(Account $user, PurchaseRequest $purchaseRequest): bool
+    {
+        $divisionId = $this->resolveDivisionId($user);
+
+        if (! $divisionId) {
+            return false;
+        }
+
+        return (int) $purchaseRequest->division_id === $divisionId;
+    }
+
     /**
      * Determine if the user can view any purchase requests.
      */
@@ -36,8 +56,13 @@ class PurchaseRequestPolicy
             return $purchaseRequest->account_id === $user->account_id;
         }
 
-        // Division heads, BAC, custodians, and inspectors can view all
-        return in_array($user->role, ['division_head', 'bac', 'custodian', 'iac'], true);
+        // Division heads can only view requests in their own division
+        if ($user->role === 'division_head') {
+            return $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest);
+        }
+
+        // BAC, custodians, and inspectors can view all
+        return in_array($user->role, ['bac', 'custodian', 'iac'], true);
     }
 
     /**
@@ -55,6 +80,10 @@ class PurchaseRequestPolicy
     public function recommend(Account $user, PurchaseRequest $purchaseRequest): bool
     {
         if ($user->role !== 'division_head') {
+            return false;
+        }
+
+        if (! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
             return false;
         }
 
@@ -87,6 +116,10 @@ class PurchaseRequestPolicy
     {
         // Division heads can cancel during recommendation phase
         if ($user->role === 'division_head') {
+            if (! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
+                return false;
+            }
+
             return (int) $purchaseRequest->status_id === Status::PR_FOR_RECOMMENDATION;
         }
 
