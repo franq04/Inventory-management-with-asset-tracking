@@ -1787,61 +1787,40 @@ const initCustodianPurchaseRequestUtilities = () => {
         });
     };
 
+    const buildQueueExportUrl = (baseUrl) => {
+        if (!baseUrl) {
+            return null;
+        }
+
+        const targetUrl = new URL(baseUrl, window.location.origin);
+        const currentUrl = new URL(window.location.href);
+        const activeTab = currentUrl.searchParams.get('tab')
+            || $('#custodianQueuePage .po-tab.is-active').data('poTab')
+            || 'all';
+
+        targetUrl.searchParams.set('tab', String(activeTab));
+
+        return targetUrl.toString();
+    };
+
     const handlePrintPdf = () => {
-        const tableHtml = buildPrintableTable();
-        if (!tableHtml) {
+        const baseUrl = String($('#purchaseRequestPrintPdf').data('printUrl') || '');
+        const url = buildQueueExportUrl(baseUrl);
+        if (!url) {
             return;
         }
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            return;
-        }
-
-        printWindow.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Purchase Requests</title>
-<style>
-body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 24px; color: #1f2937; }
-h1 { font-size: 20px; margin-bottom: 16px; }
-table { border-collapse: collapse; width: 100%; }
-th, td { border: 1px solid #d1d5db; padding: 8px; font-size: 12px; text-align: left; }
-thead th { background-color: #f3f4f6; font-weight: 600; text-transform: uppercase; }
-tbody tr:nth-child(even) { background-color: #f9fafb; }
-</style>
-</head>
-<body>
-<h1>Purchase Requests</h1>
-${tableHtml}
-</body>
-</html>`);
-
-        printWindow.document.close();
-        printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 300);
+        window.open(url, '_blank');
     };
 
     const handleExportExcel = () => {
-        const tableHtml = buildPrintableTable();
-        if (!tableHtml) {
+        const baseUrl = String($('#purchaseRequestExportExcel').data('excelUrl') || '');
+        const url = buildQueueExportUrl(baseUrl);
+        if (!url) {
             return;
         }
 
-        const blob = new Blob(['\ufeff' + tableHtml], { type: 'application/vnd.ms-excel' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        const timestamp = new Date().toISOString().split('T')[0];
-        link.download = `purchase-requests-${timestamp}.xls`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        window.location.href = url;
     };
 
     $(document)

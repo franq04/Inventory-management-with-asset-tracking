@@ -15,6 +15,7 @@ use App\Models\StatusHistory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
@@ -78,6 +79,71 @@ class InspectionController extends Controller
             'itemsByStatus' => $itemsByStatus,
             'allItems' => $allItems,
         ]);
+    }
+
+    public function printPdf(Request $request): View
+    {
+        [$items, $activeTab] = $this->inspectionExportPayload($request);
+
+        return view('custodian.inspection.print', [
+            'items' => $items,
+            'activeTab' => $activeTab,
+        ]);
+    }
+
+    public function exportExcel(Request $request): Response
+    {
+        [$items] = $this->inspectionExportPayload($request);
+
+        $html = view('custodian.inspection.excel', [
+            'items' => $items,
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Inspection-Items-'.date('Y-m-d').'.xls"');
+    }
+
+    private function inspectionExportPayload(Request $request): array
+    {
+        $statusMap = [
+            'pending' => [Status::ITEM_PENDING_INSPECTION],
+            'accepted' => [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED],
+            'defective' => [Status::ITEM_DEFECTIVE],
+            'returned' => [Status::ITEM_RETURNED],
+        ];
+
+        $activeTab = strtolower((string) $request->query('tab', 'all'));
+        if ($activeTab !== 'all' && ! array_key_exists($activeTab, $statusMap)) {
+            $activeTab = 'all';
+        }
+
+        $baseQuery = PurchaseOrderItem::query()
+            ->with([
+                'purchaseOrder.supplier',
+                'latestInspectionItem.report',
+                'latestInspectionItem.status',
+            ])
+            ->whereHas('purchaseOrder');
+
+        if ($activeTab !== 'all') {
+            $statusIds = array_map('intval', (array) ($statusMap[$activeTab] ?? []));
+
+            $baseQuery->where(function ($builder) use ($statusIds) {
+                $builder->whereHas('latestInspectionItem', function ($inspectionQuery) use ($statusIds) {
+                    $inspectionQuery->whereIn('inspection_status_id', $statusIds);
+                });
+
+                if (in_array(Status::ITEM_PENDING_INSPECTION, $statusIds, true)) {
+                    $builder->orWhereDoesntHave('latestInspectionItem');
+                }
+            });
+        }
+
+        return [
+            $baseQuery->orderByDesc('poi_id')->get(),
+            $activeTab,
+        ];
     }
 
     /**

@@ -101,10 +101,10 @@
                 <input type="search" id="purchaseRequestSearch" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search requests..." aria-label="Search purchase requests">
             </div>
             <div class="flex flex-wrap items-center gap-2">
-                <button type="button" id="purchaseRequestPrintPdf" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
+                <button type="button" id="purchaseRequestPrintPdf" data-print-url="{{ route('custodian.requests.print.pdf') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
                     <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
                 </button>
-                <button type="button" id="purchaseRequestExportExcel" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
+                <button type="button" id="purchaseRequestExportExcel" data-excel-url="{{ route('custodian.requests.export.excel') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
                     <i class="fas fa-file-excel text-emerald-600"></i> Export Excel
                 </button>
             </div>

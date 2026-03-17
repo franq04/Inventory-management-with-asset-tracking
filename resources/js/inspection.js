@@ -273,22 +273,34 @@ const initInspectionFilters = () => {
 
     runFilters();
 
-    $('#inspectionPrintPdfBtn').off('click.inspectionPrintPdf').on('click.inspectionPrintPdf', () => {
-        // Print currently visible rows for active panel
-        const $activePanel = $('[data-inspection-panel]').filter(function () { return !$(this).hasClass('hidden'); }).first();
-        if (!$activePanel.length) return;
+    const buildInspectionExportUrl = (baseUrl) => {
+        if (!baseUrl) {
+            return null;
+        }
 
-        const tableHtml = $activePanel.find('table').clone();
-        // remove hidden rows
-        tableHtml.find('tbody tr').filter(function () { return $(this).css('display') === 'none'; }).remove();
+        const targetUrl = new URL(baseUrl, window.location.origin);
+        const activeTab = $(inspectionRootSelector).find('.inspection-tab.is-selected').data('inspectionTab') || 'all';
+        targetUrl.searchParams.set('tab', String(activeTab));
 
-        const win = window.open('', '_blank');
-        if (!win) return;
-        win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Inspection Report</title>
-            <style>body{font-family:Segoe UI, Tahoma, sans-serif;padding:20px;color:#111}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;font-size:12px}</style>
-            </head><body><h2>Inspection Items</h2>` + tableHtml.prop('outerHTML') + `</body></html>`);
-        win.document.close();
-        setTimeout(() => { win.print(); win.close(); }, 300);
+        return targetUrl.toString();
+    };
+
+    $('#inspectionPrintPdfBtn').off('click.inspectionPrintPdf').on('click.inspectionPrintPdf', function () {
+        const url = buildInspectionExportUrl($(this).data('printUrl'));
+        if (!url) {
+            return;
+        }
+
+        window.open(url, '_blank');
+    });
+
+    $('#inspectionPrintExcelBtn').off('click.inspectionExportExcel').on('click.inspectionExportExcel', function () {
+        const url = buildInspectionExportUrl($(this).data('excelUrl'));
+        if (!url) {
+            return;
+        }
+
+        window.location.href = url;
     });
 };
 

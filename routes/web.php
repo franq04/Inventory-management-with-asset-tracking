@@ -80,6 +80,12 @@ Route::middleware('role:custodian')->group(function () {
         Route::patch('purchase-requests/items/{purchase_request_item}', [CustodianPurchaseRequestController::class, 'updateItem'])
             ->name('requests.items.update');
 
+        Route::get('purchase-requests/export/pdf', [CustodianPurchaseRequestController::class, 'printPdf'])
+            ->name('requests.print.pdf');
+
+        Route::get('purchase-requests/export/excel', [CustodianPurchaseRequestController::class, 'exportExcel'])
+            ->name('requests.export.excel');
+
         Route::get('purchase-orders', [
             PurchaseOrderController::class,
             'index',
@@ -134,6 +140,16 @@ Route::middleware('role:custodian')->group(function () {
             'index',
         ])->name('inspection.index');
 
+        Route::get('inspection-acceptance/export/pdf', [
+            InspectionController::class,
+            'printPdf',
+        ])->name('inspection.print.pdf');
+
+        Route::get('inspection-acceptance/export/excel', [
+            InspectionController::class,
+            'exportExcel',
+        ])->name('inspection.export.excel');
+
         Route::get('purchase-orders/{purchase_order}/inspection', [
             InspectionController::class,
             'form',
@@ -148,6 +164,16 @@ Route::middleware('role:custodian')->group(function () {
             InventoryAssignmentController::class,
             'index',
         ])->name('inventory.index');
+
+        Route::get('inventory-assignment/export/pdf', [
+            InventoryAssignmentController::class,
+            'printPdf',
+        ])->name('inventory.print.pdf');
+
+        Route::get('inventory-assignment/export/excel', [
+            InventoryAssignmentController::class,
+            'exportExcel',
+        ])->name('inventory.export.excel');
 
         Route::get('inventory-assignment/items', [
             InventoryAssignmentController::class,
