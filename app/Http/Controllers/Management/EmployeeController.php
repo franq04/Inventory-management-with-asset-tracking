@@ -20,6 +20,14 @@ class EmployeeController extends Controller
     private const DEFAULT_PROFILE_IMG = 'images/default-avatar.png';
     private const MARITAL_STATUSES = ['single', 'married', 'widowed', 'divorced', 'separated'];
     private const GENDERS = ['male', 'female', 'other'];
+    private const ACCOUNT_ROLES = ['employee', 'custodian', 'iac', 'division_head', 'bac'];
+    private const ACCOUNT_ROLE_LABELS = [
+        'employee' => 'Employee',
+        'custodian' => 'Custodian',
+        'iac' => 'IAC',
+        'division_head' => 'Division Head',
+        'bac' => 'BAC Officer',
+    ];
 
     public function index(Request $request)
     {
@@ -252,7 +260,7 @@ class EmployeeController extends Controller
             // validate account inputs separately
             $accountValidator = Validator::make($request->all(), [
                 'new_account_username' => ['required', 'string', 'max:255', Rule::unique('accounts', 'username')],
-                'new_account_role' => ['required', 'string', 'max:50'],
+                'new_account_role' => ['required', Rule::in(self::ACCOUNT_ROLES)],
                 'new_account_password' => ['nullable', 'string', 'min:6'],
             ]);
 
@@ -310,7 +318,7 @@ class EmployeeController extends Controller
         if ($createAccount) {
             $accountValidator = Validator::make($request->all(), [
                 'new_account_username' => ['required', 'string', 'max:255', Rule::unique('accounts', 'username')],
-                'new_account_role' => ['required', 'string', 'max:50'],
+                'new_account_role' => ['required', Rule::in(self::ACCOUNT_ROLES)],
                 'new_account_password' => ['nullable', 'string', 'min:6'],
             ]);
 
@@ -375,7 +383,7 @@ class EmployeeController extends Controller
 
             $newAccountData = Validator::make($request->all(), [
                 'new_account_username' => ['required', 'string', 'max:255', Rule::unique('accounts', 'username')],
-                'new_account_role' => ['required', Rule::in(['employee', 'custodian', 'iac', 'division_head'])],
+                'new_account_role' => ['required', Rule::in(self::ACCOUNT_ROLES)],
                 'new_account_password' => ['nullable', 'string', 'min:6'],
             ])->validate();
         }
@@ -474,10 +482,33 @@ class EmployeeController extends Controller
             'divisions' => $divisions,
             'positions' => $positions,
             'accounts' => $accounts,
+            'accountRoles' => $this->resolveAccountRoleOptions(),
             'maritalStatuses' => self::MARITAL_STATUSES,
             'genders' => self::GENDERS,
             'selectedDivision' => $employee?->section?->division_id,
         ];
+    }
+
+    private function resolveAccountRoleOptions(): array
+    {
+        $dbRoles = Account::query()
+            ->select('role')
+            ->distinct()
+            ->pluck('role')
+            ->map(fn ($role) => strtolower(trim((string) $role)))
+            ->filter();
+
+        $roles = collect(self::ACCOUNT_ROLES)
+            ->merge($dbRoles)
+            ->unique()
+            ->values();
+
+        return $roles->map(function (string $role): array {
+            return [
+                'value' => $role,
+                'label' => self::ACCOUNT_ROLE_LABELS[$role] ?? ucwords(str_replace('_', ' ', $role)),
+            ];
+        })->all();
     }
 
     private function availableAccounts(?Employee $employee = null)
