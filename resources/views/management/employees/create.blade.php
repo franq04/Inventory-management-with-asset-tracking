@@ -3,22 +3,28 @@
 @section('title', 'Add Employee')
 
 @section('content')
-<div class="space-y-6 animate-card">
-    {{-- Header --}}
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
-            <h1 class="text-3xl font-extrabold text-[#1a3a2d]">Add New Employee</h1>
-            <p class="mt-1 text-sm text-gray-500">Create a new employee record and assign departmental details.</p>
+<div class="mx-auto max-w-[1500px] space-y-6 animate-card">
+    <section class="relative overflow-hidden rounded-[26px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
+        <div class="pointer-events-none absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.16),_transparent_58%)]"></div>
+        <div class="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-2 max-w-2xl">
+                <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">
+                    <span class="h-2 w-2 rounded-full bg-[#f9bf0f]"></span>
+                    Employee Registry
+                </span>
+                <h1 class="text-3xl font-extrabold tracking-tight">Add New Employee</h1>
+                <p class="text-sm text-white/75">Create a new employee record, assign department details, and provision system access in guided steps.</p>
+            </div>
+            <a href="{{ route('employees.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20">
+                <i class="fas fa-arrow-left"></i>
+                Back to Employee List
+            </a>
         </div>
-        <a href="{{ route('employees.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
-            <i class="fas fa-arrow-left"></i>
-            Back to Employee List
-        </a>
-    </div>
+    </section>
 
     {{-- Validation Errors --}}
     @if ($errors->any())
-        <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm">
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 shadow-sm">
             <p class="font-bold mb-2 flex items-center gap-2"><i class="fas fa-exclamation-circle"></i> Please fix the errors below and try again:</p>
             <ul class="list-disc pl-5 space-y-1">
                 @foreach ($errors->all() as $error)
@@ -28,34 +34,38 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('employees.store') }}" class="space-y-8" enctype="multipart/form-data" id="addEmployeeForm">
+    <form method="POST" action="{{ route('employees.store') }}" class="space-y-6" enctype="multipart/form-data" id="addEmployeeForm">
         @csrf
 
         {{-- Step Navigation --}}
-        <div class="border-b border-gray-200">
-            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <button type="button" data-step="1" class="step-tab group inline-flex items-center gap-2 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-semibold border-[#1a3a2d] text-[#1a3a2d]">
+        <div class="rounded-2xl border border-emerald-950/8 bg-white/95 p-4 shadow-[0_16px_35px_-25px_rgba(15,23,42,0.45)]">
+            <nav class="-mb-px flex flex-wrap gap-4 border-b border-gray-200" aria-label="Tabs">
+                <button type="button" data-step="1" class="step-tab group inline-flex items-center gap-2 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-semibold border-[#1a3a2d] text-[#1a3a2d]">
                     <span class="step-indicator rounded-full w-6 h-6 flex items-center justify-center bg-[#1a3a2d] text-white">1</span>
                     Personal Information
                 </button>
-                <button type="button" data-step="2" class="step-tab group inline-flex items-center gap-2 whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                <button type="button" data-step="2" class="step-tab group inline-flex items-center gap-2 whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
                      <span class="step-indicator rounded-full w-6 h-6 flex items-center justify-center bg-gray-200 text-gray-600">2</span>
                     Contact, Assignment & Access
                 </button>
             </nav>
+            <p class="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-gray-500">Complete all required fields marked with *</p>
         </div>
 
         {{-- Step 1: Personal Information --}}
         <div class="form-step" data-step="1">
-            <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-                <h2 class="text-lg font-semibold text-gray-800">Personal Details</h2>
+            <section class="rounded-2xl border border-emerald-950/8 bg-white p-6 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.45)] space-y-6 sm:p-7">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-[#1a3a2d]">Personal Details</h2>
+                    <p class="mt-1 text-sm text-gray-500">Capture legal identity and basic profile data.</p>
+                </div>
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {{-- Profile Picture Uploader --}}
                     <div class="md:col-span-1">
-                        <label class="text-sm font-semibold text-gray-600">Profile Picture</label>
+                        <label class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Profile Picture</label>
                         <div class="mt-1">
                             <input id="profile_img" name="profile_img" type="file" accept="image/*" class="hidden" />
-                            <label for="profile_img" class="group cursor-pointer flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-gray-300 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition">
+                            <label for="profile_img" class="group cursor-pointer flex flex-col items-center justify-center w-full h-52 border-2 border-dashed border-gray-300 rounded-xl bg-[#f7faf8] hover:border-emerald-500 hover:bg-emerald-50 transition">
                                 <img id="image_preview" src="" alt="Image Preview" class="hidden w-full h-full object-cover rounded-xl"/>
                                 <div id="upload_prompt" class="flex flex-col items-center justify-center text-gray-500">
                                     <i class="fas fa-camera text-4xl text-gray-400 group-hover:text-emerald-600"></i>
@@ -69,41 +79,42 @@
                     {{-- Name Fields --}}
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label for="first_name" class="text-sm font-semibold text-gray-600">First Name <span class="text-red-500">*</span></label>
-                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <label for="first_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">First Name <span class="text-red-500">*</span></label>
+                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('first_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="middle_name" class="text-sm font-semibold text-gray-600">Middle Name</label>
-                            <input id="middle_name" name="middle_name" type="text" value="{{ old('middle_name') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <label for="middle_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Middle Name</label>
+                            <input id="middle_name" name="middle_name" type="text" value="{{ old('middle_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('middle_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                          <div>
-                            <label for="last_name" class="text-sm font-semibold text-gray-600">Last Name <span class="text-red-500">*</span></label>
-                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <label for="last_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Last Name <span class="text-red-500">*</span></label>
+                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('last_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="suffix" class="text-sm font-semibold text-gray-600">Suffix</label>
-                            <input id="suffix" name="suffix" type="text" value="{{ old('suffix') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" placeholder="e.g. Jr., III" />
+                            <label for="suffix" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Suffix</label>
+                            <input id="suffix" name="suffix" type="text" value="{{ old('suffix') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. Jr., III" />
                             @error('suffix')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                          <div>
-                            <label for="date_of_birth" class="text-sm font-semibold text-gray-600">Date of Birth <span class="text-red-500">*</span></label>
-                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <label for="date_of_birth" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Date of Birth <span class="text-red-500">*</span></label>
+                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('date_of_birth')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
                 </div>
                  <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                      <div>
-                        <label for="employee_id" class="text-sm font-semibold text-gray-600">Employee ID</label>
-                        <input id="employee_id" name="employee_id" type="text" value="{{ old('employee_id') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" placeholder="Auto-generated if blank" />
+                        <label for="employee_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Employee ID</label>
+                        <input id="employee_id" name="employee_id" type="text" value="{{ old('employee_id') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-gray-100 px-4 text-gray-500 cursor-not-allowed shadow-sm focus:border-gray-200 focus:ring-0" placeholder="Auto-generated" readonly aria-readonly="true" />
+                        <p class="mt-1 text-xs text-gray-500">Generated by the system after saving.</p>
                         @error('employee_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="gender" class="text-sm font-semibold text-gray-600">Gender <span class="text-red-500">*</span></label>
-                        <select id="gender" name="gender" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <label for="gender" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Gender <span class="text-red-500">*</span></label>
+                        <select id="gender" name="gender" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Select gender</option>
                             @foreach ($genders as $gender)
                                 <option value="{{ $gender }}" @selected(old('gender') === $gender)>{{ ucfirst($gender) }}</option>
@@ -112,8 +123,8 @@
                         @error('gender')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="marital_status" class="text-sm font-semibold text-gray-600">Marital Status <span class="text-red-500">*</span></label>
-                        <select id="marital_status" name="marital_status" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <label for="marital_status" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Marital Status <span class="text-red-500">*</span></label>
+                        <select id="marital_status" name="marital_status" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Select status</option>
                             @foreach ($maritalStatuses as $status)
                                 <option value="{{ $status }}" @selected(old('marital_status') === $status)>{{ ucfirst($status) }}</option>
@@ -127,24 +138,27 @@
 
         {{-- Step 2: Contact, Assignment & Access --}}
         <div class="form-step hidden" data-step="2">
-            <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
-                <h2 class="text-lg font-semibold text-gray-800">Contact & Assignment</h2>
+            <section class="rounded-2xl border border-emerald-950/8 bg-white p-6 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.45)] space-y-6 sm:p-7">
+                <div>
+                    <h2 class="text-2xl font-bold tracking-tight text-[#1a3a2d]">Contact, Assignment & Access</h2>
+                    <p class="mt-1 text-sm text-gray-500">Set communication, organizational assignment, and account linkage.</p>
+                </div>
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
-                        <label for="contact_no" class="text-sm font-semibold text-gray-600">Contact Number</label>
-                        <input id="contact_no" name="contact_no" type="text" value="{{ old('contact_no') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" placeholder="e.g. 09171234567" />
+                        <label for="contact_no" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Contact Number</label>
+                        <input id="contact_no" name="contact_no" type="text" value="{{ old('contact_no') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. 09171234567" />
                         @error('contact_no')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="email" class="text-sm font-semibold text-gray-600">Email Address</label>
-                        <input id="email" name="email" type="email" value="{{ old('email') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" placeholder="name@example.com" />
+                        <label for="email" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Email Address</label>
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="name@example.com" />
                         @error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                 </div>
                 <div class="grid gap-5 sm:grid-cols-2">
                      <div>
-                        <label for="division_id" class="text-sm font-semibold text-gray-600">Division</label>
-                        <select id="division_id" name="division_id" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <label for="division_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Division</label>
+                        <select id="division_id" name="division_id" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Unassigned</option>
                             @php $oldDivision = old('division_id', $selectedDivision); @endphp
                             @foreach ($divisions as $division)
@@ -154,16 +168,16 @@
                         @error('division_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                      <div>
-                        <label for="section_id" class="text-sm font-semibold text-gray-600">Section</label>
-                        <select id="section_id" name="section_id" data-selected="{{ old('section_id') }}" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                        <label for="section_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Section</label>
+                        <select id="section_id" name="section_id" data-selected="{{ old('section_id') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Unassigned</option>
                         </select>
                         @error('section_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                 </div>
                 <div>
-                    <label for="position_id" class="text-sm font-semibold text-gray-600">Position</label>
-                    <select id="position_id" name="position_id" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
+                    <label for="position_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Position</label>
+                    <select id="position_id" name="position_id" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                         <option value="">Unassigned</option>
                         @foreach ($positions as $position)
                             <option value="{{ $position->position_id }}" @selected(old('position_id') == $position->position_id)>{{ $position->position_title }}</option>
@@ -173,62 +187,70 @@
                 </div>
                 
                 {{-- System Access Section (Now part of Step 2) --}}
-                <div class="pt-6 border-t">
-                    <h2 class="text-lg font-semibold text-gray-800">System Access</h2>
-                     <div>
-                        <label for="account_id" class="text-sm font-semibold text-gray-600">Link to an Existing Account</label>
-                        <select id="account_id" name="account_id" class="mt-1 w-full rounded-xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
-                            <option value="">None (create new or leave unassigned)</option>
-                            @foreach ($accounts as $account)
-                                <option value="{{ $account->account_id }}" @selected(old('account_id') == $account->account_id)>{{ $account->username }} ({{ ucfirst(str_replace('_', ' ', $account->role)) }})</option>
-                            @endforeach
-                        </select>
-                         <p class="mt-1 text-xs text-gray-500">Choose this if the employee already has a system account.</p>
-                        @error('account_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div class="relative flex items-start pt-4 mt-4 border-t">
-                        <div class="flex h-6 items-center">
-                            <input id="create_account" name="create_account" type="checkbox" value="1" class="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600" @checked(old('create_account'))>
+                <div class="pt-6 border-t border-gray-200">
+                    <div class="rounded-2xl border border-emerald-100/80 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 p-5 shadow-sm">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h2 class="text-xl font-bold tracking-tight text-[#1a3a2d]">System Access</h2>
+                                <p class="mt-1 text-sm text-gray-600">Configure login access for this employee.</p>
+                            </div>
+                            <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-amber-700">
+                                Unassigned
+                            </span>
                         </div>
-                        <div class="ml-3 text-sm leading-6">
-                            <label for="create_account" class="font-semibold text-gray-800">Create a New Account for this Employee</label>
-                            <p class="text-xs text-gray-500">This will generate a new user login linked to this employee record.</p>
+
+                        <input type="hidden" id="account_id" name="account_id" value="">
+                        <p class="mt-4 rounded-xl border border-white/70 bg-white/70 px-4 py-3 text-sm text-gray-600 backdrop-blur">
+                            No linked account yet. Enable account creation below to generate credentials in this step.
+                        </p>
+                        @error('account_id')<p class="mt-2 text-xs text-red-600">{{ $message }}</p>@enderror
+
+                        <div class="relative mt-4 rounded-xl border border-emerald-100 bg-white/75 p-4">
+                            <label for="create_account" class="flex items-start gap-3">
+                                <input id="create_account" name="create_account" type="checkbox" value="1" class="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600" @checked(old('create_account'))>
+                                <span>
+                                    <span class="block text-sm font-semibold text-gray-800">Create a New Account for this Employee</span>
+                                    <span class="block text-xs text-gray-500">A system user will be created and automatically linked to this employee profile.</span>
+                                </span>
+                            </label>
                         </div>
-                    </div>
-                    <div id="new_account_fields" class="mt-4 space-y-4 rounded-lg bg-gray-50 border border-gray-200 p-4 hidden">
+
+                        <div id="new_account_fields" class="mt-4 space-y-4 rounded-xl border border-emerald-100 bg-white p-4 hidden shadow-sm">
                         <div>
-                            <label for="new_account_username" class="text-sm font-semibold text-gray-600">Username <span class="text-red-500">*</span></label>
-                            <input id="new_account_username" name="new_account_username" type="text" value="{{ old('new_account_username') }}" class="mt-1 w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" />
+                            <label for="new_account_username" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Username <span class="text-red-500">*</span></label>
+                            <input id="new_account_username" name="new_account_username" type="text" value="{{ old('new_account_username') }}" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('new_account_username')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="new_account_role" class="text-sm font-semibold text-gray-600">Role <span class="text-red-500">*</span></label>
-                            <select id="new_account_role" name="new_account_role" class="mt-1 w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm">
-                                <option value="employee" @selected(old('new_account_role', 'employee') === 'employee')>Employee</option>
-                                <option value="custodian" @selected(old('new_account_role') === 'custodian')>Custodian</option>
-                                <option value="iac" @selected(old('new_account_role') === 'iac')>IAC</option>
-                                <option value="division_head" @selected(old('new_account_role') === 'division_head')>Division Head</option>
+                            <label for="new_account_role" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Role <span class="text-red-500">*</span></label>
+                            <select id="new_account_role" name="new_account_role" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
+                                @foreach(($accountRoles ?? []) as $roleOption)
+                                    <option value="{{ $roleOption['value'] }}" @selected(old('new_account_role', 'employee') === $roleOption['value'])>{{ $roleOption['label'] }}</option>
+                                @endforeach
                             </select>
                             @error('new_account_role')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="new_account_password" class="text-sm font-semibold text-gray-600">Password</label>
-                            <input id="new_account_password" name="new_account_password" type="password" class="mt-1 w-full rounded-xl border-gray-300 focus:border-emerald-500 focus:ring-emerald-500 shadow-sm" placeholder="Leave blank for default password" />
+                            <label for="new_account_password" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Password</label>
+                            <input id="new_account_password" name="new_account_password" type="password" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="Leave blank for default password" />
                             <p class="mt-1 text-xs text-gray-500">Default is "password". The user will be prompted to change it on first login.</p>
                             @error('new_account_password')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
+                    </div>
                     </div>
                 </div>
             </section>
         </div>
 
         {{-- Form Actions/Navigation --}}
-        <div class="flex items-center justify-end gap-3 pt-4 border-t">
-            <button type="button" id="prevBtn" class="hidden rounded-lg bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-200">Previous</button>
-            <button type="button" id="nextBtn" class="bg-[#1a3a2d] text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 hover:shadow-lg flex items-center gap-2">Next Step <i class="fas fa-arrow-right"></i></button>
-            <button type="submit" id="submitBtn" class="bg-[#1a3a2d] text-white font-semibold px-5 py-2.5 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 hover:shadow-lg flex items-center gap-2">
+        <div class="sticky bottom-0 z-10 -mx-2 rounded-t-2xl border-t border-gray-200 bg-white/95 px-2 py-4 backdrop-blur sm:-mx-0 sm:rounded-2xl sm:border sm:border-gray-200 sm:px-4 sm:shadow-[0_-10px_30px_-20px_rgba(15,23,42,0.35)]">
+            <div class="flex items-center justify-end gap-3">
+            <button type="button" id="prevBtn" class="hidden rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">Previous</button>
+            <button type="button" id="nextBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">Next Step <i class="fas fa-arrow-right"></i></button>
+            <button type="submit" id="submitBtn" class="hidden items-center gap-2 rounded-xl bg-[#1a3a2d] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg">
                 <i class="fas fa-save mr-2"></i>Save Employee
             </button>
+            </div>
         </div>
     </form>
 </div>
@@ -271,7 +293,6 @@
         // Account creation toggle
         const createAccountChk = document.getElementById('create_account');
         const newAccountFields = document.getElementById('new_account_fields');
-        const linkAccountSelect = document.getElementById('account_id');
         const showAccountFields = () => newAccountFields.classList.remove('hidden');
         const hideAccountFields = () => newAccountFields.classList.add('hidden');
 
@@ -279,11 +300,8 @@
             const toggleFields = () => {
                 if (createAccountChk.checked) {
                     showAccountFields();
-                    linkAccountSelect.disabled = true;
-                    linkAccountSelect.value = '';
                 } else {
                     hideAccountFields();
-                    linkAccountSelect.disabled = false;
                 }
             };
             createAccountChk.addEventListener('change', toggleFields);
@@ -318,10 +336,39 @@
         const submitBtn = document.getElementById('submitBtn');
         let currentStep = 1;
 
+        const getStepElement = (stepNumber) => document.querySelector(`.form-step[data-step="${stepNumber}"]`);
+
+        const validateStep = (stepNumber) => {
+            const stepEl = getStepElement(stepNumber);
+            if (!stepEl) {
+                return true;
+            }
+
+            const requiredFields = Array.from(stepEl.querySelectorAll('input[required], select[required], textarea[required]'));
+            for (const field of requiredFields) {
+                if (!field.checkValidity()) {
+                    field.reportValidity();
+                    field.focus();
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
         const updateButtons = () => {
             prevBtn.classList.toggle('hidden', currentStep === 1);
-            nextBtn.classList.toggle('hidden', currentStep === steps.length);
-            submitBtn.classList.toggle('hidden', currentStep !== steps.length);
+            if (currentStep === steps.length) {
+                nextBtn.classList.add('hidden');
+                nextBtn.classList.remove('inline-flex');
+                submitBtn.classList.remove('hidden');
+                submitBtn.classList.add('inline-flex');
+            } else {
+                nextBtn.classList.remove('hidden');
+                nextBtn.classList.add('inline-flex');
+                submitBtn.classList.add('hidden');
+                submitBtn.classList.remove('inline-flex');
+            }
         };
         
         const goToStep = (stepNumber) => {
@@ -345,6 +392,9 @@
         };
 
         nextBtn.addEventListener('click', () => {
+            if (!validateStep(currentStep)) {
+                return;
+            }
             if (currentStep < steps.length) {
                 goToStep(currentStep + 1);
             }
@@ -356,7 +406,11 @@
         });
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                goToStep(parseInt(tab.dataset.step));
+                const targetStep = parseInt(tab.dataset.step);
+                if (targetStep > currentStep && !validateStep(currentStep)) {
+                    return;
+                }
+                goToStep(targetStep);
             });
         });
         

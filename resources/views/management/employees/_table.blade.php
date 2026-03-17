@@ -56,7 +56,7 @@
                             data-section-id="{{ $employee->section_id ?? '' }}"
                             data-division-id="{{ optional($employee->section)->division_id ?? '' }}"
                             data-account-id="{{ $employee->account_id ?? '' }}"
-                            data-account-label="{{ $employee->account ? ($employee->account->username . ' (' . ucfirst(str_replace('_', ' ', $employee->account->role)) . ')') : '' }}"
+                            data-account-label="{{ $employee->account ? ($employee->account->username . ' (' . (strtolower((string) $employee->account->role) === 'bac' ? 'BAC Officer' : (strtolower((string) $employee->account->role) === 'iac' ? 'IAC' : ucwords(str_replace('_', ' ', (string) $employee->account->role)))) . ')') : '' }}"
                             data-profile-img="{{ $employee->profile_img ?? '' }}"
                             data-email-raw="{{ $employee->email ?? '' }}"
                             data-contact-raw="{{ $employee->contact_no ?? '' }}"

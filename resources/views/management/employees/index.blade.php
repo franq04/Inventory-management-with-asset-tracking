@@ -399,6 +399,7 @@
                                             <option value="custodian">Custodian</option>
                                             <option value="iac">IAC</option>
                                             <option value="division_head">Division head</option>
+                                            <option value="bac">BAC Officer</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-2">
@@ -481,9 +482,16 @@
     });
 
     $accountOptionsData = $accounts->map(function ($account) {
+        $normalizedRole = strtolower((string) $account->role);
+        $roleLabel = match ($normalizedRole) {
+            'iac' => 'IAC',
+            'bac' => 'BAC Officer',
+            default => ucwords(str_replace('_', ' ', $normalizedRole)),
+        };
+
         return [
             'id' => (string) $account->account_id,
-            'label' => $account->username . ' (' . ucfirst(str_replace('_', ' ', (string) $account->role)) . ')',
+            'label' => $account->username . ' (' . $roleLabel . ')',
             'employee_id' => (string) ($account->employee->employee_id ?? ''),
         ];
     })->values();
