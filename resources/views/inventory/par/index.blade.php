@@ -81,10 +81,10 @@
                              <button type="submit" class="bg-[#1a3a2d] text-white font-semibold px-5 py-2 rounded-lg shadow-md hover:bg-opacity-90 transition-all duration-300 flex items-center gap-2">
                                 <i class="fas fa-filter"></i> Apply
                             </button>
-                            <button type="button" id="parPrintPdfBtn" class="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm hover:bg-red-100">
-                                <i class="fas fa-file-pdf text-red-500"></i> Print PDF
+                            <button type="button" id="parPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
                             </button>
-                            <button type="button" id="parExportExcelBtn" class="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700 shadow-sm hover:bg-green-100">
+                            <button type="button" id="parExportExcelBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
                                 <i class="fas fa-file-excel text-green-600"></i> Export Excel
                             </button>
                         </div>

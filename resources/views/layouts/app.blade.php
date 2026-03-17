@@ -186,6 +186,85 @@
             userMenuDropdown?.classList.add('hidden');
         };
 
+        const exportActionSelector = [
+            'button[id$="PrintPdfBtn"]',
+            'button[id$="ExportExcelBtn"]',
+            'button[id$="PrintExcelBtn"]',
+        ].join(', ');
+
+        const exportButtonTimers = new WeakMap();
+        const exportButtonState = new WeakMap();
+
+        const setExportButtonLabel = (button, label) => {
+            const labelSpan = button.querySelector('span');
+            if (labelSpan) {
+                labelSpan.textContent = label;
+                return;
+            }
+
+            const textNode = Array.from(button.childNodes).find((node) => {
+                return node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0;
+            });
+
+            if (textNode) {
+                textNode.textContent = ` ${label}`;
+            } else {
+                button.appendChild(document.createTextNode(` ${label}`));
+            }
+        };
+
+        const setExportButtonLoadingState = (button, loading) => {
+            let state = exportButtonState.get(button);
+            if (!state) {
+                state = {
+                    originalLabel: button.querySelector('span')?.textContent?.trim() || 'Export',
+                    originalTextNode: Array.from(button.childNodes).find((node) => {
+                        return node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0;
+                    })?.textContent?.trim() || '',
+                };
+                exportButtonState.set(button, state);
+            }
+
+            const icon = button.querySelector('i');
+
+            if (loading) {
+                const activeTimer = exportButtonTimers.get(button);
+                if (activeTimer) {
+                    window.clearTimeout(activeTimer);
+                }
+
+                button.disabled = true;
+                button.setAttribute('aria-disabled', 'true');
+                button.classList.add('opacity-60', 'cursor-not-allowed');
+                if (icon) {
+                    icon.classList.add('fa-spin');
+                }
+                setExportButtonLabel(button, 'Processing...');
+
+                const timerId = window.setTimeout(() => {
+                    setExportButtonLoadingState(button, false);
+                }, 2200);
+                exportButtonTimers.set(button, timerId);
+                return;
+            }
+
+            const activeTimer = exportButtonTimers.get(button);
+            if (activeTimer) {
+                window.clearTimeout(activeTimer);
+                exportButtonTimers.delete(button);
+            }
+
+            button.disabled = false;
+            button.removeAttribute('aria-disabled');
+            button.classList.remove('opacity-60', 'cursor-not-allowed');
+            if (icon) {
+                icon.classList.remove('fa-spin');
+            }
+
+            const fallbackLabel = state.originalTextNode || state.originalLabel || 'Export';
+            setExportButtonLabel(button, fallbackLabel);
+        };
+
         // --- Sidebar Logic ---
         const isDesktop = () => window.innerWidth >= 768;
         const sidebarStateKey = 'pqs.sidebar.collapsed';
@@ -390,6 +469,15 @@
                 }
             }, { signal });
         }
+
+        document.addEventListener('click', (event) => {
+            const button = event.target.closest(exportActionSelector);
+            if (!button || button.disabled) {
+                return;
+            }
+
+            setExportButtonLoadingState(button, true);
+        }, { signal });
         
         // --- Sidebar Accordion Dropdown Logic ---
         dropdownToggles.forEach(button => {

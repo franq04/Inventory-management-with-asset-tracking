@@ -90,11 +90,11 @@
                                 <i class="fas fa-undo"></i>
                                 Reset
                             </a>
-                            <button type="button" id="auditLogsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100">
-                                <i class="fas fa-file-pdf text-red-500"></i>
+                            <button type="button" id="auditLogsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                <i class="fas fa-file-pdf text-rose-600"></i>
                                 Print PDF
                             </button>
-                            <button type="button" id="auditLogsExportExcelBtn" class="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100">
+                            <button type="button" id="auditLogsExportExcelBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
                                 <i class="fas fa-file-excel text-emerald-600"></i>
                                 Export Excel
                             </button>

@@ -15,6 +15,7 @@ use App\Models\StatusHistory;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -115,6 +116,65 @@ class InventoryAssignmentController extends Controller
                 'items' => $items,
             ],
         ]);
+    }
+
+    public function printPdf(Request $request): View
+    {
+        $state = strtolower((string) $request->query('state', 'all'));
+
+        return view('custodian.inventory.print', [
+            'items' => $this->inventoryExportItems($request),
+            'state' => $state,
+        ]);
+    }
+
+    public function exportExcel(Request $request): Response
+    {
+        $html = view('custodian.inventory.excel', [
+            'items' => $this->inventoryExportItems($request),
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Inventory-Assignment-'.date('Y-m-d').'.xls"');
+    }
+
+    private function inventoryExportItems(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $state = strtolower((string) $request->query('state', 'all'));
+
+        $query = InspectionReportItem::with([
+            'purchaseOrderItem.purchaseOrder.purchaseRequest',
+            'purchaseOrderItem.purchaseOrder.purchaseRequest.requester.employee',
+            'purchaseOrderItem.purchaseOrder.supplier',
+            'report',
+            'status',
+            'propertyRecord.category.parent',
+            'propertyRecord.accountableOfficer',
+        ])->where('quantity_accepted', '>', 0)
+            ->whereIn('inspection_status_id', [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED]);
+
+        if ($state === 'pending') {
+            $query->whereNull('property_no');
+        } elseif ($state === 'recorded') {
+            $query->whereNotNull('property_no');
+        }
+
+        if ($search !== '') {
+            $query->where(function ($inner) use ($search) {
+                $inner->whereHas('purchaseOrderItem', function ($poQuery) use ($search) {
+                    $poQuery->where('item_description', 'like', "%{$search}%");
+                })->orWhereHas('report', function ($reportQuery) use ($search) {
+                    $reportQuery->where('ia_no', 'like', "%{$search}%")
+                        ->orWhere('po_no', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        return $query->orderByDesc('ia_item_id')
+            ->get()
+            ->map(fn (InspectionReportItem $item) => $this->transformItem($item));
     }
 
     public function show(InspectionReportItem $inspectionReportItem): JsonResponse

@@ -29,6 +29,8 @@ $(() => {
     const $dateFrom = $('#date_from');
     const $dateTo = $('#date_to');
     const $applyDateBtn = $('#inventoryApplyDate');
+    const $printPdfBtn = $('#inventoryPrintPdfBtn');
+    const $exportExcelBtn = $('#inventoryExportExcelBtn');
     const $pendingCount = $('#inventoryPendingCount');
     const $recordedCount = $('#inventoryRecordedCount');
 
@@ -490,6 +492,52 @@ $(() => {
 
     $search.on('input', debounceFetch);
     $stateFilter.on('change', fetchItems);
+
+    const buildInventoryExportUrl = (baseUrl) => {
+        if (!baseUrl) {
+            return null;
+        }
+
+        const targetUrl = new URL(baseUrl, window.location.origin);
+        const searchValue = String($search.val() || '').trim();
+        const stateValue = String($stateFilter.val() || 'all').trim();
+
+        if (searchValue) {
+            targetUrl.searchParams.set('search', searchValue);
+        }
+
+        if (stateValue) {
+            targetUrl.searchParams.set('state', stateValue);
+        }
+
+        if (appliedDateFrom) {
+            targetUrl.searchParams.set('date_from', appliedDateFrom);
+        }
+
+        if (appliedDateTo) {
+            targetUrl.searchParams.set('date_to', appliedDateTo);
+        }
+
+        return targetUrl.toString();
+    };
+
+    $printPdfBtn.on('click', function () {
+        const url = buildInventoryExportUrl($(this).data('printUrl'));
+        if (!url) {
+            return;
+        }
+
+        window.open(url, '_blank');
+    });
+
+    $exportExcelBtn.on('click', function () {
+        const url = buildInventoryExportUrl($(this).data('excelUrl'));
+        if (!url) {
+            return;
+        }
+
+        window.location.href = url;
+    });
 
     window.addEventListener('popstate', () => {
         currentPage = getCurrentPageFromUrl();

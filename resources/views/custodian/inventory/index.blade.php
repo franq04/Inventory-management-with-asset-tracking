@@ -87,11 +87,11 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <button type="button" class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition-all duration-300 hover:border-red-300 hover:bg-red-100 hover:shadow-md">
-                    <i class="fa-solid fa-file-pdf text-red-500"></i>
+                <button type="button" id="inventoryPrintPdfBtn" data-print-url="{{ route('custodian.inventory.print.pdf') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                    <i class="fa-solid fa-file-pdf text-rose-600"></i>
                     <span>Print PDF</span>
                 </button>
-                <button type="button" class="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-semibold text-green-800 shadow-sm transition-all duration-300 hover:border-green-300 hover:bg-green-100 hover:shadow-md">
+                <button type="button" id="inventoryExportExcelBtn" data-excel-url="{{ route('custodian.inventory.export.excel') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
                     <i class="fa-solid fa-file-excel text-green-600"></i>
                     <span>Export Excel</span>
                 </button>
