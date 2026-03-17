@@ -28,7 +28,7 @@ return new class extends Migration
   `remarks` varchar(255) DEFAULT NULL,
   `fulfillment_status` enum(\'pending\',\'ordered\',\'unavailable\',\'alternative\',\'waiting\',\'fulfilled\',\'expired\') NOT NULL DEFAULT \'pending\',
   `alternate_description` varchar(255) DEFAULT NULL,
-  `suggested_by` int(10) UNSIGNED DEFAULT NULL,
+    `suggested_by` bigint(20) UNSIGNED DEFAULT NULL,
   `suggested_at` timestamp NULL DEFAULT NULL,
   `original_description` varchar(500) DEFAULT NULL,
   `employee_decision` varchar(20) DEFAULT NULL,
