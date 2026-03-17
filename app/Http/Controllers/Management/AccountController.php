@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -176,10 +177,12 @@ class AccountController extends Controller
     {
         $validated = $request->validate([
             'role' => ['required', 'string', Rule::in(self::ALLOWED_ROLES)],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         $newRole = strtolower((string) $validated['role']);
         $currentRole = strtolower((string) $account->role);
+        $hasPasswordUpdate = filled($validated['password'] ?? null);
 
         $sessionAccountId = (int) session('account_id');
         if ($sessionAccountId === (int) $account->account_id && $currentRole !== $newRole) {
@@ -191,7 +194,7 @@ class AccountController extends Controller
             ], 422);
         }
 
-        if ($currentRole === $newRole) {
+        if ($currentRole === $newRole && ! $hasPasswordUpdate) {
             return response()->json([
                 'message' => 'No changes detected.',
                 'account' => [
@@ -202,12 +205,22 @@ class AccountController extends Controller
             ]);
         }
 
-        $account->update([
+        $updatePayload = [
             'role' => $newRole,
-        ]);
+        ];
+
+        if ($hasPasswordUpdate) {
+            $updatePayload['password'] = Hash::make((string) $validated['password']);
+        }
+
+        $account->update($updatePayload);
+
+        $message = $hasPasswordUpdate
+            ? ($currentRole === $newRole ? 'Account password updated successfully.' : 'Account role and password updated successfully.')
+            : 'Account role updated successfully.';
 
         return response()->json([
-            'message' => 'Account role updated successfully.',
+            'message' => $message,
             'account' => [
                 'account_id' => $account->account_id,
                 'username' => $account->username,

@@ -18,12 +18,9 @@
         </div>
     </div>
 
-    {{-- Session Status --}}
-    @if (session('status'))
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800 shadow-sm">
-            {{ session('status') }}
-        </div>
-    @endif
+        @if (session('status'))
+            <div id="employeesFlashStatus" class="hidden" data-message="{{ session('status') }}"></div>
+        @endif
 
     {{-- Enhanced Stat Cards --}}
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -641,6 +638,12 @@
                 toastEl.classList.add('hidden');
             }, 2600);
         };
+
+        const flashStatusEl = document.getElementById('employeesFlashStatus');
+        const flashStatusMessage = flashStatusEl?.dataset?.message || '';
+        if (flashStatusMessage) {
+            setTimeout(() => showToast(flashStatusMessage, 'success'), 120);
+        }
 
         const renderSectionsForModal = (divisionId, selectedSection = '') => {
             if (!editSectionField) return;
