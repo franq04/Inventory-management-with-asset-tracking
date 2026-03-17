@@ -229,9 +229,35 @@
                     <p id="accountEditRoleError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                 </div>
 
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="accountEditPassword" class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">New Password</label>
+                        <div class="relative">
+                            <input id="accountEditPassword" name="password" type="password" autocomplete="new-password"
+                                class="w-full rounded-xl border border-emerald-950/15 bg-white px-3 py-2.5 pr-10 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10"
+                                placeholder="Leave blank to keep current">
+                            <button type="button" id="accountEditPasswordToggle" data-target-input="accountEditPassword" aria-label="Show password" class="absolute inset-y-0 right-2 inline-flex items-center rounded-lg px-2 text-gray-500 transition hover:text-[#1a3a2d]">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="accountEditPasswordConfirm" class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Confirm Password</label>
+                        <div class="relative">
+                            <input id="accountEditPasswordConfirm" name="password_confirmation" type="password" autocomplete="new-password"
+                                class="w-full rounded-xl border border-emerald-950/15 bg-white px-3 py-2.5 pr-10 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10"
+                                placeholder="Re-enter password">
+                            <button type="button" id="accountEditPasswordConfirmToggle" data-target-input="accountEditPasswordConfirm" aria-label="Show password" class="absolute inset-y-0 right-2 inline-flex items-center rounded-lg px-2 text-gray-500 transition hover:text-[#1a3a2d]">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <p id="accountEditPasswordError" class="-mt-1 hidden text-xs font-medium text-red-600"></p>
+
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     <i class="fas fa-circle-info mr-1"></i>
-                    Use role updates carefully, especially for active user sessions and route-based access.
+                    Role and password updates apply immediately. Use changes carefully for active user sessions.
                 </div>
 
                 <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
@@ -276,6 +302,10 @@
         const editUsernameInput = document.getElementById('accountEditUsername');
         const editRoleSelect = document.getElementById('accountEditRole');
         const editRoleError = document.getElementById('accountEditRoleError');
+        const editPasswordInput = document.getElementById('accountEditPassword');
+        const editPasswordConfirmInput = document.getElementById('accountEditPasswordConfirm');
+        const passwordToggleButtons = Array.from(document.querySelectorAll('[data-target-input]'));
+        const editPasswordError = document.getElementById('accountEditPasswordError');
         const editSaveBtn = document.getElementById('accountEditSaveBtn');
         const toast = document.getElementById('accountsToast');
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -497,6 +527,16 @@
                 editRoleError.textContent = '';
                 editRoleError.classList.add('hidden');
             }
+            if (editPasswordError) {
+                editPasswordError.textContent = '';
+                editPasswordError.classList.add('hidden');
+            }
+            if (editPasswordInput) {
+                editPasswordInput.value = '';
+            }
+            if (editPasswordConfirmInput) {
+                editPasswordConfirmInput.value = '';
+            }
             toggleEditModal(true);
         };
 
@@ -644,6 +684,23 @@
             }
         });
 
+        passwordToggleButtons.forEach((toggleBtn) => {
+            toggleBtn.addEventListener('click', () => {
+                const inputId = toggleBtn.getAttribute('data-target-input');
+                const input = inputId ? document.getElementById(inputId) : null;
+                const icon = toggleBtn.querySelector('i');
+                if (!input || !(input instanceof HTMLInputElement) || !icon) {
+                    return;
+                }
+
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                icon.classList.toggle('fa-eye', !isHidden);
+                icon.classList.toggle('fa-eye-slash', isHidden);
+                toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+            });
+        });
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeRoleDropdown();
@@ -667,12 +724,18 @@
                 editRoleError.textContent = '';
                 editRoleError.classList.add('hidden');
             }
+            if (editPasswordError) {
+                editPasswordError.textContent = '';
+                editPasswordError.classList.add('hidden');
+            }
 
             editSaveBtn?.setAttribute('disabled', 'disabled');
 
             const accountId = editIdInput?.value || '';
             const previousRole = editForm.dataset.originalRole || '';
             const nextRole = editRoleSelect?.value || '';
+            const nextPassword = editPasswordInput?.value || '';
+            const nextPasswordConfirm = editPasswordConfirmInput?.value || '';
             const optimisticApplied = accountId && nextRole
                 ? applyRoleToRow(accountId, nextRole, true)
                 : false;
@@ -681,6 +744,11 @@
                 const payload = {
                     role: nextRole,
                 };
+
+                if (nextPassword || nextPasswordConfirm) {
+                    payload.password = nextPassword;
+                    payload.password_confirmation = nextPasswordConfirm;
+                }
 
                 const res = await fetch(actionUrl, {
                     method: 'PUT',
@@ -697,9 +765,14 @@
 
                 if (!res.ok) {
                     const roleError = data?.errors?.role?.[0];
+                    const passwordError = data?.errors?.password?.[0];
                     if (roleError && editRoleError) {
                         editRoleError.textContent = roleError;
                         editRoleError.classList.remove('hidden');
+                    }
+                    if (passwordError && editPasswordError) {
+                        editPasswordError.textContent = passwordError;
+                        editPasswordError.classList.remove('hidden');
                     }
                     throw new Error(data?.message || `Account update failed (status ${res.status})`);
                 }
