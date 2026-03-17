@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 14, 2026 at 04:25 AM
+-- Generation Time: Mar 17, 2026 at 07:04 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -44,16 +44,26 @@ INSERT INTO `accounts` (`account_id`, `username`, `password`, `role`) VALUES
 (1003, 'ana.reyes', 'f6a6e9f7cfb786bd6df92e88875f881256d761a726e1aaab0da09aa0d4bb85b1', 'custodian'),
 (1004, 'roberto.garcia', 'f6a6e9f7cfb786bd6df92e88875f881256d761a726e1aaab0da09aa0d4bb85b1', 'employee'),
 (1005, 'luisa.fernandez', 'f6a6e9f7cfb786bd6df92e88875f881256d761a726e1aaab0da09aa0d4bb85b1', 'custodian'),
-(2000, 'carl', '$2y$12$cHv.yaU9EMQlH5QiaDVJV.ht58egKTh/towvG6cHQD07gbGmeM8N2', 'custodian'),
+(2000, 'carl', '$2y$12$cHv.yaU9EMQlH5QiaDVJV.ht58egKTh/towvG6cHQD07gbGmeM8N2', 'division_head'),
 (2001, 'frank', '$2y$12$bOBGkB3ltyRA5I3Gm/hTNO12kvKzmmVUI96LoQ7X8Kn8l6Ymys2aW', 'employee'),
 (2002, 'philip', '$2y$12$7wkmSsNBR0J1iqk4fxRdzu5N0KVmAoyGutaRsDshCTGX1zUIcLQ62', 'employee'),
 (2003, 'zyle', '$2y$12$cFjdAB3Pvuue0DGFj1iH.uPp2Cnr3vdXfMrQW/LWxZYq0exlnNRHi', 'employee'),
 (2004, 'kent', '$2y$12$KmR4YhqnJjuJrd9OOkldjevSbFcV19FWUcqUOzotYXpT.Y0ZWqilC', 'employee'),
 (2005, 'john', '$2y$12$7RpYcPftCBU446UEa65SN.N81vNqerccFaAVNkGRXt.7MDcgVNKs2', 'employee'),
-(2006, 'division.head', '$2y$12$V6vO4lVgcJC6wDD1i2D7heSynfCUyij8DxxcEv3GrKhpdEUt2zMUe', 'division_head'),
-(2007, 'iac.lead', '$2y$12$JgAkZECQJYzKKKAwS2Vl0OcdKa.BR5Y33QoBT94jaXcs6k.qhjbNa', 'iac'),
-(2008, 'iac.member', '$2y$12$sO8nOVzskr4uxIU/WkxBz.i/HS.xDNJ9E00uWc9UMBEO3H3RMj6H2', 'iac'),
-(2009, 'bac.officer', '$2y$12$QFS0WeB4awKIFyPisH8NSO6ICjyDR85n8tu9f0DaS0/H6BjdUNirm', 'bac');
+(2006, 'division.head', '$2y$12$SXma8SzV71zFupEMeXAqvuCePrzA9lym3IFbfJ3lu0kKW3VzoaD/i', 'division_head'),
+(2007, 'iac.lead', '$2y$12$usUSfR0M1l.ZWIv/yyu2hufl65j4.QoX2QF6W5aPOeX29VO.dgMYm', 'iac'),
+(2008, 'iac.member', '$2y$12$uyxu0mguPj9ZS2CGX8.v7uE96.LFm26CNVP7AQygnEOY9sQylvtE2', 'iac'),
+(2009, 'bac.officer', '$2y$12$QFS0WeB4awKIFyPisH8NSO6ICjyDR85n8tu9f0DaS0/H6BjdUNirm', 'bac'),
+(2010, 'employee', '$2y$12$WoB.M6j/RyFNq0titIMILORtD.z3uY3M4GoKuL9AvPljg.0hTeayq', 'employee'),
+(2011, 'custodian', '$2y$12$j8eFTyyfSIfkVYpjNVgJB.zka3Pd2TaYHCXfU47VfhfuC/kwZc3/W', 'custodian'),
+(2012, 'division_head', '$2y$12$.B2OWGYT86gmfZ5YSH.IQes2m4G1du2GtWRlFOJdudqlp.bwku6QK', 'division_head'),
+(2013, 'IAC', '$2y$12$.Yf3JtCBFUfyUflmx9VfxuYHaCIoTEnxvmFbuOb9d0bF5KQYhMpE2', 'iac'),
+(2014, 'BAC', '$2y$12$CnBhZBFNRijv7.sY70./s.3ohUce5rQ/oCMMokZ6dYLFeWMwo1gve', 'bac'),
+(2015, 'Carl1', '$2y$12$0wwGN9wpOdAoM9vB.mNB.eJLwz6OnYhDuCQInIBvcqsvIo3VdLizi', 'employee'),
+(2016, 'adrian', '$2y$12$ZUzTrySHkYAd/Rew8phld.sRY9uBBzX.9NYBRSsU095rHgaGGug/i', 'custodian'),
+(2017, 'philippe', '$2y$12$bA/U14gdh308bwe/FYGgXeLNJJ5e1/K/mkmsXzebdvISAbll7zDoq', 'iac'),
+(2018, 'Mark', '$2y$12$motJHGb.MmKSczl5ybXbIexIJhMznCpx3Mvt6b9W/KLegQexLXkvW', 'division_head'),
+(2019, 'Edon', '$2y$12$.cQKIRa.VZuWCSf5tlmQJ.JQTqueDV8IKjFxIovpiOHQ10Hz04R.y', 'division_head');
 
 -- --------------------------------------------------------
 
@@ -270,7 +280,66 @@ INSERT INTO `audit_logs` (`log_id`, `account_id`, `table_name`, `action`, `descr
 (559, 2003, 'accounts', 'LOGIN', 'User zyle logged in to the system', '2025-12-15 12:37:28'),
 (560, 2006, 'accounts', 'LOGIN', 'User division.head logged in to the system', '2025-12-15 12:37:38'),
 (561, 2009, 'accounts', 'LOGIN', 'User bac.officer logged in to the system', '2025-12-15 12:37:53'),
-(562, 2008, 'accounts', 'LOGIN', 'User iac.member logged in to the system', '2025-12-15 12:38:01');
+(562, 2008, 'accounts', 'LOGIN', 'User iac.member logged in to the system', '2025-12-15 12:38:01'),
+(563, 2010, 'accounts', 'TEST', 'Test log insert', '2026-01-14 15:52:39'),
+(564, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-01-14 15:53:53'),
+(565, 2011, 'accounts', 'LOGOUT', 'User custodian logged out', '2026-01-14 16:01:48'),
+(566, 2010, 'accounts', 'LOGIN', 'User employee logged in to the system', '2026-01-14 16:01:57'),
+(567, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-01-14 16:03:05'),
+(568, 2010, 'fund_allocations', 'RESERVE', 'Reserved ₱3,000.00 from fund cluster \'FY2025-GEN-001\' for PR PR-20260114-001', '2026-01-14 16:17:12'),
+(569, 2010, 'purchase_requests', 'CREATE', 'Created purchase request PR-20260114-001', '2026-01-14 16:17:12'),
+(570, 2010, 'fund_allocations', 'RESERVE', 'Reserved ₱1,000.00 from fund cluster \'FY2025-GEN-001\' for PR PR-20260114-002', '2026-01-14 16:31:16'),
+(571, 2010, 'purchase_requests', 'CREATE', 'Created purchase request PR-20260114-002', '2026-01-14 16:31:16'),
+(572, 2014, 'accounts', 'LOGIN', 'User BAC logged in to the system', '2026-01-14 16:32:16'),
+(573, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-01-15 09:27:45'),
+(574, 2012, 'accounts', 'LOGIN', 'User division_head logged in to the system', '2026-01-15 09:49:30'),
+(575, 2012, 'purchase_requests', 'STATUS_UPDATE', 'Updated purchase request PR-20260114-002 status from 102 to 103', '2026-01-15 09:56:22'),
+(576, 2014, 'accounts', 'LOGIN', 'User BAC logged in to the system', '2026-01-15 09:59:21'),
+(577, 2010, 'accounts', 'LOGIN', 'User employee logged in to the system', '2026-01-15 10:42:44'),
+(578, 2014, 'purchase_request_items', 'SUGGEST_ALTERNATIVE', 'BAC suggested alternative for item in PR PR-20260114-002: \"sadnajsnd\" → \"alternative\"', '2026-01-15 10:51:26'),
+(579, 2014, 'purchase_requests', 'STATUS_UPDATE', 'Moved purchase request PR-20260114-002 to BAC review', '2026-01-15 10:52:05'),
+(580, 2010, 'purchase_request_items', 'WAIT_FOR_ORIGINAL', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', '2026-01-15 11:21:21'),
+(581, 2010, 'fund_allocations', 'RESERVE', 'Reserved ₱4,000.00 from fund cluster \'FY2025-GEN-001\' for PR PR-20260115-001', '2026-01-15 11:41:01'),
+(582, 2010, 'purchase_requests', 'CREATE', 'Created purchase request PR-20260115-001', '2026-01-15 11:41:01'),
+(583, 2012, 'purchase_requests', 'STATUS_UPDATE', 'Updated purchase request PR-20260115-001 status from 102 to 103', '2026-01-15 11:41:50'),
+(584, 2014, 'purchase_request_items', 'SUGGEST_ALTERNATIVE', 'BAC suggested alternative for item in PR PR-20260115-001: \"hellowowrd\" → \"alternative\" (Cost: ₱5,000.00)', '2026-01-15 11:42:31'),
+(585, 2014, 'purchase_requests', 'STATUS_UPDATE', 'Moved purchase request PR-20260115-001 to BAC review', '2026-01-15 11:42:39'),
+(586, 2010, 'purchase_request_items', 'ACCEPT_ALTERNATIVE', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', '2026-01-15 11:43:02'),
+(587, 2014, 'purchase_requests', 'UPDATE_ITEM_COSTS', 'BAC updated item costs for PR PR-20260115-001. New total: ₱5,000.00', '2026-01-15 11:44:48'),
+(588, 2014, 'purchase_requests', 'BAC_APPROVAL', 'BAC approved purchase request PR-20260115-001', '2026-01-15 11:44:52'),
+(589, 2011, 'purchase_orders', 'CREATE', 'Generated purchase order PO-20260115-001 from request PR-20260115-001', '2026-01-15 12:01:01'),
+(590, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-01-20 14:14:38'),
+(591, 2013, 'accounts', 'LOGIN', 'User IAC logged in to the system', '2026-01-20 14:17:05'),
+(592, 2013, 'inspection_reports', 'CREATE', 'Inspection report IA-20260120-001 saved for PO PO-20260115-001', '2026-01-20 14:18:01'),
+(593, 2011, 'asset', 'created', 'Property Record PQS-323-223-2026-0001', '2026-01-20 16:11:57'),
+(594, 2011, 'pqs', 'CREATE', 'Created PQS record(s) PQS-323-223-2026-0001 for inspection item 17', '2026-01-20 16:11:57'),
+(595, 2011, 'asset', 'created', 'Property Record PQS-323-224-2026-0001', '2026-01-20 16:13:03'),
+(596, 2011, 'pqs', 'CREATE', 'Created PQS record(s) PQS-323-224-2026-0001 for inspection item 13', '2026-01-20 16:13:03'),
+(597, 2014, 'accounts', 'LOGIN', 'User BAC logged in to the system', '2026-01-20 16:49:15'),
+(598, 2014, 'purchase_requests', 'UPDATE_ITEM_COSTS', 'BAC updated item costs for PR PR-20260114-002. New total: ₱1,000.00', '2026-01-20 16:50:00'),
+(599, 2014, 'purchase_requests', 'BAC_APPROVAL', 'BAC approved purchase request PR-20260114-002', '2026-01-20 16:50:03'),
+(600, 2011, 'purchase_orders', 'CREATE', 'Generated purchase order PO-20260120-001 from request PR-20260114-002', '2026-01-20 16:50:41'),
+(601, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-01-26 11:08:50'),
+(602, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-03-16 14:46:35'),
+(603, 2011, 'accounts', 'LOGIN', 'User custodian logged in to the system', '2026-03-17 12:50:20'),
+(604, 2016, 'accounts', 'LOGIN', 'User adrian logged in to the system', '2026-03-17 13:06:46'),
+(605, 2017, 'accounts', 'LOGIN', 'User philippe logged in to the system', '2026-03-17 13:07:03'),
+(606, 2015, 'accounts', 'LOGIN', 'User Carl1 logged in to the system', '2026-03-17 13:07:23'),
+(607, 2018, 'accounts', 'LOGIN', 'User Mark logged in to the system', '2026-03-17 13:07:37'),
+(608, 2011, 'accounts', 'LOGOUT', 'User custodian logged out', '2026-03-17 13:13:38'),
+(609, 2014, 'accounts', 'LOGIN', 'User BAC logged in to the system', '2026-03-17 13:13:44'),
+(610, 2015, 'purchase_requests', 'CREATE', 'Created purchase request PR-20260317-001', '2026-03-17 13:14:46'),
+(611, 2018, 'purchase_requests', 'STATUS_UPDATE', 'Updated purchase request PR-20260317-001 status from 102 to 103', '2026-03-17 13:16:03'),
+(612, 2018, 'accounts', 'LOGOUT', 'User Mark logged out', '2026-03-17 13:45:55'),
+(613, 2018, 'accounts', 'LOGIN', 'User Mark logged in to the system', '2026-03-17 13:47:55'),
+(614, 2015, 'purchase_requests', 'CREATE', 'Created purchase request PR-20260317-002', '2026-03-17 13:49:32'),
+(615, 2018, 'accounts', 'LOGOUT', 'User Mark logged out', '2026-03-17 13:49:50'),
+(616, 2012, 'accounts', 'LOGIN', 'User division_head logged in to the system', '2026-03-17 13:51:05'),
+(617, 2012, 'accounts', 'LOGOUT', 'User division_head logged out', '2026-03-17 13:54:25'),
+(618, 2003, 'accounts', 'LOGIN', 'User zyle logged in to the system', '2026-03-17 13:54:33'),
+(619, 2003, 'accounts', 'LOGOUT', 'User zyle logged out', '2026-03-17 13:56:50'),
+(620, 2019, 'accounts', 'LOGIN', 'User Edon logged in to the system', '2026-03-17 13:56:57'),
+(621, 2018, 'accounts', 'LOGIN', 'User Mark logged in to the system', '2026-03-17 13:57:48');
 
 -- --------------------------------------------------------
 
@@ -404,7 +473,14 @@ INSERT INTO `employees` (`employee_id`, `first_name`, `middle_name`, `last_name`
 ('EMP-1008', 'zyke', 'andre', 'Pabeloonio', NULL, '2013-06-06', 'single', 'male', '09121352136', 'zyle@gmail.com', 2003, 'storage/profile_images/wevSZDYOnKemS1GS5NWwSUPZBodVkJQHESOPbxT9.jpg', 8, 11),
 ('EMP-1009', 'Kent', NULL, 'Giniseran', NULL, '2015-02-03', 'single', 'male', '09121352136', 'kent@gmail.com', NULL, 'storage/profile_images/fT7TUZ6cEmfbh03sxpf08Qvk6c6zgt9SPI4gK3yF.jpg', 13, 13),
 ('EMP-1010', 'john', 'osyler', 'Tagra', NULL, '2008-06-10', 'single', 'male', '09121382125', 'osyler@gmail.com', 2005, 'storage/profile_images/sMC2XhCwZpfUsdmmHgvvaVFBsXw00mL4sg7ynK85.jpg', 13, 13),
-('EMP-1011', 'Carl Ian', 'Ramirez', 'Ballori', NULL, '2010-02-26', 'single', 'male', '09121382125', 'Carl@gmail.com', 2000, 'storage/profile_images/nscSGOKmaWr4U4brtBxj3iY6a3YUFyif7tkLydC1.jpg', 12, 13);
+('EMP-1011', 'Carl Ian', 'Ramirez', 'Ballori', NULL, '2010-02-26', 'single', 'male', '09121382125', 'Carl@gmail.com', 2000, 'storage/profile_images/nscSGOKmaWr4U4brtBxj3iY6a3YUFyif7tkLydC1.jpg', 12, 13),
+('EMP-1012', 'Carlito', NULL, 'Ballori', NULL, '2026-01-12', 'single', 'male', '16236512635', 'Carl1@gmail.com', 2010, 'images/default-avatar.png', 9, 4),
+('EMP-1013', 'Jeah', NULL, 'Calumba', NULL, '2004-01-04', 'single', 'female', '09265451264', 'Jeah@gmail.com', 2012, 'images/default-avatar.png', 12, 11),
+('EMP-1014', 'Carl', 'Ramirez', 'Ballori', NULL, '2003-01-01', 'single', 'male', '09978761059', NULL, 2015, 'images/default-avatar.png', 11, 11),
+('EMP-1015', 'Adrian', NULL, 'Masion', NULL, '2026-03-16', 'single', 'male', NULL, NULL, 2016, 'images/default-avatar.png', 10, 11),
+('EMP-1016', 'philippe', NULL, 'Otida', NULL, '2026-03-16', 'single', 'male', NULL, NULL, 2017, 'images/default-avatar.png', 4, 13),
+('EMP-1017', 'Mark', NULL, 'Rosales', NULL, '2026-03-13', 'single', 'male', NULL, NULL, 2018, 'images/default-avatar.png', 9, 11),
+('EMP-1018', 'Edon', NULL, 'Yamo', NULL, '2002-03-12', 'single', 'male', '092381238271', NULL, 2019, 'images/default-avatar.png', 12, 4);
 
 -- --------------------------------------------------------
 
@@ -427,7 +503,7 @@ CREATE TABLE `fund_allocations` (
 --
 
 INSERT INTO `fund_allocations` (`id`, `fund_cluster`, `total_amount`, `remaining_amount`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 'FY2025-GEN-001', 100000.00, 100000.00, 2000, '2025-12-14 17:01:39', '2025-12-14 17:01:39');
+(1, 'FY2025-GEN-001', 100000.00, 92000.00, 2000, '2025-12-14 17:01:39', '2025-12-14 17:01:39');
 
 -- --------------------------------------------------------
 
@@ -456,7 +532,8 @@ INSERT INTO `ics` (`ics_no`, `property_no`, `description`, `quantity`, `unit`, `
 (12, 'PQS-323-224-2025-0004', 'Monitor, 165hz, 24inch (SN: 123556)', 1, 'pc', 12690.00, 12690.00, '5 years'),
 (13, 'PQS-323-224-2025-0005', 'Monitor, 165hz, 24inch (SN: 123557)', 1, 'pc', 12690.00, 12690.00, '5 years'),
 (14, 'PQS-323-224-2025-0006', 'Monitor, 165hz, 24inch (SN: 123558)', 1, 'pc', 12690.00, 12690.00, '5 years'),
-(15, 'PQS-323-224-2025-0007', 'Monitor, 165hz, 24inch (SN: 123559)', 1, 'pc', 12690.00, 12690.00, '5 years');
+(15, 'PQS-323-224-2025-0007', 'Monitor, 165hz, 24inch (SN: 123559)', 1, 'pc', 12690.00, 12690.00, '5 years'),
+(16, 'PQS-323-223-2026-0001', 'alternative', 1, 'pcs', 5000.00, 5000.00, '10 years');
 
 -- --------------------------------------------------------
 
@@ -497,7 +574,8 @@ INSERT INTO `inspection_reports` (`ia_no`, `po_no`, `fund_cluster`, `inspection_
 ('IA-20251026-009', 'PO-20251026-006', 'Accounting & Finance', '2025-10-29', NULL, NULL, NULL, 2008, 2008, 301, NULL, NULL, '2025-10-26 10:33:55', '2025-10-26 10:33:55'),
 ('IA-20251026-010', 'PO-20251026-006', 'Accounting & Finance', '2025-10-29', NULL, NULL, NULL, 2008, 2008, 303, NULL, NULL, '2025-10-26 10:35:14', '2025-10-26 10:35:14'),
 ('IA-20251026-011', 'PO-20251026-006', 'Accounting & Finance', '2025-10-29', NULL, NULL, NULL, 2008, 2008, 302, NULL, NULL, '2025-10-26 10:35:41', '2025-10-26 10:35:41'),
-('IA-20251214-001', 'PO-20251026-007', NULL, '2025-12-14', NULL, NULL, NULL, NULL, NULL, 301, NULL, NULL, '2025-12-14 14:34:38', '2025-12-14 14:34:38');
+('IA-20251214-001', 'PO-20251026-007', NULL, '2025-12-14', NULL, NULL, NULL, NULL, NULL, 301, NULL, NULL, '2025-12-14 14:34:38', '2025-12-14 14:34:38'),
+('IA-20260120-001', 'PO-20260115-001', NULL, '2026-01-16', NULL, NULL, NULL, NULL, NULL, 302, NULL, NULL, '2026-01-20 06:18:01', '2026-01-20 06:18:01');
 
 -- --------------------------------------------------------
 
@@ -535,10 +613,11 @@ INSERT INTO `inspection_report_items` (`ia_item_id`, `ia_no`, `po_item_id`, `qua
 (10, 'IA-20251026-009', 14, 5, 3, 2, 301, NULL, NULL, '2026-11-27'),
 (11, 'IA-20251026-009', 15, 1, 1, 0, 302, NULL, NULL, '2026-11-27'),
 (12, 'IA-20251026-010', 14, 5, 3, 2, 303, 'some items are defective', NULL, '2026-11-27'),
-(13, 'IA-20251026-010', 15, 1, 1, 0, 302, NULL, NULL, '2026-11-27'),
+(13, 'IA-20251026-010', 15, 1, 1, 0, 306, 'Recorded as PQS-323-224-2026-0001', 'PQS-323-224-2026-0001', '2026-11-27'),
 (14, 'IA-20251026-011', 14, 5, 5, 0, 306, 'Recorded as PQS-323-224-2025-0003, PQS-323-224-2025-0004, PQS-323-224-2025-0005, PQS-323-224-2025-0006, PQS-323-224-2025-0007', 'PQS-323-224-2025-0003', '2026-11-27'),
 (15, 'IA-20251026-011', 15, 1, 1, 0, 306, 'Recorded as PQS-323-224-2025-0002', 'PQS-323-224-2025-0002', '2026-11-27'),
-(16, 'IA-20251214-001', 16, 1, 0, 0, 301, NULL, NULL, NULL);
+(16, 'IA-20251214-001', 16, 1, 0, 0, 301, NULL, NULL, NULL),
+(17, 'IA-20260120-001', 19, 1, 1, 0, 306, 'Recorded as PQS-323-223-2026-0001', 'PQS-323-223-2026-0001', '2026-01-21');
 
 -- --------------------------------------------------------
 
@@ -575,7 +654,7 @@ CREATE TABLE `notifications` (
   `table_name` enum('purchase_requests','purchase_orders','inspection_acceptance') DEFAULT NULL,
   `record_id` varchar(100) DEFAULT NULL,
   `message` text NOT NULL,
-  `type` enum('info','success','warning','error','task') DEFAULT 'info',
+  `type` enum('info','success','warning','error','task','action_required') NOT NULL DEFAULT 'info',
   `is_read` tinyint(1) DEFAULT 0,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -810,7 +889,68 @@ INSERT INTO `notifications` (`notification_id`, `recipient_id`, `sender_id`, `ta
 (223, 2000, 2009, 'purchase_requests', 'PR-20251214-002', 'Your purchase request PR-20251214-002 has received BAC final approval.', 'success', 0, '2025-12-14 15:49:27'),
 (224, 1003, 2009, 'purchase_requests', 'PR-20251214-002', 'Purchase request PR-20251214-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2025-12-14 15:49:27'),
 (225, 1005, 2009, 'purchase_requests', 'PR-20251214-002', 'Purchase request PR-20251214-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2025-12-14 15:49:27'),
-(226, 2000, 2009, 'purchase_requests', 'PR-20251214-002', 'Purchase request PR-20251214-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2025-12-14 15:49:27');
+(226, 2000, 2009, 'purchase_requests', 'PR-20251214-002', 'Purchase request PR-20251214-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2025-12-14 15:49:27'),
+(227, 2011, 2010, 'purchase_requests', 'PR-TEST', 'test', 'info', 0, '2026-01-14 08:27:38'),
+(228, 2011, 2010, 'purchase_requests', 'PR-TEST2', 'test2', 'info', 0, '2026-01-14 08:30:07'),
+(229, 1003, 2010, 'purchase_requests', 'PR-20260114-002', 'New purchase request PR-20260114-002 submitted by employee.', 'task', 0, '2026-01-14 08:31:16'),
+(230, 1005, 2010, 'purchase_requests', 'PR-20260114-002', 'New purchase request PR-20260114-002 submitted by employee.', 'task', 0, '2026-01-14 08:31:16'),
+(231, 2000, 2010, 'purchase_requests', 'PR-20260114-002', 'New purchase request PR-20260114-002 submitted by employee.', 'task', 0, '2026-01-14 08:31:16'),
+(232, 2011, 2010, 'purchase_requests', 'PR-20260114-002', 'New purchase request PR-20260114-002 submitted by employee.', 'task', 0, '2026-01-14 08:31:16'),
+(233, 2010, 2012, 'purchase_requests', 'PR-20260114-002', 'Your purchase request PR-20260114-002 status changed to Recommended.', 'info', 1, '2026-01-15 01:56:22'),
+(234, 2010, 2014, 'purchase_requests', 'PR-20260114-002', 'BAC has suggested an alternative for an item in your purchase request PR-20260114-002. Original: \"sadnajsnd\". Suggested alternative: \"alternative\". Please review and respond.', 'action_required', 0, '2026-01-15 02:51:26'),
+(235, 2010, 2014, 'purchase_requests', 'PR-20260114-002', 'Your purchase request PR-20260114-002 is now under BAC review.', 'info', 0, '2026-01-15 02:52:05'),
+(236, 2009, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 0, '2026-01-15 03:21:21'),
+(237, 2014, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 1, '2026-01-15 03:21:21'),
+(238, 1003, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 0, '2026-01-15 03:21:21'),
+(239, 1005, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 0, '2026-01-15 03:21:21'),
+(240, 2000, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 0, '2026-01-15 03:21:21'),
+(241, 2011, 2010, 'purchase_requests', 'PR-20260114-002', 'employee has chose to wait for the original item \"sadnajsnd\" until Jan 16, 2026 for PR PR-20260114-002.', 'warning', 0, '2026-01-15 03:21:21'),
+(242, 1003, 2010, 'purchase_requests', 'PR-20260115-001', 'New purchase request PR-20260115-001 submitted by employee.', 'task', 0, '2026-01-15 03:41:01'),
+(243, 1005, 2010, 'purchase_requests', 'PR-20260115-001', 'New purchase request PR-20260115-001 submitted by employee.', 'task', 0, '2026-01-15 03:41:01'),
+(244, 2000, 2010, 'purchase_requests', 'PR-20260115-001', 'New purchase request PR-20260115-001 submitted by employee.', 'task', 0, '2026-01-15 03:41:01'),
+(245, 2011, 2010, 'purchase_requests', 'PR-20260115-001', 'New purchase request PR-20260115-001 submitted by employee.', 'task', 0, '2026-01-15 03:41:01'),
+(246, 2010, 2012, 'purchase_requests', 'PR-20260115-001', 'Your purchase request PR-20260115-001 status changed to Recommended.', 'info', 0, '2026-01-15 03:41:50'),
+(247, 2010, 2014, 'purchase_requests', 'PR-20260115-001', 'BAC has suggested an alternative for an item in your purchase request PR-20260115-001. Original: \"hellowowrd\". Suggested alternative: \"alternative\" at ₱5,000.00/unit. Please review and respond.', 'action_required', 0, '2026-01-15 03:42:31'),
+(248, 2010, 2014, 'purchase_requests', 'PR-20260115-001', 'Your purchase request PR-20260115-001 is now under BAC review.', 'info', 0, '2026-01-15 03:42:39'),
+(249, 2009, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'success', 0, '2026-01-15 03:43:02'),
+(250, 2014, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'success', 1, '2026-01-15 03:43:02'),
+(251, 1003, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'info', 0, '2026-01-15 03:43:02'),
+(252, 1005, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'info', 0, '2026-01-15 03:43:02'),
+(253, 2000, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'info', 0, '2026-01-15 03:43:02'),
+(254, 2011, 2010, 'purchase_requests', 'PR-20260115-001', 'employee has accepted the alternative item \"alternative\" for PR PR-20260115-001.', 'info', 0, '2026-01-15 03:43:02'),
+(255, 2010, 2014, 'purchase_requests', 'PR-20260115-001', 'Your purchase request PR-20260115-001 has received BAC final approval.', 'success', 0, '2026-01-15 03:44:52'),
+(256, 1003, 2014, 'purchase_requests', 'PR-20260115-001', 'Purchase request PR-20260115-001 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-15 03:44:52'),
+(257, 1005, 2014, 'purchase_requests', 'PR-20260115-001', 'Purchase request PR-20260115-001 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-15 03:44:52'),
+(258, 2000, 2014, 'purchase_requests', 'PR-20260115-001', 'Purchase request PR-20260115-001 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-15 03:44:52'),
+(259, 2011, 2014, 'purchase_requests', 'PR-20260115-001', 'Purchase request PR-20260115-001 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-15 03:44:52'),
+(260, 2010, 2011, 'purchase_orders', 'PO-20260115-001', 'Purchase order PO-20260115-001 has been generated for request PR-20260115-001.', 'success', 0, '2026-01-15 04:01:01'),
+(261, 1003, 2011, 'purchase_orders', 'PO-20260115-001', 'Purchase order PO-20260115-001 has been generated for request PR-20260115-001.', 'success', 0, '2026-01-15 04:01:01'),
+(262, 1005, 2011, 'purchase_orders', 'PO-20260115-001', 'Purchase order PO-20260115-001 has been generated for request PR-20260115-001.', 'success', 0, '2026-01-15 04:01:01'),
+(263, 2000, 2011, 'purchase_orders', 'PO-20260115-001', 'Purchase order PO-20260115-001 has been generated for request PR-20260115-001.', 'success', 0, '2026-01-15 04:01:01'),
+(264, 2011, 2011, 'purchase_orders', 'PO-20260115-001', 'Purchase order PO-20260115-001 has been generated for request PR-20260115-001.', 'success', 0, '2026-01-15 04:01:01'),
+(265, 2010, 2011, 'purchase_requests', 'PR-20260115-001', 'Updates for PR PR-20260115-001:\r\n• alternative → currently unavailable. Please let us know how long you can wait so we can revisit sourcing.', 'warning', 0, '2026-01-15 04:01:01'),
+(266, 2010, 2011, 'inspection_acceptance', 'IA-20260120-001', 'Item \"alternative\" has been recorded in PQS with property number(s) PQS-323-223-2026-0001.', 'success', 0, '2026-01-20 08:11:57'),
+(267, 2003, 2011, 'inspection_acceptance', 'IA-20251026-010', 'Item \"System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd\" has been recorded in PQS with property number(s) PQS-323-224-2026-0001.', 'success', 0, '2026-01-20 08:13:03'),
+(268, 2010, 2014, 'purchase_requests', 'PR-20260114-002', 'Your purchase request PR-20260114-002 has received BAC final approval.', 'success', 0, '2026-01-20 08:50:03'),
+(269, 1003, 2014, 'purchase_requests', 'PR-20260114-002', 'Purchase request PR-20260114-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-20 08:50:03'),
+(270, 1005, 2014, 'purchase_requests', 'PR-20260114-002', 'Purchase request PR-20260114-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-20 08:50:03'),
+(271, 2000, 2014, 'purchase_requests', 'PR-20260114-002', 'Purchase request PR-20260114-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-20 08:50:03'),
+(272, 2011, 2014, 'purchase_requests', 'PR-20260114-002', 'Purchase request PR-20260114-002 approved by BAC. Ready for purchase order generation.', 'task', 0, '2026-01-20 08:50:03'),
+(273, 2010, 2011, 'purchase_orders', 'PO-20260120-001', 'Purchase order PO-20260120-001 has been generated for request PR-20260114-002.', 'success', 0, '2026-01-20 08:50:41'),
+(274, 1003, 2011, 'purchase_orders', 'PO-20260120-001', 'Purchase order PO-20260120-001 has been generated for request PR-20260114-002.', 'success', 0, '2026-01-20 08:50:41'),
+(275, 1005, 2011, 'purchase_orders', 'PO-20260120-001', 'Purchase order PO-20260120-001 has been generated for request PR-20260114-002.', 'success', 0, '2026-01-20 08:50:41'),
+(276, 2000, 2011, 'purchase_orders', 'PO-20260120-001', 'Purchase order PO-20260120-001 has been generated for request PR-20260114-002.', 'success', 0, '2026-01-20 08:50:41'),
+(277, 2011, 2011, 'purchase_orders', 'PO-20260120-001', 'Purchase order PO-20260120-001 has been generated for request PR-20260114-002.', 'success', 0, '2026-01-20 08:50:41'),
+(278, 2010, 2011, 'purchase_requests', 'PR-20260114-002', 'Updates for PR PR-20260114-002:\r\n• sadnajsnd → currently unavailable. Please let us know how long you can wait so we can revisit sourcing.', 'warning', 0, '2026-01-20 08:50:41'),
+(279, 1003, 2015, 'purchase_requests', 'PR-20260317-001', 'New purchase request PR-20260317-001 submitted by Carl1.', 'task', 0, '2026-03-17 05:14:46'),
+(280, 1005, 2015, 'purchase_requests', 'PR-20260317-001', 'New purchase request PR-20260317-001 submitted by Carl1.', 'task', 0, '2026-03-17 05:14:46'),
+(281, 2000, 2015, 'purchase_requests', 'PR-20260317-001', 'New purchase request PR-20260317-001 submitted by Carl1.', 'task', 0, '2026-03-17 05:14:46'),
+(282, 2011, 2015, 'purchase_requests', 'PR-20260317-001', 'New purchase request PR-20260317-001 submitted by Carl1.', 'task', 0, '2026-03-17 05:14:46'),
+(283, 2016, 2015, 'purchase_requests', 'PR-20260317-001', 'New purchase request PR-20260317-001 submitted by Carl1.', 'task', 0, '2026-03-17 05:14:46'),
+(284, 2015, 2018, 'purchase_requests', 'PR-20260317-001', 'Your purchase request PR-20260317-001 status changed to Recommended.', 'info', 0, '2026-03-17 05:16:03'),
+(285, 2012, 2015, 'purchase_requests', 'PR-20260317-002', 'New purchase request PR-20260317-002 submitted by Carl1.', 'task', 0, '2026-03-17 05:49:32'),
+(286, 2018, 2015, 'purchase_requests', 'PR-20260317-002', 'New purchase request PR-20260317-002 submitted by Carl1.', 'task', 0, '2026-03-17 05:49:32'),
+(287, 2000, 2015, 'purchase_requests', 'PR-20260317-002', 'New purchase request PR-20260317-002 submitted by Carl1.', 'task', 0, '2026-03-17 05:49:32');
 
 -- --------------------------------------------------------
 
@@ -834,7 +974,8 @@ CREATE TABLE `par` (
 --
 
 INSERT INTO `par` (`par_no`, `property_no`, `article_desc`, `quantity`, `unit`, `date_acquired`, `unit_value`, `amount`) VALUES
-(3, 'PQS-323-224-2025-0002', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 1, 'pc', '2025-10-26', 51000.00, 51000.00);
+(3, 'PQS-323-224-2025-0002', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 1, 'pc', '2025-10-26', 51000.00, 51000.00),
+(4, 'PQS-323-224-2026-0001', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 1, 'pc', '2026-01-20', 51000.00, 51000.00);
 
 -- --------------------------------------------------------
 
@@ -892,13 +1033,15 @@ CREATE TABLE `pqs` (
 --
 
 INSERT INTO `pqs` (`property_no`, `article`, `description`, `serial_number`, `date_acquired`, `unit_value`, `unit`, `on_hand_per_count`, `total_value`, `remarks`, `accountable_officer_id`, `cat_id`) VALUES
+('PQS-323-223-2026-0001', 'alternative', 'alternative', NULL, '2026-01-20', 5000.00, 'pcs', 1, 5000.00, 'Recorded via Inspection IA-20260120-001', 'EMP-1012', '223'),
 ('PQS-323-224-2025-0002', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd (SN: 3123321)', NULL, '2025-10-26', 51000.00, 'pc', 1, 51000.00, 'Serial No: 3123321 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
 ('PQS-323-224-2025-0003', 'Monitor, 165hz, 24inch', 'Monitor, 165hz, 24inch (SN: 123555)', '123555', '2025-10-26', 12690.00, 'pc', 1, 12690.00, 'Serial No: 123555 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
 ('PQS-323-224-2025-0004', 'Monitor, 165hz, 24inch', 'Monitor, 165hz, 24inch (SN: 123556)', '123556', '2025-10-26', 12690.00, 'pc', 1, 12690.00, 'Serial No: 123556 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
 ('PQS-323-224-2025-0005', 'Monitor, 165hz, 24inch', 'Monitor, 165hz, 24inch (SN: 123557)', '123557', '2025-10-26', 12690.00, 'pc', 1, 12690.00, 'Serial No: 123557 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
 ('PQS-323-224-2025-0006', 'Monitor, 165hz, 24inch', 'Monitor, 165hz, 24inch (SN: 123558)', '123558', '2025-10-26', 12690.00, 'pc', 1, 12690.00, 'Serial No: 123558 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
 ('PQS-323-224-2025-0007', 'Monitor, 165hz, 24inch', 'Monitor, 165hz, 24inch (SN: 123559)', '123559', '2025-10-26', 12690.00, 'pc', 1, 12690.00, 'Serial No: 123559 | Recorded via Inspection IA-20251026-011', 'EMP-1008', '224'),
-('PQS-323-224-2025-1', 'Generated from PO PO-0002', '• 1. ryzen 5 5500 | Unit: unit | Qty: 1 | ₱7,500.00 | SN: 21314\r\n• 2. 16gb | Unit: unit | Qty: 2 | ₱3,000.00 | SN: 21312\r\n• 3. 1tb ssd | Unit: unit | Qty: 1 | ₱2,500.00 | SN: 23232\r\n• 4. 24inch | Unit: unit | Qty: 1 | ₱10,000.00 | SN: 23231\r\n• 5. rtx 3060 ti | Unit: unit | Qty: 1 | ₱21,000.00 | SN: 45344\r\n• 6. mouse | Unit: unit | Qty: 1 | ₱0.00 | SN: 23230\r\n• 7. keyboard | Unit: unit | Qty: 1 | ₱0.00 | SN: 21218', NULL, '2025-10-23', 47000.00, 'unit', 1, 47000.00, 'Generated from Inspection & Acceptance', NULL, '224');
+('PQS-323-224-2025-1', 'Generated from PO PO-0002', '• 1. ryzen 5 5500 | Unit: unit | Qty: 1 | ₱7,500.00 | SN: 21314\r\n• 2. 16gb | Unit: unit | Qty: 2 | ₱3,000.00 | SN: 21312\r\n• 3. 1tb ssd | Unit: unit | Qty: 1 | ₱2,500.00 | SN: 23232\r\n• 4. 24inch | Unit: unit | Qty: 1 | ₱10,000.00 | SN: 23231\r\n• 5. rtx 3060 ti | Unit: unit | Qty: 1 | ₱21,000.00 | SN: 45344\r\n• 6. mouse | Unit: unit | Qty: 1 | ₱0.00 | SN: 23230\r\n• 7. keyboard | Unit: unit | Qty: 1 | ₱0.00 | SN: 21218', NULL, '2025-10-23', 47000.00, 'unit', 1, 47000.00, 'Generated from Inspection & Acceptance', NULL, '224'),
+('PQS-323-224-2026-0001', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd (SN: 1023648)', '1023648', '2026-01-20', 51000.00, 'pc', 1, 51000.00, 'Serial No: 1023648 | Recorded via Inspection IA-20251026-010', 'EMP-1008', '224');
 
 -- --------------------------------------------------------
 
@@ -973,7 +1116,9 @@ INSERT INTO `purchase_orders` (`po_no`, `pr_no`, `supplier_id`, `supplier_contra
 ('PO-20251026-006', 'PR-20251026-007', 'SUP-001', NULL, '2025-10-26', NULL, 'bidding', NULL, 'macabalan cdoc', '2025-10-29', 'DAP', 'CID', NULL, 'Accounting & Finance', 115000.00, NULL, '2025-10-26', 114450.00, NULL, 'Ara Industrial Supply', '2025-10-26', NULL, 2000, 205, '2025-10-26 10:29:34', '2025-10-26 10:35:41'),
 ('PO-20251026-007', 'PR-20251026-008', 'SUP-KNWUPMLF', NULL, '2025-10-26', NULL, 'Shopping', NULL, 'macabalan cdoc', '2025-10-28', 'DAP', 'CID', NULL, 'Accounting & Finance', 1200000.00, NULL, '2025-10-26', 1150000.00, NULL, 'Toyota', '2025-10-26', NULL, 2000, 204, '2025-10-26 11:31:13', '2025-12-14 14:34:38'),
 ('PO-20251026-008', 'PR-20251026-010', 'SUP-003', NULL, '2025-10-26', NULL, 'bidding', NULL, 'macabalan cdoc', '2025-10-28', 'DAP', 'CID', NULL, 'Accounting & Finance', 15000.00, NULL, '2025-10-26', 12000.00, NULL, 'Oro Mighty Enterprises', '2025-10-26', NULL, 2000, 202, '2025-10-26 12:53:28', '2025-10-26 12:53:28'),
-('PO-20251214-001', 'PR-20251213-001', 'SUP-001', NULL, '2025-12-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 22000.00, NULL, '2025-12-14', 21000.00, NULL, 'Ara Industrial Supply', '2025-12-14', NULL, 2000, 202, '2025-12-14 14:30:03', '2025-12-14 14:30:03');
+('PO-20251214-001', 'PR-20251213-001', 'SUP-001', NULL, '2025-12-14', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 22000.00, NULL, '2025-12-14', 21000.00, NULL, 'Ara Industrial Supply', '2025-12-14', NULL, 2000, 202, '2025-12-14 14:30:03', '2025-12-14 14:30:03'),
+('PO-20260115-001', 'PR-20260115-001', 'SUP-001', NULL, '2026-01-15', NULL, 'Bidding', NULL, 'CAGAYAN BPI', '2026-01-16', 'DAP', 'COD', NULL, NULL, 92000.00, NULL, '2026-01-15', 5000.00, NULL, 'Ara Industrial Supply', '2026-01-15', NULL, 2011, 205, '2026-01-15 04:01:01', '2026-01-20 06:18:01'),
+('PO-20260120-001', 'PR-20260114-002', 'SUP-001', NULL, '2026-01-20', NULL, NULL, NULL, 'CAGAYAN BPI', '2026-01-21', 'DAP', 'COD', NULL, NULL, 96000.00, NULL, '2026-01-20', 1000.00, NULL, 'Ara Industrial Supply', '2026-01-20', NULL, 2011, 201, '2026-01-20 08:50:41', '2026-01-20 08:50:42');
 
 -- --------------------------------------------------------
 
@@ -1019,10 +1164,12 @@ INSERT INTO `purchase_order_items` (`poi_id`, `po_no`, `pri_id`, `item_descripti
 (12, 'PO-20251026-004', 19, 'printer, inkjet, 100mm/s, long or letter size', 1, 'pc', 12000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:40:54', 2000, NULL, 302, NULL, NULL, NULL),
 (13, 'PO-20251026-005', 20, 'printer, inkjet, 100mm/s, a4', 1, 'pc', 13000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 07:26:49', 2000, NULL, NULL, NULL, NULL, NULL),
 (14, 'PO-20251026-006', 21, 'Monitor, 165hz, 24inch', 5, 'pc', 12690.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:31:22', 2000, NULL, 306, 'Recorded as PQS-323-224-2025-0003, PQS-323-224-2025-0004, PQS-323-224-2025-0005, PQS-323-224-2025-0006, PQS-323-224-2025-0007', NULL, NULL),
-(15, 'PO-20251026-006', 22, 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 1, 'pc', 51000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:32:05', 2000, NULL, 306, 'Recorded as PQS-323-224-2025-0002', NULL, NULL),
+(15, 'PO-20251026-006', 22, 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 1, 'pc', 51000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:32:05', 2000, NULL, 306, 'Recorded as PQS-323-224-2025-0002 Recorded as PQS-323-224-2026-0001', NULL, NULL),
 (16, 'PO-20251026-007', 23, 'Car, 4x4, toyota hilux', 1, 'pc', 1150000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-12-14 14:34:38', 2000, NULL, NULL, NULL, NULL, NULL),
 (17, 'PO-20251026-008', 25, 'smartphone', 1, 'pc', 12000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(18, 'PO-20251214-001', 26, 'desktop', 1, 'set', 21000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(18, 'PO-20251214-001', 26, 'desktop', 1, 'set', 21000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(19, 'PO-20260115-001', 33, 'alternative', 1, 'pcs', 5000.00, NULL, 'fulfilled', NULL, 'accept', '2026-01-15 03:43:02', NULL, NULL, NULL, NULL, NULL, 306, 'Recorded as PQS-323-223-2026-0001', NULL, NULL),
+(20, 'PO-20260120-001', 32, 'sadnajsnd', 1, 'pcs', 1000.00, NULL, 'waiting', NULL, 'wait', '2026-01-15 03:21:21', '2026-01-16', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1073,7 +1220,12 @@ INSERT INTO `purchase_requests` (`pr_no`, `account_id`, `status_id`, `reviewed_b
 ('PR-20251026-010', 2003, 108, 2000, 2006, '2025-10-26 12:19:58', NULL, 6, 11, NULL, NULL, 'Accounting & Finance', 15000.00, 'for communication', NULL, 2000, '2025-10-26 12:52:07', 'Confirmed during purchase order generation.', 14233.00, NULL, 0, '2025-10-26 20:19:48', '2025-10-26 20:53:28'),
 ('PR-20251213-001', 2000, 108, 2000, 2006, '2025-12-13 07:12:34', NULL, 6, 13, NULL, NULL, NULL, 22000.00, 'purpose', NULL, 2009, '2025-12-14 04:43:54', 'Confirmed during purchase order generation.', 21000.00, NULL, 0, '2025-12-13 15:00:57', '2025-12-14 22:30:03'),
 ('PR-20251214-001', 2000, 105, 2006, 2006, '2025-12-14 15:05:19', NULL, 6, 13, NULL, NULL, NULL, NULL, 'G', NULL, NULL, NULL, NULL, 31000.00, NULL, 0, '2025-12-14 23:03:37', '2025-12-14 23:31:32'),
-('PR-20251214-002', 2000, 105, 2006, 2006, '2025-12-14 15:47:49', NULL, 6, 13, NULL, NULL, NULL, NULL, 'prints', NULL, NULL, NULL, NULL, 15000.00, NULL, 0, '2025-12-14 23:43:08', '2025-12-14 23:49:27');
+('PR-20251214-002', 2000, 105, 2006, 2006, '2025-12-14 15:47:49', NULL, 6, 13, NULL, NULL, NULL, NULL, 'prints', NULL, NULL, NULL, NULL, 15000.00, NULL, 0, '2025-12-14 23:43:08', '2025-12-14 23:49:27'),
+('PR-20260114-001', 2010, 102, NULL, NULL, NULL, NULL, 1, 4, NULL, NULL, NULL, 97000.00, 'amsndmasnd', NULL, NULL, NULL, NULL, 3000.00, 1, 0, '2026-01-14 16:17:12', '2026-01-14 16:17:12'),
+('PR-20260114-002', 2010, 107, 2011, 2012, '2026-01-15 01:56:22', NULL, 1, 4, NULL, NULL, NULL, 96000.00, 'asdasd', NULL, 2011, '2026-01-20 08:50:41', 'Confirmed during purchase order generation.', 1000.00, 1, 0, '2026-01-14 16:31:16', '2026-01-20 16:50:42'),
+('PR-20260115-001', 2010, 111, 2011, 2012, '2026-01-15 03:41:50', NULL, 1, 4, NULL, NULL, NULL, 92000.00, 'asdsad', NULL, 2011, '2026-01-15 04:01:01', 'Confirmed during purchase order generation.', 5000.00, 1, 0, '2026-01-15 11:41:01', '2026-01-20 14:18:01'),
+('PR-20260317-001', 2015, 103, 2018, 2018, '2026-03-17 05:16:03', NULL, 6, 11, NULL, NULL, NULL, 92000.00, 'for office computer', NULL, NULL, NULL, NULL, 0.00, 1, 0, '2026-03-17 13:14:46', '2026-03-17 13:16:03'),
+('PR-20260317-002', 2015, 102, NULL, NULL, NULL, NULL, 6, 11, NULL, NULL, NULL, 92000.00, 'asd', NULL, NULL, NULL, NULL, 0.00, 1, 0, '2026-03-17 13:49:32', '2026-03-17 13:49:32');
 
 -- --------------------------------------------------------
 
@@ -1092,12 +1244,17 @@ CREATE TABLE `purchase_request_items` (
   `estimated_unit_cost` decimal(15,2) NOT NULL DEFAULT 0.00,
   `estimated_total_cost` decimal(15,2) GENERATED ALWAYS AS (`quantity` * `estimated_unit_cost`) STORED,
   `remarks` varchar(255) DEFAULT NULL,
-  `fulfillment_status` enum('pending','ordered','unavailable','alternative') NOT NULL DEFAULT 'pending',
+  `fulfillment_status` enum('pending','ordered','unavailable','alternative','waiting','fulfilled','expired') NOT NULL DEFAULT 'pending',
   `alternate_description` varchar(255) DEFAULT NULL,
+  `suggested_by` int(10) UNSIGNED DEFAULT NULL,
+  `suggested_at` timestamp NULL DEFAULT NULL,
+  `original_description` varchar(500) DEFAULT NULL,
   `employee_decision` varchar(20) DEFAULT NULL,
   `employee_decided_at` timestamp NULL DEFAULT NULL,
   `employee_wait_until` date DEFAULT NULL,
   `employee_wait_note` varchar(255) DEFAULT NULL,
+  `removed_at` timestamp NULL DEFAULT NULL,
+  `removal_reason` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -1106,25 +1263,32 @@ CREATE TABLE `purchase_request_items` (
 -- Dumping data for table `purchase_request_items`
 --
 
-INSERT INTO `purchase_request_items` (`pri_id`, `pr_no`, `item_description`, `item_type`, `quantity`, `unit`, `stock_number`, `estimated_unit_cost`, `remarks`, `fulfillment_status`, `alternate_description`, `employee_decision`, `employee_decided_at`, `employee_wait_until`, `employee_wait_note`, `created_at`, `updated_at`) VALUES
-(11, 'PR-20251026-001', 'asd', 'consumable', 1, 'asd', '123', 1231.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-25 22:01:07', '2025-10-25 22:01:07'),
-(12, 'PR-20251026-002', 'dasd123', 'consumable', 1, 'unit', NULL, 31312.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-25 22:40:42', '2025-10-25 22:40:42'),
-(13, 'PR-20251026-003', 'office chair', 'consumable', 1, 'pc', NULL, 3123.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
-(14, 'PR-20251026-003', 'office table', 'consumable', 1, 'pc', NULL, 2133.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
-(15, 'PR-20251026-003', 'laptop', 'consumable', 1, 'pc', NULL, 24222.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
-(16, 'PR-20251026-004', 'printer, laser type, 60 mm/s, A4', 'consumable', 1, 'pc', '1', 12000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
-(17, 'PR-20251026-004', 'chair', 'consumable', 1, 'pc', '1', 350.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
-(18, 'PR-20251026-004', 'table', 'consumable', 1, 'pc', '1', 500.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
-(19, 'PR-20251026-005', 'printer, inkjet, 100mm/s, long or letter size', 'consumable', 1, 'pc', '1', 12000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:27:56', '2025-10-26 04:27:56'),
-(20, 'PR-20251026-006', 'printer, inkjet, 100mm/s, a4', 'consumable', 1, 'pc', '1', 13000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 06:50:46', '2025-10-26 06:50:46'),
-(21, 'PR-20251026-007', 'Monitor, 165hz, 24inch', 'consumable', 5, 'pc', NULL, 12690.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:24:41', '2025-10-26 10:24:41'),
-(22, 'PR-20251026-007', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 'consumable', 1, 'pc', NULL, 51000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:24:41', '2025-10-26 10:24:41'),
-(23, 'PR-20251026-008', 'Car, 4x4, toyota hilux', 'consumable', 1, 'pc', NULL, 1150000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-10-26 11:27:03', '2025-10-26 11:27:03'),
-(24, 'PR-20251026-009', 'Nissan navara, 4x4', 'consumable', 1, 'pc', NULL, 1450000.00, NULL, 'ordered', NULL, 'wait', '2025-10-26 12:41:23', '2025-10-27', NULL, '2025-10-26 11:47:25', '2025-12-13 07:15:49'),
-(25, 'PR-20251026-010', 'smartphone', 'consumable', 1, 'pc', NULL, 12000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-10-26 12:19:48', '2025-10-26 12:51:46'),
-(26, 'PR-20251213-001', 'desktop', 'consumable', 1, 'set', NULL, 21000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, '2025-12-13 07:00:57', '2025-12-14 04:43:54'),
-(27, 'PR-20251214-001', 'Laptop - Ryzen 5, 3060ti gpu, 16gb ram ddr4, 512gb ssd', 'consumable', 1, 'pc', NULL, 31000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-12-14 15:03:37', '2025-12-14 15:03:37'),
-(28, 'PR-20251214-002', 'printer', 'consumable', 1, 'pc', NULL, 15000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, '2025-12-14 15:43:08', '2025-12-14 15:43:08');
+INSERT INTO `purchase_request_items` (`pri_id`, `pr_no`, `item_description`, `item_type`, `quantity`, `unit`, `stock_number`, `estimated_unit_cost`, `remarks`, `fulfillment_status`, `alternate_description`, `suggested_by`, `suggested_at`, `original_description`, `employee_decision`, `employee_decided_at`, `employee_wait_until`, `employee_wait_note`, `removed_at`, `removal_reason`, `created_at`, `updated_at`) VALUES
+(11, 'PR-20251026-001', 'asd', 'consumable', 1, 'asd', '123', 1231.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-25 22:01:07', '2025-10-25 22:01:07'),
+(12, 'PR-20251026-002', 'dasd123', 'consumable', 1, 'unit', NULL, 31312.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-25 22:40:42', '2025-10-25 22:40:42'),
+(13, 'PR-20251026-003', 'office chair', 'consumable', 1, 'pc', NULL, 3123.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
+(14, 'PR-20251026-003', 'office table', 'consumable', 1, 'pc', NULL, 2133.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
+(15, 'PR-20251026-003', 'laptop', 'consumable', 1, 'pc', NULL, 24222.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 01:09:26', '2025-10-26 01:09:26'),
+(16, 'PR-20251026-004', 'printer, laser type, 60 mm/s, A4', 'consumable', 1, 'pc', '1', 12000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
+(17, 'PR-20251026-004', 'chair', 'consumable', 1, 'pc', '1', 350.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
+(18, 'PR-20251026-004', 'table', 'consumable', 1, 'pc', '1', 500.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:20:42', '2025-10-26 04:20:42'),
+(19, 'PR-20251026-005', 'printer, inkjet, 100mm/s, long or letter size', 'consumable', 1, 'pc', '1', 12000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 04:27:56', '2025-10-26 04:27:56'),
+(20, 'PR-20251026-006', 'printer, inkjet, 100mm/s, a4', 'consumable', 1, 'pc', '1', 13000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 06:50:46', '2025-10-26 06:50:46'),
+(21, 'PR-20251026-007', 'Monitor, 165hz, 24inch', 'consumable', 5, 'pc', NULL, 12690.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:24:41', '2025-10-26 10:24:41'),
+(22, 'PR-20251026-007', 'System Unit, RTX 4050, R7 7th gen, 16gb ram, 512ssd', 'consumable', 1, 'pc', NULL, 51000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 10:24:41', '2025-10-26 10:24:41'),
+(23, 'PR-20251026-008', 'Car, 4x4, toyota hilux', 'consumable', 1, 'pc', NULL, 1150000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 11:27:03', '2025-10-26 11:27:03'),
+(24, 'PR-20251026-009', 'Nissan navara, 4x4', 'consumable', 1, 'pc', NULL, 1450000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, 'wait', '2025-10-26 12:41:23', '2025-10-27', NULL, NULL, NULL, '2025-10-26 11:47:25', '2025-12-13 07:15:49'),
+(25, 'PR-20251026-010', 'smartphone', 'consumable', 1, 'pc', NULL, 12000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-26 12:19:48', '2025-10-26 12:51:46'),
+(26, 'PR-20251213-001', 'desktop', 'consumable', 1, 'set', NULL, 21000.00, NULL, 'ordered', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-13 07:00:57', '2025-12-14 04:43:54'),
+(27, 'PR-20251214-001', 'Laptop - Ryzen 5, 3060ti gpu, 16gb ram ddr4, 512gb ssd', 'consumable', 1, 'pc', NULL, 31000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-14 15:03:37', '2025-12-14 15:03:37'),
+(28, 'PR-20251214-002', 'printer', 'consumable', 1, 'pc', NULL, 15000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-12-14 15:43:08', '2025-12-14 15:43:08'),
+(29, 'PR-TEST', 'test', 'consumable', 1, 'pcs', '-', 1.00, '-', 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 08:12:51', '2026-01-14 08:12:51'),
+(30, 'PR-20260114-001', 'askbdhasbd', 'consumable', 1, 'pcs', NULL, 1000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 08:17:12', '2026-01-14 08:17:12'),
+(31, 'PR-20260114-001', 'ajsdjasnd', 'consumable', 1, 'box', NULL, 2000.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-01-14 08:17:12', '2026-01-14 08:17:12'),
+(32, 'PR-20260114-002', 'sadnajsnd', 'consumable', 1, 'pcs', NULL, 1000.00, NULL, 'waiting', 'alternative', 2014, '2026-01-15 02:51:26', 'sadnajsnd', 'wait', '2026-01-15 03:21:21', '2026-01-16', NULL, NULL, NULL, '2026-01-14 08:31:16', '2026-01-15 03:21:21'),
+(33, 'PR-20260115-001', 'alternative', 'consumable', 1, 'pcs', NULL, 5000.00, NULL, 'fulfilled', 'alternative', 2014, '2026-01-15 03:42:31', 'hellowowrd', 'accept', '2026-01-15 03:43:02', NULL, NULL, NULL, NULL, '2026-01-15 03:41:01', '2026-01-15 03:43:02'),
+(34, 'PR-20260317-001', 'Ryzen 5 7th gen', 'consumable', 2, 'pcs', NULL, 0.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-17 05:14:46', '2026-03-17 05:14:46'),
+(35, 'PR-20260317-002', '1', 'consumable', 1, 'pcs', NULL, 0.00, NULL, 'pending', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-03-17 05:49:32', '2026-03-17 05:49:32');
 
 -- --------------------------------------------------------
 
@@ -1348,7 +1512,33 @@ INSERT INTO `status_history` (`history_id`, `table_name`, `record_id`, `old_stat
 (119, 'purchase_requests', 'PR-20251214-002', NULL, 102, 2000, 'Initial submission', '2025-12-14 15:43:08'),
 (120, 'purchase_requests', 'PR-20251214-002', 102, 103, 2006, NULL, '2025-12-14 15:47:49'),
 (121, 'purchase_requests', 'PR-20251214-002', 103, 104, 2009, 'Moved to BAC review queue.', '2025-12-14 15:48:31'),
-(122, 'purchase_requests', 'PR-20251214-002', 104, 105, 2009, 'BAC final approval granted.', '2025-12-14 15:49:27');
+(122, 'purchase_requests', 'PR-20251214-002', 104, 105, 2009, 'BAC final approval granted.', '2025-12-14 15:49:27'),
+(123, 'purchase_requests', 'PR-TEST', NULL, 100, 2010, 'Test', '2026-01-14 08:16:06'),
+(124, 'purchase_requests', 'PR-20260114-001', NULL, 102, 2010, 'Initial submission', '2026-01-14 08:17:12'),
+(125, 'purchase_requests', 'PR-20260114-002', NULL, 102, 2010, 'Initial submission', '2026-01-14 08:31:16'),
+(126, 'purchase_requests', 'PR-20260114-002', 102, 103, 2012, NULL, '2026-01-15 01:56:22'),
+(127, 'purchase_requests', 'PR-20260114-002', 103, 104, 2014, 'Moved to BAC review queue.', '2026-01-15 02:52:05'),
+(128, 'purchase_requests', 'PR-20260115-001', NULL, 102, 2010, 'Initial submission', '2026-01-15 03:41:01'),
+(129, 'purchase_requests', 'PR-20260115-001', 102, 103, 2012, NULL, '2026-01-15 03:41:50'),
+(130, 'purchase_requests', 'PR-20260115-001', 103, 104, 2014, 'Moved to BAC review queue.', '2026-01-15 03:42:39'),
+(131, 'purchase_requests', 'PR-20260115-001', 104, 105, 2014, 'BAC final approval granted.', '2026-01-15 03:44:52'),
+(132, 'purchase_requests', 'PR-20260115-001', 105, 105, 2011, 'Converted to purchase order PO-20260115-001', '2026-01-15 04:01:01'),
+(133, 'purchase_requests', 'PR-20260115-001', 105, 108, 2011, 'Purchase order PO-20260115-001 generated from this request.', '2026-01-15 04:01:01'),
+(134, 'purchase_orders', 'PO-20260115-001', 202, 201, 2011, 'Updated after item fulfillment changes.', '2026-01-15 04:01:02'),
+(135, 'purchase_requests', 'PR-20260115-001', 108, 107, 2011, 'Purchase order PO-20260115-001 status adjusted after item updates.', '2026-01-15 04:01:02'),
+(136, 'purchase_orders', 'PO-20260115-001', 201, 205, 2013, 'Inspection and acceptance update applied.', '2026-01-20 06:18:01'),
+(137, 'purchase_requests', 'PR-20260115-001', 107, 111, 2013, 'Inspection results updated purchase order PO-20260115-001 status.', '2026-01-20 06:18:01'),
+(138, 'inspection_acceptance', 'IA-20260120-001', 301, 302, 2013, 'Inspection results recorded.', '2026-01-20 06:18:01'),
+(139, 'inspection_acceptance', 'IA-20260120-001', 302, 306, 2011, 'Item recorded in PQS with property number(s) PQS-323-223-2026-0001', '2026-01-20 08:11:57'),
+(140, 'inspection_acceptance', 'IA-20251026-010', 302, 306, 2011, 'Item recorded in PQS with property number(s) PQS-323-224-2026-0001', '2026-01-20 08:13:03'),
+(141, 'purchase_requests', 'PR-20260114-002', 104, 105, 2014, 'BAC final approval granted.', '2026-01-20 08:50:03'),
+(142, 'purchase_requests', 'PR-20260114-002', 105, 105, 2011, 'Converted to purchase order PO-20260120-001', '2026-01-20 08:50:41'),
+(143, 'purchase_requests', 'PR-20260114-002', 105, 108, 2011, 'Purchase order PO-20260120-001 generated from this request.', '2026-01-20 08:50:41'),
+(144, 'purchase_orders', 'PO-20260120-001', 202, 201, 2011, 'Updated after item fulfillment changes.', '2026-01-20 08:50:42'),
+(145, 'purchase_requests', 'PR-20260114-002', 108, 107, 2011, 'Purchase order PO-20260120-001 status adjusted after item updates.', '2026-01-20 08:50:42'),
+(146, 'purchase_requests', 'PR-20260317-001', NULL, 102, 2015, 'Initial submission', '2026-03-17 05:14:46'),
+(147, 'purchase_requests', 'PR-20260317-001', 102, 103, 2018, NULL, '2026-03-17 05:16:03'),
+(148, 'purchase_requests', 'PR-20260317-002', NULL, 102, 2015, 'Initial submission', '2026-03-17 05:49:32');
 
 -- --------------------------------------------------------
 
@@ -1588,227 +1778,7 @@ ALTER TABLE `suppliers`
 -- AUTO_INCREMENT for table `accounts`
 --
 ALTER TABLE `accounts`
-  MODIFY `account_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2010;
-
---
--- AUTO_INCREMENT for table `audit_logs`
---
-ALTER TABLE `audit_logs`
-  MODIFY `log_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=563;
-
---
--- AUTO_INCREMENT for table `divisions`
---
-ALTER TABLE `divisions`
-  MODIFY `division_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
--- AUTO_INCREMENT for table `fund_allocations`
---
-ALTER TABLE `fund_allocations`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `ics`
---
-ALTER TABLE `ics`
-  MODIFY `ics_no` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
-
---
--- AUTO_INCREMENT for table `inspection_report_items`
---
-ALTER TABLE `inspection_report_items`
-  MODIFY `ia_item_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
-
---
--- AUTO_INCREMENT for table `migrations`
---
-ALTER TABLE `migrations`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `notifications`
---
-ALTER TABLE `notifications`
-  MODIFY `notification_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=227;
-
---
--- AUTO_INCREMENT for table `par`
---
-ALTER TABLE `par`
-  MODIFY `par_no` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `positions`
---
-ALTER TABLE `positions`
-  MODIFY `position_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
-
---
--- AUTO_INCREMENT for table `property_items`
---
-ALTER TABLE `property_items`
-  MODIFY `property_item_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `purchase_order_items`
---
-ALTER TABLE `purchase_order_items`
-  MODIFY `poi_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
-
---
--- AUTO_INCREMENT for table `purchase_request_items`
---
-ALTER TABLE `purchase_request_items`
-  MODIFY `pri_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=29;
-
---
--- AUTO_INCREMENT for table `sections`
---
-ALTER TABLE `sections`
-  MODIFY `section_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
-
---
--- AUTO_INCREMENT for table `statuses`
---
-ALTER TABLE `statuses`
-  MODIFY `status_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=307;
-
---
--- AUTO_INCREMENT for table `status_history`
---
-ALTER TABLE `status_history`
-  MODIFY `history_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `audit_logs`
---
-ALTER TABLE `audit_logs`
-  ADD CONSTRAINT `audit_logs_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `categories`
---
-ALTER TABLE `categories`
-  ADD CONSTRAINT `fk_categories_parent` FOREIGN KEY (`parent_id`) REFERENCES `categories` (`cat_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `employees`
---
-ALTER TABLE `employees`
-  ADD CONSTRAINT `employees_ibfk_1` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_employees_position` FOREIGN KEY (`position_id`) REFERENCES `positions` (`position_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_employees_section` FOREIGN KEY (`section_id`) REFERENCES `sections` (`section_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `fund_allocations`
---
-ALTER TABLE `fund_allocations`
-  ADD CONSTRAINT `fund_allocations_created_by_foreign` FOREIGN KEY (`created_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `ics`
---
-ALTER TABLE `ics`
-  ADD CONSTRAINT `fk_ics_pqs` FOREIGN KEY (`property_no`) REFERENCES `pqs` (`property_no`) ON DELETE CASCADE;
-
---
--- Constraints for table `inspection_reports`
---
-ALTER TABLE `inspection_reports`
-  ADD CONSTRAINT `fk_ia_accepted_by` FOREIGN KEY (`accepted_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ia_inspected_by` FOREIGN KEY (`inspected_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ia_po` FOREIGN KEY (`po_no`) REFERENCES `purchase_orders` (`po_no`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_ia_status` FOREIGN KEY (`overall_status_id`) REFERENCES `statuses` (`status_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `inspection_report_items`
---
-ALTER TABLE `inspection_report_items`
-  ADD CONSTRAINT `fk_iai_ia` FOREIGN KEY (`ia_no`) REFERENCES `inspection_reports` (`ia_no`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_iai_poi` FOREIGN KEY (`po_item_id`) REFERENCES `purchase_order_items` (`poi_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_iai_status` FOREIGN KEY (`inspection_status_id`) REFERENCES `statuses` (`status_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `notifications`
---
-ALTER TABLE `notifications`
-  ADD CONSTRAINT `notifications_ibfk_1` FOREIGN KEY (`recipient_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `notifications_ibfk_2` FOREIGN KEY (`sender_id`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `par`
---
-ALTER TABLE `par`
-  ADD CONSTRAINT `fk_par_pqs` FOREIGN KEY (`property_no`) REFERENCES `pqs` (`property_no`) ON DELETE CASCADE;
-
---
--- Constraints for table `pqs`
---
-ALTER TABLE `pqs`
-  ADD CONSTRAINT `fk_pqs_category` FOREIGN KEY (`cat_id`) REFERENCES `categories` (`cat_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `property_items`
---
-ALTER TABLE `property_items`
-  ADD CONSTRAINT `property_items_ia_item_id_foreign` FOREIGN KEY (`ia_item_id`) REFERENCES `inspection_report_items` (`ia_item_id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `property_items_po_item_id_foreign` FOREIGN KEY (`po_item_id`) REFERENCES `purchase_order_items` (`poi_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `purchase_orders`
---
-ALTER TABLE `purchase_orders`
-  ADD CONSTRAINT `fk_po_authorized_by` FOREIGN KEY (`authorized_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_po_ordered_by` FOREIGN KEY (`ordered_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_po_pr_no` FOREIGN KEY (`pr_no`) REFERENCES `purchase_requests` (`pr_no`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_po_status` FOREIGN KEY (`status_id`) REFERENCES `statuses` (`status_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_po_supplier` FOREIGN KEY (`supplier_id`) REFERENCES `suppliers` (`supplier_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `purchase_order_items`
---
-ALTER TABLE `purchase_order_items`
-  ADD CONSTRAINT `fk_poi_inspection_status` FOREIGN KEY (`inspection_status_id`) REFERENCES `statuses` (`status_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_poi_po` FOREIGN KEY (`po_no`) REFERENCES `purchase_orders` (`po_no`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_poi_pri` FOREIGN KEY (`pri_id`) REFERENCES `purchase_request_items` (`pri_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `purchase_order_items_received_by_foreign` FOREIGN KEY (`received_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `purchase_requests`
---
-ALTER TABLE `purchase_requests`
-  ADD CONSTRAINT `fk_pr_account` FOREIGN KEY (`account_id`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_approved_by` FOREIGN KEY (`approved_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_division` FOREIGN KEY (`division_id`) REFERENCES `divisions` (`division_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_recommending_officer` FOREIGN KEY (`recommending_officer_id`) REFERENCES `employees` (`employee_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_section` FOREIGN KEY (`section_id`) REFERENCES `sections` (`section_id`) ON DELETE SET NULL ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_pr_status` FOREIGN KEY (`status_id`) REFERENCES `statuses` (`status_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `purchase_requests_fund_allocation_id_foreign` FOREIGN KEY (`fund_allocation_id`) REFERENCES `fund_allocations` (`id`) ON DELETE SET NULL,
-  ADD CONSTRAINT `purchase_requests_recommended_by_foreign` FOREIGN KEY (`recommended_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL;
-
---
--- Constraints for table `purchase_request_items`
---
-ALTER TABLE `purchase_request_items`
-  ADD CONSTRAINT `fk_pr_items_pr` FOREIGN KEY (`pr_no`) REFERENCES `purchase_requests` (`pr_no`) ON DELETE CASCADE ON UPDATE CASCADE;
-
---
--- Constraints for table `sections`
---
-ALTER TABLE `sections`
-  ADD CONSTRAINT `sections_ibfk_1` FOREIGN KEY (`division_id`) REFERENCES `divisions` (`division_id`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
--- Constraints for table `status_history`
---
-ALTER TABLE `status_history`
-  ADD CONSTRAINT `status_history_ibfk_1` FOREIGN KEY (`changed_by`) REFERENCES `accounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  MODIFY `account_id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2020;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -140,7 +140,10 @@
             <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
                 <h3 class="text-lg font-semibold text-gray-800">Divisions Overview</h3>
                 <div class="mt-4 space-y-4">
-                    @php $maxEmployees = max(array_values($divisionEmployeeCounts->toArray())) ?: 1; @endphp
+                    @php
+                        $maxEmployees = (int) collect($divisionEmployeeCounts)->max();
+                        $maxEmployees = $maxEmployees > 0 ? $maxEmployees : 1;
+                    @endphp
                     @foreach ($divisions as $division)
                         @php
                             $divisionCount = $divisionEmployeeCounts[$division->division_id] ?? 0;
