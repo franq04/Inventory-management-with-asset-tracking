@@ -121,7 +121,7 @@
                             </button>
                         </div>
                     </div>
-                    <button type="submit" class="sr-only">Submit</button>
+                    <button type="submit" data-no-global-loading="true" class="sr-only">Submit</button>
                 </form>
             </div>
 
@@ -264,7 +264,7 @@
                     <button type="button" class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-close-account-edit-modal>
                         Close
                     </button>
-                    <button type="submit" id="accountEditSaveBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#204835] disabled:cursor-not-allowed disabled:opacity-60">
+                    <button type="submit" id="accountEditSaveBtn" data-loading-text="Saving account changes..." class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#204835] disabled:cursor-not-allowed disabled:opacity-60">
                         <i class="fas fa-save"></i>
                         Save Changes
                     </button>

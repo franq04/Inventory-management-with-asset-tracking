@@ -124,7 +124,7 @@
                     <button type="button" class="px-6 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm" data-close-modal>
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
-                    <button type="submit" class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all">
+                    <button type="submit" data-loading-text="Saving record..." class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all">
                         <i class="fas fa-save mr-2"></i>Save Record
                     </button>
                 </div>

@@ -178,17 +178,17 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3">
-                        <button type="button" id="bacBtnMoveToReview" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnMoveToReview" data-loading-on-click="true" data-loading-text="Moving to approval..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-clipboard-check"></i>
                             Move to For Approval
                         </button>
                         
-                        <button type="button" id="bacBtnApprove" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnApprove" data-loading-on-click="true" data-loading-text="Approving..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-check-circle"></i>
                             Approve
                         </button>
                         
-                        <button type="button" id="bacBtnCancel" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-semibold text-sm hover:bg-rose-700 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnCancel" data-loading-on-click="true" data-loading-text="Canceling request..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-semibold text-sm hover:bg-rose-700 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-times-circle"></i>
                             Cancel Request
                         </button>
@@ -281,7 +281,7 @@
                     <button type="button" class="flex-1 px-4 py-3 rounded-lg bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300 transition-all" data-close-alternative-modal>
                         Cancel
                     </button>
-                    <button type="submit" id="bacBtnSubmitAlternative" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
+                    <button type="submit" id="bacBtnSubmitAlternative" data-loading-text="Sending suggestion..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all shadow-md">
                         <i class="fas fa-paper-plane"></i>
                         Send Suggestion
                     </button>

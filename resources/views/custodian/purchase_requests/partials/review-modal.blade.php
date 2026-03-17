@@ -238,7 +238,7 @@
                     <i class="fas fa-times mr-2"></i>Close
                 </button>
                 @if($statuses->isNotEmpty())
-                <button type="submit" form="custodianStatusForm" class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all">
+                <button type="submit" data-loading-text="Saving status updates..." form="custodianStatusForm" class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all">
                     <i class="fas fa-save mr-2"></i>Save Changes
                 </button>
                 @endif

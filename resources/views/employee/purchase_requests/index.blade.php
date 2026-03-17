@@ -466,7 +466,7 @@
                     <button type="button" class="px-6 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm" data-close-modal>
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
-                    <button type="submit" class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all @unless($canSubmit) opacity-50 cursor-not-allowed @endunless" @unless($canSubmit) disabled @endunless>
+                    <button type="submit" data-loading-text="Submitting request..." class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all @unless($canSubmit) opacity-50 cursor-not-allowed @endunless" @unless($canSubmit) disabled @endunless>
                         <i class="fas fa-paper-plane mr-2"></i>Submit Request
                     </button>
                 </div>
@@ -503,7 +503,7 @@
                 </div>
                 <div class="flex justify-end gap-2">
                     <button type="button" class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-100" data-close-modal>Cancel</button>
-                    <button type="submit" class="rounded-lg bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white transition hover:bg-opacity-90">Save Timeframe</button>
+                    <button type="submit" data-loading-text="Saving timeframe..." class="rounded-lg bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white transition hover:bg-opacity-90">Save Timeframe</button>
                 </div>
             </form>
         </div>

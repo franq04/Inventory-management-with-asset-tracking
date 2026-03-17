@@ -138,7 +138,7 @@
                     <button type="button" class="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 font-semibold text-gray-700 transition hover:bg-gray-50" data-close-modal>
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 rounded-xl bg-[#1a3a2d] px-4 py-2.5 font-semibold text-white transition hover:bg-[#204835]">
+                    <button type="submit" data-loading-text="Saving allocation..." class="flex-1 rounded-xl bg-[#1a3a2d] px-4 py-2.5 font-semibold text-white transition hover:bg-[#204835]">
                         <span id="submitText">Create Allocation</span>
                     </button>
                 </div>

@@ -446,7 +446,7 @@
                                                             @elseif ($trackingReceivable)
                                                                 <form class="js-receive-item" data-receive-url="{{ route('custodian.orders.items.receive', $trackingItem) }}">
                                                                     @csrf
-                                                                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3a2d] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-opacity-90 transition cursor-pointer ">
+                                                                    <button type="submit" data-no-global-loading="true" class="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3a2d] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-opacity-90 transition cursor-pointer ">
                                                                         <i class="fas fa-box-open"></i> Mark Received
                                                                     </button>
                                                                 </form>
@@ -531,7 +531,7 @@
                                                                 <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">₱</span>
                                                                 <input type="number" min="0" step="0.01" name="unit_cost" value="{{ $item->unit_cost }}" class="js-item-unit-cost w-full rounded-lg border border-gray-200 pl-5 pr-2 py-1.5 text-xs text-right focus:border-[#1a3a2d] focus:outline-none">
                                                             </div>
-                                                            <button type="submit" class="rounded-lg bg-[#1a3a2d] px-3 py-1.5 text-xs font-semibold text-white hover:bg-opacity-90 transition cursor-pointer ">
+                                                            <button type="submit" data-no-global-loading="true" class="rounded-lg bg-[#1a3a2d] px-3 py-1.5 text-xs font-semibold text-white hover:bg-opacity-90 transition cursor-pointer ">
                                                                 <i class="fas fa-save mr-1"></i> Save
                                                             </button>
                                                         </form>

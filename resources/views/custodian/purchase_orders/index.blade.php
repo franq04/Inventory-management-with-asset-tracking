@@ -148,7 +148,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="flex justify-end gap-2">
-                                                    <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white shadow hover:bg-opacity-90">
+                                                    <button type="submit" data-loading-text="Saving order changes..." class="inline-flex items-center gap-2 rounded-lg bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white shadow hover:bg-opacity-90">
                                                         <i class="fas fa-floppy-disk"></i>
                                                         Save Changes
                                                     </button>
@@ -226,7 +226,7 @@
                             </div>
                             <div class="flex items-end gap-2 justify-end">
                                 <a href="{{ route('custodian.orders.index') }}" class="rounded-lg bg-gray-100 px-4 py-2 font-semibold text-gray-700 transition hover:bg-gray-200">Reset</a>
-                                <button type="submit" class="rounded-lg bg-[#1a3a2d] px-4 py-2 font-semibold text-white transition hover:bg-opacity-90">Apply</button>
+                                <button type="submit" data-loading-text="Applying filters..." class="rounded-lg bg-[#1a3a2d] px-4 py-2 font-semibold text-white transition hover:bg-opacity-90">Apply</button>
                             </div>
                         </form>
 

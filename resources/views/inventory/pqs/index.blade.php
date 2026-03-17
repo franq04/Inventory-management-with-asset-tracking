@@ -116,7 +116,7 @@
                             </button>
                         </div>
                     </div>
-                     <button type="submit" class="sr-only">Submit</button>
+                     <button type="submit" data-no-global-loading="true" class="sr-only">Submit</button>
                 </form>
             </div>
 

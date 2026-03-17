@@ -40,7 +40,7 @@
 
                 <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
                     <button type="button" class="px-4 py-2 text-sm font-semibold text-gray-600 rounded-lg border border-gray-200 hover:bg-gray-100 transition" data-close-modal>Cancel</button>
-                    <button type="submit" class="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg bg-[#1a3a2d] hover:bg-[#1a3a2d]/90 shadow transition" data-submit-button>
+                    <button type="submit" data-no-global-loading="true" class="inline-flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white rounded-lg bg-[#1a3a2d] hover:bg-[#1a3a2d]/90 shadow transition" data-submit-button>
                         <i class="fas fa-save"></i>
                         <span data-submit-label>Save Category</span>
                     </button>
