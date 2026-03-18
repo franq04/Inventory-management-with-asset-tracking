@@ -15,15 +15,8 @@
                 <h2 class="text-3xl font-extrabold tracking-tight">Manage Employees</h2>
                 <p class="text-sm text-white/75">Oversee employee records, assignments, and system access.</p>
             </div>
-        </div>
-    </div>
 
-        @if (session('status'))
-            <div id="employeesFlashStatus" class="hidden" data-message="{{ session('status') }}"></div>
-        @endif
-
-    {{-- Enhanced Stat Cards --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div id="employeesKpiCards" class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[760px] 2xl:min-w-[840px]">
         @php
             $statCards = [
                 ['label' => 'Total Employees', 'value' => $stats['total'], 'icon' => 'fa-users', 'color' => 'blue'],
@@ -32,24 +25,30 @@
                 ['label' => 'Coverage Ratio', 'value' => ($stats['total'] > 0) ? number_format(($stats['withAccount'] / max($stats['total'], 1)) * 100, 1) . '%' : '0%', 'icon' => 'fa-percentage', 'color' => 'teal'],
             ];
             $colors = [
-                'blue' => 'bg-blue-100 text-blue-600',
-                'emerald' => 'bg-emerald-100 text-emerald-600',
-                'amber' => 'bg-amber-100 text-amber-600',
-                'teal' => 'bg-teal-100 text-teal-700',
+                'blue' => 'bg-blue-300/20 text-blue-100',
+                'emerald' => 'bg-emerald-300/20 text-emerald-100',
+                'amber' => 'bg-amber-300/20 text-amber-100',
+                'teal' => 'bg-teal-300/20 text-teal-100',
             ];
         @endphp
         @foreach ($statCards as $card)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex items-center gap-5 transition hover:shadow-xl hover:-translate-y-1">
-            <div class="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center {{ $colors[$card['color']] }}">
-                <i class="fa-solid {{ $card['icon'] }} text-2xl"></i>
+        <div class="min-h-[112px] rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+            <div class="flex items-center gap-2.5">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full {{ $colors[$card['color']] }}">
+                    <i class="fa-solid {{ $card['icon'] }} text-sm"></i>
+                </div>
+                <p class="min-h-[1.8rem] text-[10px] font-semibold uppercase leading-tight tracking-[0.16em] text-white/70">{{ $card['label'] }}</p>
             </div>
-            <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-1 text-3xl font-bold text-gray-900">{{ $card['value'] }}</p>
-            </div>
+            <p class="mt-2 text-[1.75rem] font-bold leading-none tabular-nums">{{ $card['value'] }}</p>
         </div>
         @endforeach
+            </div>
+        </div>
     </div>
+
+        @if (session('status'))
+            <div id="employeesFlashStatus" class="hidden" data-message="{{ session('status') }}"></div>
+        @endif
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {{-- Main Content Column --}}
@@ -57,11 +56,13 @@
             {{-- Enhanced Filters & Actions --}}
             <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
                 <form method="GET" class="space-y-4" id="employeesFiltersForm" action="{{ route('employees.index') }}">
-                    <div class="relative w-full">
+                    <div class="w-full">
                         <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
-                        <i class="fas fa-search absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                        <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search by ID, name, email, or contact..."
-                               class="h-11 w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                        <div class="relative mt-1">
+                            <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search by ID, name, email, or contact..."
+                                   class="h-11 w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -304,7 +305,7 @@
                             </div>
                             <div>
                                 <label for="employeeEditDateOfBirth" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date of Birth</label>
-                                <input id="employeeEditDateOfBirth" name="date_of_birth" type="date" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditDateOfBirth" name="date_of_birth" type="date" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
                             </div>
                             <div>
                                 <label for="employeeEditSuffix" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Suffix</label>
@@ -315,7 +316,7 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label for="employeeEditFirstName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">First Name</label>
-                                <input id="employeeEditFirstName" name="first_name" type="text" required maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditFirstName" name="first_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
                             </div>
                             <div>
                                 <label for="employeeEditMiddleName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Middle Name</label>
@@ -323,7 +324,7 @@
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="employeeEditLastName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Last Name</label>
-                                <input id="employeeEditLastName" name="last_name" type="text" required maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditLastName" name="last_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
                             </div>
                             <div>
                                 <label for="employeeEditEmail" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Email</label>
@@ -335,7 +336,7 @@
                             </div>
                             <div>
                                 <label for="employeeEditGender" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Gender</label>
-                                <select id="employeeEditGender" name="gender" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                <select id="employeeEditGender" name="gender" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
                                     <option value="">Select gender</option>
                                     @foreach ($genders as $gender)
                                         <option value="{{ $gender }}">{{ ucfirst($gender) }}</option>
@@ -344,7 +345,7 @@
                             </div>
                             <div>
                                 <label for="employeeEditMaritalStatus" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Marital Status</label>
-                                <select id="employeeEditMaritalStatus" name="marital_status" required class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
+                                <select id="employeeEditMaritalStatus" name="marital_status" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
                                     <option value="">Select status</option>
                                     @foreach ($maritalStatuses as $status)
                                         <option value="{{ $status }}">{{ ucfirst($status) }}</option>
@@ -465,7 +466,7 @@
     </div>
 </div>
 
-<div id="employeesToast" class="pointer-events-none fixed right-4 top-20 z-[130] hidden min-w-[260px] max-w-md rounded-xl border border-emerald-800 bg-[#1a3a2d] px-5 py-3 text-sm font-semibold text-white shadow-2xl"></div>
+<div id="employeesToastStack" class="pointer-events-none fixed right-4 top-6 z-[130] w-[min(24rem,calc(100vw-2rem))] space-y-2"></div>
 @endsection
 
 @push('scripts')
@@ -512,7 +513,11 @@
         const viewModal = document.getElementById('employeesViewModal');
         const viewPanel = viewModal?.querySelector('.employee-view-panel') ?? null;
         const viewFocusTarget = viewModal?.querySelector('[data-employee-view-focus]') ?? null;
-        const toastEl = document.getElementById('employeesToast');
+        const toastStackEl = document.getElementById('employeesToastStack');
+
+        if (toastStackEl && toastStackEl.parentElement !== document.body) {
+            document.body.appendChild(toastStackEl);
+        }
 
         const viewName = document.getElementById('employeeViewName');
         const viewId = document.getElementById('employeeViewId');
@@ -623,23 +628,45 @@
         let modalUpdateUrl = null;
         let activeModalButton = null;
         let pendingDelete = false;
-        let toastTimer = null;
+        const activeToastKeys = new Set();
 
         const showToast = (message, type = 'success') => {
-            if (!toastEl || !message) return;
+            if (!toastStackEl || !message) return;
 
-            toastEl.textContent = message;
-            toastEl.classList.remove('hidden', 'border-emerald-800', 'bg-[#1a3a2d]', 'border-red-800', 'bg-red-700');
+            const key = `${type}:${message}`;
+            if (activeToastKeys.has(key)) return;
+            activeToastKeys.add(key);
+
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto rounded-xl border px-5 py-3 text-sm font-semibold text-white shadow-2xl opacity-0 translate-y-2 transition-all duration-200 ease-out';
+            toast.textContent = message;
+
             if (type === 'error') {
-                toastEl.classList.add('border-red-800', 'bg-red-700');
+                toast.classList.add('border-red-800', 'bg-red-700');
             } else {
-                toastEl.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
+                toast.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
             }
 
-            if (toastTimer) clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => {
-                toastEl.classList.add('hidden');
-            }, 2600);
+            toastStackEl.appendChild(toast);
+
+            while (toastStackEl.children.length > 3) {
+                const first = toastStackEl.firstElementChild;
+                if (first) first.remove();
+            }
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+                toast.classList.add('opacity-100', 'translate-y-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                    activeToastKeys.delete(key);
+                }, 220);
+            }, 3200);
         };
 
         const flashStatusEl = document.getElementById('employeesFlashStatus');

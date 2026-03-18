@@ -15,11 +15,8 @@
                 <h2 class="text-3xl font-extrabold tracking-tight">Manage Categories</h2>
                 <p class="text-sm text-white/75">Organize and classify assets with a structured category system.</p>
             </div>
-        </div>
-    </div>
 
-    {{-- Enhanced Stat Cards --}}
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div id="categoriesKpiCards" class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 lg:min-w-[760px] 2xl:min-w-[840px]">
         @php
             $statCards = [
                 ['key' => 'total', 'label' => 'Total Categories', 'value' => $stats['total'], 'icon' => 'fa-sitemap', 'color' => 'blue'],
@@ -28,23 +25,25 @@
                 ['key' => 'withPqs', 'label' => 'Categories With Assets', 'value' => $stats['withPqs'], 'icon' => 'fa-boxes-stacked', 'color' => 'amber'],
             ];
             $colors = [
-                'blue' => 'bg-blue-100 text-blue-600',
-                'purple' => 'bg-purple-100 text-purple-600',
-                'emerald' => 'bg-emerald-100 text-emerald-600',
-                'amber' => 'bg-amber-100 text-amber-600',
+                'blue' => 'bg-blue-300/20 text-blue-100',
+                'purple' => 'bg-violet-300/20 text-violet-100',
+                'emerald' => 'bg-emerald-300/20 text-emerald-100',
+                'amber' => 'bg-amber-300/20 text-amber-100',
             ];
         @endphp
         @foreach ($statCards as $card)
-        <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex items-center gap-5 transition hover:shadow-xl hover:-translate-y-1">
-            <div class="flex-shrink-0 w-14 h-14 rounded-full flex items-center justify-center {{ $colors[$card['color']] }}">
-                <i class="fa-solid {{ $card['icon'] }} text-2xl"></i>
+        <div class="min-h-[112px] rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+            <div class="flex items-center gap-2.5">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full {{ $colors[$card['color']] }}">
+                    <i class="fa-solid {{ $card['icon'] }} text-sm"></i>
+                </div>
+                <p class="min-h-[1.8rem] text-[10px] font-semibold uppercase leading-tight tracking-[0.16em] text-white/70">{{ $card['label'] }}</p>
             </div>
-            <div>
-                <p class="text-xs uppercase tracking-wider font-semibold text-gray-500">{{ $card['label'] }}</p>
-                <p class="mt-1 text-3xl font-bold text-gray-900" data-stat="{{ $card['key'] }}">{{ number_format($card['value']) }}</p>
-            </div>
+            <p class="mt-2 text-[1.75rem] font-bold leading-none tabular-nums" data-stat="{{ $card['key'] }}">{{ number_format($card['value']) }}</p>
         </div>
         @endforeach
+            </div>
+        </div>
     </div>
 
     {{-- Main Content Area with Filters and Category Cards --}}
@@ -61,26 +60,22 @@
                         </div>
                     </div>
                 </div>
-                 <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                     <span class="text-sm text-gray-500" data-parent-count>{{ number_format($categoryTree->total()) }} parent categories found</span>
-                     <div class="flex flex-col items-end gap-2">
-                        <div class="flex items-center justify-end gap-2">
-                            <a id="categoriesResetFilters" href="{{ route('categories.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
-                                <i class="fas fa-undo"></i>
-                            </a>
-                            <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg" id="addCategoryBtn">
-                                <i class="fas fa-plus-circle"></i>
-                                Add New Category
-                            </button>
-                        </div>
-                        <div class="flex items-center justify-end gap-2">
-                            <button type="button" id="categoriesPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
-                                <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
-                            </button>
-                            <button type="button" id="categoriesExportExcelBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
-                                <i class="fas fa-file-excel text-green-600"></i> Export Excel
-                            </button>
-                        </div>
+                <div class="flex flex-col gap-3 border-t border-gray-100 pt-4 lg:flex-row lg:items-center lg:justify-between">
+                    <span class="text-sm text-gray-500" data-parent-count>{{ number_format($categoryTree->total()) }} parent categories found</span>
+                    <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <a id="categoriesResetFilters" href="{{ route('categories.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
+                            <i class="fas fa-undo"></i>
+                        </a>
+                        <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#204835] hover:shadow-lg" id="addCategoryBtn">
+                            <i class="fas fa-plus-circle"></i>
+                            Add New Category
+                        </button>
+                        <button type="button" id="categoriesPrintPdfBtn" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                            <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
+                        </button>
+                        <button type="button" id="categoriesExportExcelBtn" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                            <i class="fas fa-file-excel text-green-600"></i> Export Excel
+                        </button>
                     </div>
                 </div>
             </form>

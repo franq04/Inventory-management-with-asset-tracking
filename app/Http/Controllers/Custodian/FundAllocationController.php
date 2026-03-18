@@ -38,7 +38,7 @@ class FundAllocationController extends Controller
         ];
 
         $allocations = FundAllocation::with(['creator.employee'])
-            ->orderBy('fund_cluster')
+            ->orderByDesc('id')
             ->paginate(15);
 
         if ($request->ajax() || $request->boolean('ajax') || $request->expectsJson()) {

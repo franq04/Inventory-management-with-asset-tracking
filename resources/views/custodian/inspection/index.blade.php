@@ -173,7 +173,6 @@
                                     <th class="whitespace-nowrap px-5 py-3 text-right">Delivered</th>
                                     <th class="whitespace-nowrap px-5 py-3 text-right">Accepted</th>
                                     <th class="whitespace-nowrap px-5 py-3 text-right">Rejected</th>
-                                    <th class="whitespace-nowrap px-5 py-3 text-left">Warranty</th>
                                     <th class="whitespace-nowrap px-5 py-3 text-left">Remarks</th>
                                     <th class="whitespace-nowrap px-5 py-3 text-center">Actions</th>
                                 </tr>
@@ -204,7 +203,6 @@
                                         <td class="px-5 py-4 align-top text-right font-mono font-semibold text-gray-800">{{ $latestInspection?->quantity_delivered ?? $item->quantity }}</td>
                                         <td class="px-5 py-4 align-top text-right font-mono font-semibold text-emerald-600">{{ $latestInspection?->quantity_accepted ?? 0 }}</td>
                                         <td class="px-5 py-4 align-top text-right font-mono font-semibold text-rose-600">{{ $latestInspection?->quantity_rejected ?? 0 }}</td>
-                                        <td class="px-5 py-4 align-top text-gray-600">{{ optional($latestInspection?->warranty_expiration)->format('M d, Y') ?? '—' }}</td>
                                         <td class="px-5 py-4 align-top text-gray-600">
                                             <span class="block max-w-[160px] truncate" title="{{ $latestInspection?->inspection_remarks }}">{{ $latestInspection?->inspection_remarks ?? '—' }}</span>
                                         </td>
@@ -229,7 +227,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="px-5 py-20 text-center text-gray-500">
+                                        <td colspan="9" class="px-5 py-20 text-center text-gray-500">
                                             <i class="fa-regular fa-folder-open mb-4 text-5xl text-gray-300"></i>
                                             <p class="font-medium text-lg">No inspection items found.</p>
                                             <p class="text-sm">Try adjusting your filters or switch to another status tab.</p>

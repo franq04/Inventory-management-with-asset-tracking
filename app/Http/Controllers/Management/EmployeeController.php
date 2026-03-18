@@ -67,8 +67,7 @@ class EmployeeController extends Controller
         }
 
         $employees = $query
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->orderByDesc('employee_id')
             ->paginate(5)
             ->withQueryString();
 
@@ -179,7 +178,7 @@ class EmployeeController extends Controller
             $query->whereNull('account_id');
         }
 
-        $employees = $query->orderBy('last_name')->orderBy('first_name')->get();
+        $employees = $query->orderByDesc('employee_id')->get();
 
         return view('management.employees.print', [
             'employees' => $employees,
@@ -226,7 +225,7 @@ class EmployeeController extends Controller
             $query->whereNull('account_id');
         }
 
-        $employees = $query->orderBy('last_name')->orderBy('first_name')->get();
+        $employees = $query->orderByDesc('employee_id')->get();
 
         $html = view('management.employees.excel', ['employees' => $employees])->render();
 
@@ -579,9 +578,9 @@ class EmployeeController extends Controller
             'date_of_birth' => ['required', 'date', 'before_or_equal:today'],
             'marital_status' => ['required', Rule::in(self::MARITAL_STATUSES)],
             'gender' => ['required', Rule::in(self::GENDERS)],
-            'contact_no' => ['nullable', 'string', 'max:20'],
+            'contact_no' => ['required', 'string', 'max:20'],
             'email' => [
-                'nullable',
+                'required',
                 'email',
                 'max:255',
                 $emailRule,
@@ -592,9 +591,9 @@ class EmployeeController extends Controller
                 'exists:accounts,account_id',
                 $accountRule,
             ],
-            'position_id' => ['nullable', 'integer', 'exists:positions,position_id'],
-            'section_id' => ['nullable', 'integer', 'exists:sections,section_id'],
-            'division_id' => ['nullable', 'integer', 'exists:divisions,division_id'],
+            'position_id' => ['required', 'integer', 'exists:positions,position_id'],
+            'section_id' => ['required', 'integer', 'exists:sections,section_id'],
+            'division_id' => ['required', 'integer', 'exists:divisions,division_id'],
             'profile_img' => ['nullable', 'image', 'max:2048'],
             'signature' => ['nullable', 'file', 'mimes:png', 'max:2048'],
         ];
