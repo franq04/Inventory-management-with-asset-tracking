@@ -3,6 +3,14 @@
 @section('title', 'Purchase Request')
 
 @section('content')
+@php
+    $requesterSignature = $purchaseRequest->requester?->employee?->signature
+        ? 'data:image/png;base64,' . base64_encode($purchaseRequest->requester->employee->signature)
+        : null;
+    $approverSignature = $purchaseRequest->approver?->employee?->signature
+        ? 'data:image/png;base64,' . base64_encode($purchaseRequest->approver->employee->signature)
+        : null;
+@endphp
 <div class="max-w-5xl mx-auto px-4 pb-8">
     <div class="bg-white rounded-2xl border-2 border-gray-300 overflow-hidden mt-6">
         <div class="relative border-b border-gray-400 px-5 pt-4 pb-3">
@@ -125,12 +133,26 @@
             </div>
             <div class="mt-6 grid gap-6 md:grid-cols-2 text-xs uppercase tracking-wide text-gray-600">
                 <div class="space-y-3">
-                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                    <div class="border-b border-gray-500 pb-2">
+                        <div class="flex min-h-10 items-end justify-between gap-2">
+                            <span>Signature:</span>
+                            @if ($requesterSignature)
+                                <img src="{{ $requesterSignature }}" alt="Requested by signature" class="max-h-10 w-auto object-contain" />
+                            @endif
+                        </div>
+                    </div>
                     <div class="border-b border-gray-500 pb-2">Printed Name:</div>
                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                 </div>
                 <div class="space-y-3">
-                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                    <div class="border-b border-gray-500 pb-2">
+                        <div class="flex min-h-10 items-end justify-between gap-2">
+                            <span>Signature:</span>
+                            @if ($approverSignature)
+                                <img src="{{ $approverSignature }}" alt="Approved by signature" class="max-h-10 w-auto object-contain" />
+                            @endif
+                        </div>
+                    </div>
                     <div class="border-b border-gray-500 pb-2">Printed Name:</div>
                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                 </div>

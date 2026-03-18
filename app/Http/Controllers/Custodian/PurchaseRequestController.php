@@ -374,6 +374,10 @@ class PurchaseRequestController extends Controller
         $latestHistory = $purchaseRequest->statusHistory->first();
 
         if ($request->wantsJson()) {
+            $requesterSignature = $this->signatureDataUri($purchaseRequest->requester?->employee?->signature);
+            $recommendedSignature = $this->signatureDataUri($purchaseRequest->recommender?->employee?->signature);
+            $approvedSignature = $this->signatureDataUri($purchaseRequest->approver?->employee?->signature);
+
             return response()->json([
                 'data' => [
                     'pr_no' => $purchaseRequest->pr_no,
@@ -392,12 +396,14 @@ class PurchaseRequestController extends Controller
                         $purchaseRequest->requester->employee->last_name,
                         $purchaseRequest->requester->employee->suffix,
                     ])->filter()->implode(' ') : 'Unknown',
+                    'requester_signature' => $requesterSignature,
                     'approved_by' => $purchaseRequest->approver ? collect([
                         $purchaseRequest->approver->employee->first_name ?? null,
                         $purchaseRequest->approver->employee->middle_name ?? null,
                         $purchaseRequest->approver->employee->last_name ?? null,
                         $purchaseRequest->approver->employee->suffix ?? null,
                     ])->filter()->implode(' ') : null,
+                    'approved_signature' => $approvedSignature,
                     'created_at' => optional($purchaseRequest->created_at)->toDateTimeString(),
                     'recommended_at' => optional($purchaseRequest->recommended_at)->toDateTimeString(),
                     'recommendation_remarks' => $purchaseRequest->recommendation_remarks,
@@ -416,6 +422,7 @@ class PurchaseRequestController extends Controller
                             ])->filter()->implode(' ')
                             : $purchaseRequest->recommender->username)
                         : null,
+                    'recommended_signature' => $recommendedSignature,
                     'items' => $purchaseRequest->items->map(fn (PurchaseRequestItem $item) => $this->transformItem($item)),
                     'can_edit_items' => (int) $purchaseRequest->status_id === Status::PR_FOR_APPROVAL,
                 ],
@@ -805,6 +812,15 @@ class PurchaseRequestController extends Controller
             'employee_wait_until' => optional($item->employee_wait_until)->toDateString(),
             'employee_wait_note' => $item->employee_wait_note,
         ];
+    }
+
+    protected function signatureDataUri($signature): ?string
+    {
+        if ($signature === null || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($signature);
     }
 
     protected function notifyRequesterOfItemChange(PurchaseRequestItem $item, ?string $previousStatus = null): void

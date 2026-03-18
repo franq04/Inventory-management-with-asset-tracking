@@ -132,6 +132,12 @@
                         </select>
                         @error('marital_status')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
+                    <div>
+                        <label for="signature" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Signature (PNG only)</label>
+                        <input id="signature" name="signature" type="file" accept=".png,image/png" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-[#f8faf9] px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:bg-emerald-700 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                        <p class="mt-1 text-xs text-gray-500">Accepted format: PNG only (max 2MB).</p>
+                        @error('signature')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                    </div>
                 </div>
             </section>
         </div>

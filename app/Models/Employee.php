@@ -26,6 +26,7 @@ class Employee extends Model
         'email',
         'account_id',
         'profile_img',
+        'signature',
         'position_id',
         'section_id',
     ];

@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\Position;
 use App\Models\Section;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -276,6 +277,10 @@ class EmployeeController extends Controller
             $payload['profile_img'] = 'storage/' . $path;
         }
 
+        if ($request->hasFile('signature')) {
+            $payload['signature'] = $this->readSignatureFile($request->file('signature'));
+        }
+
         DB::transaction(function () use ($payload, $createAccount, $newAccountData) {
             if ($createAccount && $newAccountData) {
                 $accountId = $this->generateAccountId();
@@ -331,6 +336,10 @@ class EmployeeController extends Controller
         if ($request->hasFile('profile_img')) {
             $path = $request->file('profile_img')->store('profile_images', 'public');
             $payload['profile_img'] = 'storage/' . $path;
+        }
+
+        if ($request->hasFile('signature')) {
+            $payload['signature'] = $this->readSignatureFile($request->file('signature'));
         }
 
         DB::transaction(function () use ($employee, $payload, $createAccount, $newAccountData) {
@@ -391,6 +400,10 @@ class EmployeeController extends Controller
         if ($request->hasFile('profile_img')) {
             $path = $request->file('profile_img')->store('profile_images', 'public');
             $payload['profile_img'] = 'storage/' . $path;
+        }
+
+        if ($request->hasFile('signature')) {
+            $payload['signature'] = $this->readSignatureFile($request->file('signature'));
         }
 
         DB::transaction(function () use ($employee, &$payload, $createAccount, $newAccountData) {
@@ -583,7 +596,21 @@ class EmployeeController extends Controller
             'section_id' => ['nullable', 'integer', 'exists:sections,section_id'],
             'division_id' => ['nullable', 'integer', 'exists:divisions,division_id'],
             'profile_img' => ['nullable', 'image', 'max:2048'],
+            'signature' => ['nullable', 'file', 'mimes:png', 'max:2048'],
         ];
+    }
+
+    private function readSignatureFile(UploadedFile $file): string
+    {
+        $contents = file_get_contents($file->getRealPath());
+
+        if ($contents === false) {
+            throw ValidationException::withMessages([
+                'signature' => 'Unable to read the uploaded signature file. Please try again.',
+            ]);
+        }
+
+        return $contents;
     }
 
     private function preparePayload(array $validated, ?Employee $employee = null): array

@@ -19,6 +19,14 @@ const initBacPurchaseRequestPage = function () {
 
     let currentPrData = null;
 
+    function renderSignature(signatureDataUrl) {
+        if (!signatureDataUrl) {
+            return '';
+        }
+
+        return `<img src="${signatureDataUrl}" alt="Signature" class="max-h-10 w-auto object-contain">`;
+    }
+
     const softNavigate = (url = window.location.href, options = {}) => {
         const { replace = false } = options;
         if (window.Turbo && typeof window.Turbo.visit === 'function') {
@@ -68,6 +76,13 @@ const initBacPurchaseRequestPage = function () {
         document.body.style.overflow = '';
         currentPrData = null;
         hideModalError();
+        const requestedSignature = document.getElementById('bacPrRequestedSignature');
+        const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
+        const approvedSignature = document.getElementById('bacPrApprovedSignature');
+
+        if (requestedSignature) requestedSignature.innerHTML = '';
+        if (recommendedSignature) recommendedSignature.innerHTML = '';
+        if (approvedSignature) approvedSignature.innerHTML = '';
     }
 
     // Show/hide alternative modal
@@ -245,14 +260,26 @@ const initBacPurchaseRequestPage = function () {
         // Requester info
         document.getElementById('bacPrRequestedPrintedName').textContent = data.requester || 'Unknown';
         document.getElementById('bacPrRequestedDate').textContent = formatDate(data.created_at);
+        const requestedSignature = document.getElementById('bacPrRequestedSignature');
+        if (requestedSignature) {
+            requestedSignature.innerHTML = renderSignature(data.requester_signature || '');
+        }
         
         // Recommender info
         document.getElementById('bacPrRecommendedPrintedName').textContent = data.recommended_by_name || '';
         document.getElementById('bacPrRecommendedDate').textContent = formatDate(data.recommended_at);
         document.getElementById('bacPrRecommendationRemarks').textContent = data.recommendation_remarks || '';
+        const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
+        if (recommendedSignature) {
+            recommendedSignature.innerHTML = renderSignature(data.recommended_signature || '');
+        }
         
         // Approver info (will be filled after approval)
         document.getElementById('bacPrApprovedPrintedName').textContent = data.approved_by || '';
+        const approvedSignature = document.getElementById('bacPrApprovedSignature');
+        if (approvedSignature) {
+            approvedSignature.innerHTML = renderSignature(data.approved_signature || '');
+        }
         
         // Fund fields
         document.getElementById('bacFundCluster').value = data.fund_cluster || '';

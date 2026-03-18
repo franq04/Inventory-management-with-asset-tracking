@@ -393,6 +393,10 @@ class PurchaseRequestController extends Controller
      */
     protected function transformPurchaseRequest(PurchaseRequest $pr): array
     {
+        $requesterSignature = $this->signatureDataUri($pr->requester?->employee?->signature);
+        $recommendedSignature = $this->signatureDataUri($pr->recommender?->employee?->signature);
+        $approvedSignature = $this->signatureDataUri($pr->approver?->employee?->signature);
+
         return [
             'pr_no' => $pr->pr_no,
             'status' => $pr->status?->status_name,
@@ -413,6 +417,7 @@ class PurchaseRequestController extends Controller
                     $pr->requester->employee->suffix,
                 ])->filter()->implode(' ')
                 : 'Unknown',
+            'requester_signature' => $requesterSignature,
             'recommended_by_name' => $pr->recommender?->employee
                 ? collect([
                     $pr->recommender->employee->first_name,
@@ -421,6 +426,7 @@ class PurchaseRequestController extends Controller
                     $pr->recommender->employee->suffix,
                 ])->filter()->implode(' ')
                 : null,
+            'recommended_signature' => $recommendedSignature,
             'recommended_at' => $pr->recommended_at instanceof \DateTimeInterface
                 ? $pr->recommended_at->toDateTimeString()
                 : ($pr->recommended_at ? (string) $pr->recommended_at : null),
@@ -433,6 +439,7 @@ class PurchaseRequestController extends Controller
                     $pr->approver->employee->suffix,
                 ])->filter()->implode(' ')
                 : null,
+            'approved_signature' => $approvedSignature,
             'approved_at' => $pr->approved_at instanceof \DateTimeInterface
                 ? $pr->approved_at->toDateTimeString()
                 : ($pr->approved_at ? (string) $pr->approved_at : null),
@@ -459,6 +466,15 @@ class PurchaseRequestController extends Controller
                 'removal_reason' => $item->removal_reason,
             ])->toArray(),
         ];
+    }
+
+    private function signatureDataUri($signature): ?string
+    {
+        if ($signature === null || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($signature);
     }
 
     /**
