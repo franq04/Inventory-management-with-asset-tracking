@@ -109,7 +109,12 @@
                             <div>
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Requested by:</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="bacPrRequestedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrRequestedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                                     <div class="border-b border-gray-500 pb-2">Date: <span id="bacPrRequestedDate"></span></div>
@@ -118,7 +123,12 @@
                             <div>
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Recommending Approval:</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="bacPrRecommendedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrRecommendedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Designation: <span id="bacPrRecommendedDesignation">DIVISION.HEAD</span></div>
                                     <div class="border-b border-gray-500 pb-2">Date: <span id="bacPrRecommendedDate"></span></div>
@@ -128,7 +138,12 @@
                             <div>
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Approved by (BAC):</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="bacPrApprovedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrApprovedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                                 </div>

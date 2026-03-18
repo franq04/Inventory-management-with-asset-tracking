@@ -228,11 +228,21 @@ class PurchaseRequestController extends Controller
         $account = Auth::user();
         abort_unless($purchaseRequest->account_id === $account->account_id, 403);
 
-        $purchaseRequest->load(['items', 'status', 'division', 'section', 'statusHistory' => function ($query) {
+        $purchaseRequest->load(['items', 'status', 'division', 'section', 'requester.employee', 'approver.employee', 'statusHistory' => function ($query) {
             $query->orderByDesc('changed_at')->limit(1);
         }]);
 
         $latestHistory = $purchaseRequest->statusHistory->first();
+        $requesterName = $purchaseRequest->requester?->employee
+            ? collect([
+                $purchaseRequest->requester->employee->first_name,
+                $purchaseRequest->requester->employee->middle_name,
+                $purchaseRequest->requester->employee->last_name,
+                $purchaseRequest->requester->employee->suffix,
+            ])->filter()->implode(' ')
+            : ($purchaseRequest->requester?->username ?? 'Unknown');
+        $requesterSignature = $this->signatureDataUri($purchaseRequest->requester?->employee?->signature);
+        $approvedSignature = $this->signatureDataUri($purchaseRequest->approver?->employee?->signature);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -247,6 +257,9 @@ class PurchaseRequestController extends Controller
                     'alobs_no' => $purchaseRequest->alobs_no,
                     'division' => $purchaseRequest->division?->division_name,
                     'section' => $purchaseRequest->section?->section_name,
+                    'requester_name' => $requesterName,
+                    'requester_signature' => $requesterSignature,
+                    'approved_signature' => $approvedSignature,
                     'total_estimated_cost' => $purchaseRequest->total_estimated_cost,
                     'items' => $purchaseRequest->items->map(fn (PurchaseRequestItem $item) => $this->transformItem($item)),
                 ],
@@ -258,6 +271,15 @@ class PurchaseRequestController extends Controller
             'purchaseRequest' => $purchaseRequest,
             'latestHistory' => $latestHistory,
         ]);
+    }
+
+    private function signatureDataUri($signature): ?string
+    {
+        if ($signature === null || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($signature);
     }
 
     public function respondToItem(Request $request, PurchaseRequestItem $purchaseRequestItem)

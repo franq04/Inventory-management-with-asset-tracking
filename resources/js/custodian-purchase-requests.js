@@ -52,6 +52,9 @@ const initPurchaseRequestWorkflow = () => {
     const $recommendedName = $('#custodianPrRecommendedPrintedName');
     const $recommendedDate = $('#custodianPrRecommendedDate');
     const $recommendedRemarks = $('#custodianPrRecommendationRemarks');
+    const $requestedSignature = $('#custodianPrRequestedSignature');
+    const $recommendedSignature = $('#custodianPrRecommendedSignature');
+    const $approvedSignature = $('#custodianPrApprovedSignature');
     const $itemsTable = $('#custodianPrItemsTable');
     const $grandTotalLabel = $('#custodianPrGrandTotal');
     let currentUpdateUrl = null;
@@ -77,6 +80,14 @@ const initPurchaseRequestWorkflow = () => {
 
     const toFixed = (value) => toNumber(value, 0).toFixed(2);
 
+    const renderSignature = (signatureDataUrl) => {
+        if (!signatureDataUrl) {
+            return '';
+        }
+
+        return `<img src="${signatureDataUrl}" alt="Signature" class="max-h-10 w-auto object-contain">`;
+    };
+
     const renderWorkflowLoadingState = () => {
         $('#custodianPrNumber').text('Loading purchase request...');
         $('#custodianPrNo').text('—');
@@ -92,6 +103,9 @@ const initPurchaseRequestWorkflow = () => {
         $('#custodianPrPurposeTextarea').val('');
         $('#custodianPrRequestedPrintedName').text('');
         $('#custodianPrApprovedPrintedName').text('');
+        $requestedSignature.empty();
+        $recommendedSignature.empty();
+        $approvedSignature.empty();
         $recommendedName.text('');
         $recommendedDate.text('');
         $recommendedRemarks.text('');
@@ -392,6 +406,9 @@ const initPurchaseRequestWorkflow = () => {
         $('#custodianPrPurposeTextarea').val(data.purpose ?? '');
         $('#custodianPrRequestedPrintedName').text(data.requester ?? 'Unknown');
         $('#custodianPrApprovedPrintedName').text(data.approved_by ?? '');
+        $requestedSignature.html(renderSignature(data.requester_signature || ''));
+        $recommendedSignature.html(renderSignature(data.recommended_signature || ''));
+        $approvedSignature.html(renderSignature(data.approved_signature || ''));
 
         const recommendedName = data.recommended_by_name ?? '';
         let recommendedDateLabel = '';

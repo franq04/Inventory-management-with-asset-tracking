@@ -123,7 +123,12 @@
                             <div>
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Requested by:</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="custodianPrRequestedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="custodianPrRequestedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                                 </div>
@@ -131,7 +136,12 @@
                             <div id="custodianPrRecommendedBlock" class="hidden">
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Recommending Approval Officer:</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="custodianPrRecommendedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="custodianPrRecommendedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Date: <span id="custodianPrRecommendedDate"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Remarks: <span id="custodianPrRecommendationRemarks"></span></div>
@@ -140,7 +150,12 @@
                             <div>
                                 <span class="block text-xs font-semibold uppercase tracking-wide text-gray-600">Approved by:</span>
                                 <div class="mt-6 space-y-3 text-xs uppercase tracking-wide text-gray-600">
-                                    <div class="border-b border-gray-500 pb-2">Signature:</div>
+                                    <div class="border-b border-gray-500 pb-2">
+                                        <div class="flex min-h-10 items-end justify-between gap-2">
+                                            <span>Signature:</span>
+                                            <span id="custodianPrApprovedSignature"></span>
+                                        </div>
+                                    </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="custodianPrApprovedPrintedName"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Designation:</div>
                                 </div>
