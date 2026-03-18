@@ -64,18 +64,13 @@ const initBacPurchaseRequestPage = function () {
         }, 4000);
     }
 
-    // Show modal
-    function showModal() {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
-
     // Hide modal
     function hideModal() {
         modal.classList.add('hidden');
         document.body.style.overflow = '';
         currentPrData = null;
         hideModalError();
+
         const requestedSignature = document.getElementById('bacPrRequestedSignature');
         const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
         const approvedSignature = document.getElementById('bacPrApprovedSignature');
