@@ -423,9 +423,10 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder)
     {
-        $purchaseOrder->load(['items', 'supplier', 'purchaseRequest', 'status']);
+        $purchaseOrder->load(['items', 'supplier', 'purchaseRequest.fundAllocation', 'status']);
 
-        $officialAccountId = $purchaseOrder->authorized_by ?: $purchaseOrder->ordered_by;
+        // Authorized official in the details view should reflect the custodian who created the PO.
+        $officialAccountId = $purchaseOrder->ordered_by ?: $purchaseOrder->authorized_by;
         $officialAccount = $officialAccountId
             ? Account::query()->with('employee.position')->find($officialAccountId)
             : null;
@@ -439,6 +440,16 @@ class PurchaseOrderController extends Controller
         }
 
         $authorizedOfficialDesignation = $officialAccount?->employee?->position?->position_title;
+        $authorizedOfficialSignature = $this->signatureDataUri($officialAccount?->employee?->signature);
+
+        $effectiveFundCluster = $purchaseOrder->fund_cluster
+            ?: $purchaseOrder->purchaseRequest?->fund_cluster
+            ?: $purchaseOrder->purchaseRequest?->fundAllocation?->fund_cluster;
+
+        $effectiveFundsAvailable = $purchaseOrder->funds_available;
+        if ($effectiveFundsAvailable === null) {
+            $effectiveFundsAvailable = $purchaseOrder->purchaseRequest?->funds_available;
+        }
 
         // Get status history for this PO
         $statusHistory = StatusHistory::query()
@@ -493,8 +504,8 @@ class PurchaseOrderController extends Controller
                 'order_date' => optional($purchaseOrder->order_date)->toDateString(),
                 'delivery_date' => optional($purchaseOrder->delivery_date)->toDateString(),
                 'amount_in_words' => $purchaseOrder->amount_in_words,
-                'fund_cluster' => $purchaseOrder->fund_cluster,
-                'funds_available' => $purchaseOrder->funds_available,
+                'fund_cluster' => $effectiveFundCluster,
+                'funds_available' => $effectiveFundsAvailable,
                 'ors_burs_no' => $purchaseOrder->ors_burs_no,
                 'ors_burs_date' => optional($purchaseOrder->ors_burs_date)->toDateString(),
                 'ors_burs_amount' => $purchaseOrder->ors_burs_amount,
@@ -502,6 +513,7 @@ class PurchaseOrderController extends Controller
                 'conforme_date' => optional($purchaseOrder->conforme_date)->toDateString(),
                 'authorized_official_name' => $authorizedOfficialName,
                 'authorized_official_designation' => $authorizedOfficialDesignation,
+                'authorized_official_signature' => $authorizedOfficialSignature,
                 'items' => $purchaseOrder->items->map(function (PurchaseOrderItem $item) {
                     return [
                         'item_description' => $item->item_description,
@@ -521,6 +533,23 @@ class PurchaseOrderController extends Controller
                 'status_history' => $statusHistory,
             ],
         ]);
+    }
+
+    private function signatureDataUri($signature): ?string
+    {
+        if ($signature === null || $signature === '') {
+            return null;
+        }
+
+        if (is_resource($signature)) {
+            $signature = stream_get_contents($signature);
+        }
+
+        if (! is_string($signature) || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,' . base64_encode($signature);
     }
 
     public function acceptOrder(Request $request, PurchaseOrder $purchaseOrder)
