@@ -39,7 +39,7 @@ class CategoryController extends Controller
         $sharedQueryParams = $request->except(['page', 'parent_page', 'section']);
 
         $categories = $query
-            ->orderBy('cat_name')
+            ->orderByDesc('cat_id')
             ->paginate(5)
             ->appends($sharedQueryParams);
 
@@ -65,7 +65,7 @@ class CategoryController extends Controller
 
         $categoryTreeQuery = Category::query()
             ->with(['children' => function ($relation) {
-                $relation->orderBy('cat_name')->withCount('pqsRecords');
+                $relation->orderByDesc('cat_id')->withCount('pqsRecords');
             }])
             ->withCount('pqsRecords')
             ->whereNull('parent_id');
@@ -84,7 +84,7 @@ class CategoryController extends Controller
         }
 
         $categoryTree = $categoryTreeQuery
-            ->orderBy('cat_name')
+            ->orderByDesc('cat_id')
             ->paginate($parentPerPage, ['*'], 'parent_page')
             ->appends($sharedQueryParams);
 
@@ -136,7 +136,7 @@ class CategoryController extends Controller
             });
         }
 
-        $categories = $query->orderBy('cat_name')->get();
+        $categories = $query->orderByDesc('cat_id')->get();
 
         return view('management.categories.print', [
             'categories' => $categories,
@@ -158,7 +158,7 @@ class CategoryController extends Controller
             });
         }
 
-        $categories = $query->orderBy('cat_name')->get();
+        $categories = $query->orderByDesc('cat_id')->get();
 
         $html = view('management.categories.excel', ['categories' => $categories])->render();
 

@@ -203,7 +203,7 @@ class ParController extends Controller
             $query->whereDoesntHave('pqsRecord.accountableOfficer');
         }
 
-        $records = $query->orderBy('par_no')->get();
+        $records = $query->orderByDesc('par_no')->get();
 
         return view('inventory.par.print-list', [
             'records' => $records,
@@ -257,7 +257,7 @@ class ParController extends Controller
             $query->whereDoesntHave('pqsRecord.accountableOfficer');
         }
 
-        $records = $query->orderBy('par_no')->get();
+        $records = $query->orderByDesc('par_no')->get();
 
         $html = view('inventory.par.excel', ['records' => $records])->render();
 

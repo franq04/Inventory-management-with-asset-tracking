@@ -50,7 +50,7 @@
                     Contact, Assignment & Access
                 </button>
             </nav>
-            <p class="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-gray-500">Complete all required fields marked with *</p>
+            <p class="mt-3 text-xs font-medium uppercase tracking-[0.14em] text-gray-500">Update the fields below to save employee changes.</p>
         </div>
 
         {{-- Step 1: Personal Information --}}
@@ -80,8 +80,8 @@
                     {{-- Name Fields --}}
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                            <label for="first_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">First Name <span class="text-red-500">*</span></label>
-                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name', $employee->first_name) }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <label for="first_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">First Name</label>
+                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name', $employee->first_name) }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('first_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -90,8 +90,8 @@
                             @error('middle_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                          <div>
-                            <label for="last_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Last Name <span class="text-red-500">*</span></label>
-                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name', $employee->last_name) }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <label for="last_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Last Name</label>
+                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name', $employee->last_name) }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('last_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -100,8 +100,8 @@
                             @error('suffix')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                          <div>
-                            <label for="date_of_birth" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Date of Birth <span class="text-red-500">*</span></label>
-                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth', $employee->date_of_birth) }}" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <label for="date_of_birth" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Date of Birth</label>
+                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth', $employee->date_of_birth) }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('date_of_birth')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -113,8 +113,8 @@
                         @error('employee_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="gender" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Gender <span class="text-red-500">*</span></label>
-                        <select id="gender" name="gender" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
+                        <label for="gender" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Gender</label>
+                        <select id="gender" name="gender" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Select gender</option>
                             @foreach ($genders as $gender)
                                 <option value="{{ $gender }}" @selected(old('gender', $employee->gender) === $gender)>{{ ucfirst($gender) }}</option>
@@ -123,8 +123,8 @@
                         @error('gender')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
-                        <label for="marital_status" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Marital Status <span class="text-red-500">*</span></label>
-                        <select id="marital_status" name="marital_status" required aria-required="true" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
+                        <label for="marital_status" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Marital Status</label>
+                        <select id="marital_status" name="marital_status" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Select status</option>
                             @foreach ($maritalStatuses as $status)
                                 <option value="{{ $status }}" @selected(old('marital_status', $employee->marital_status) === $status)>{{ ucfirst($status) }}</option>
@@ -231,12 +231,12 @@
 
                         <div id="new_account_fields" class="mt-4 space-y-4 rounded-xl border border-emerald-100 bg-white p-4 hidden shadow-sm">
                         <div>
-                            <label for="new_account_username" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Username <span class="text-red-500">*</span></label>
+                            <label for="new_account_username" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Username</label>
                             <input id="new_account_username" name="new_account_username" type="text" value="{{ old('new_account_username') }}" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
                             @error('new_account_username')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label for="new_account_role" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Role <span class="text-red-500">*</span></label>
+                            <label for="new_account_role" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Role</label>
                             <select id="new_account_role" name="new_account_role" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                                 @foreach(($accountRoles ?? []) as $roleOption)
                                     <option value="{{ $roleOption['value'] }}" @selected(old('new_account_role', 'employee') === $roleOption['value'])>{{ $roleOption['label'] }}</option>
@@ -268,6 +268,8 @@
             </div>
         </div>
     </form>
+
+    <div id="editEmployeeToastStack" class="pointer-events-none fixed right-4 top-6 z-[130] w-[min(24rem,calc(100vw-2rem))] space-y-2"></div>
 </div>
 @endsection
 
@@ -346,23 +348,122 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const submitBtn = document.getElementById('submitBtn');
+        const form = document.getElementById('editEmployeeForm');
+        const toastStackEl = document.getElementById('editEmployeeToastStack');
         let currentStep = 1;
+        const activeToastKeys = new Set();
+
+        if (toastStackEl && toastStackEl.parentElement !== document.body) {
+            document.body.appendChild(toastStackEl);
+        }
+
+        const stepRequiredFields = {
+            1: [
+                { id: 'first_name', label: 'First Name' },
+                { id: 'last_name', label: 'Last Name' },
+                { id: 'date_of_birth', label: 'Date of Birth' },
+                { id: 'gender', label: 'Gender' },
+                { id: 'marital_status', label: 'Marital Status' },
+            ],
+            2: [
+                { id: 'contact_no', label: 'Contact Number' },
+                { id: 'email', label: 'Email Address' },
+                { id: 'division_id', label: 'Division' },
+                { id: 'section_id', label: 'Section' },
+                { id: 'position_id', label: 'Position' },
+            ],
+        };
 
         const getStepElement = (stepNumber) => document.querySelector(`.form-step[data-step="${stepNumber}"]`);
 
-        const validateStep = (stepNumber) => {
-            const stepEl = getStepElement(stepNumber);
-            if (!stepEl) {
-                return true;
+        const showFormToast = (message, type = 'error') => {
+            if (!toastStackEl || !message) return;
+
+            const key = `${type}:${message}`;
+            if (activeToastKeys.has(key)) return;
+            activeToastKeys.add(key);
+
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto rounded-xl border px-5 py-3 text-sm font-semibold text-white shadow-2xl opacity-0 translate-y-2 transition-all duration-200 ease-out';
+            toast.textContent = message;
+
+            if (type === 'error') {
+                toast.classList.add('border-red-800', 'bg-red-700');
+            } else {
+                toast.classList.add('border-emerald-800', 'bg-[#1a3a2d]');
             }
 
-            const requiredFields = Array.from(stepEl.querySelectorAll('input[required], select[required], textarea[required]'));
-            for (const field of requiredFields) {
-                if (!field.checkValidity()) {
-                    field.reportValidity();
+            toastStackEl.appendChild(toast);
+
+            while (toastStackEl.children.length > 3) {
+                const first = toastStackEl.firstElementChild;
+                if (first) first.remove();
+            }
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', 'translate-y-2');
+                toast.classList.add('opacity-100', 'translate-y-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                    activeToastKeys.delete(key);
+                }, 220);
+            }, 3200);
+        };
+
+        const markFieldInvalid = (field) => {
+            field.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            field.setAttribute('aria-invalid', 'true');
+        };
+
+        const clearFieldInvalid = (field) => {
+            field.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            field.removeAttribute('aria-invalid');
+        };
+
+        const wireFieldCleanup = (field) => {
+            const clear = () => clearFieldInvalid(field);
+            field.addEventListener('input', clear);
+            field.addEventListener('change', clear);
+        };
+
+        Object.values(stepRequiredFields)
+            .flat()
+            .forEach(({ id }) => {
+                const field = document.getElementById(id);
+                if (field) wireFieldCleanup(field);
+            });
+
+        const validateStep = (stepNumber) => {
+            const fields = [...(stepRequiredFields[stepNumber] || [])];
+
+            if (stepNumber === 2 && createAccountChk?.checked) {
+                fields.push(
+                    { id: 'new_account_username', label: 'Username' },
+                    { id: 'new_account_role', label: 'Role' },
+                );
+            }
+
+            for (const rule of fields) {
+                const field = document.getElementById(rule.id);
+                if (!field) {
+                    continue;
+                }
+
+                const value = String(field.value ?? '').trim();
+                if (value === '') {
+                    markFieldInvalid(field);
                     field.focus();
+                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    showFormToast(`${rule.label} is required before continuing.`, 'error');
                     return false;
                 }
+
+                clearFieldInvalid(field);
             }
 
             return true;
@@ -424,6 +525,16 @@
                 }
                 goToStep(targetStep);
             });
+        });
+
+        form?.addEventListener('submit', (event) => {
+            for (let step = 1; step <= steps.length; step++) {
+                if (!validateStep(step)) {
+                    event.preventDefault();
+                    goToStep(step);
+                    return;
+                }
+            }
         });
         
         // Initial state

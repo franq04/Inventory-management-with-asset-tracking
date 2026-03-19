@@ -72,12 +72,9 @@
             'icon' => 'fa-table-list',
         ],
     ];
-    $activeOverviewTab = request()->query('po_tab', 'pipeline');
+    $activeOverviewTab = request()->query('po_tab', 'ready');
     if (! array_key_exists($activeOverviewTab, $overviewTabs)) {
-        $activeOverviewTab = 'pipeline';
-    }
-    if ($activeOverviewTab === 'ready' && $readyForPoCount === 0) {
-        $activeOverviewTab = 'pipeline';
+        $activeOverviewTab = 'ready';
     }
 @endphp
 
@@ -156,7 +153,7 @@
             <div class="inline-flex items-center gap-2 rounded-full border border-emerald-950/10 bg-[#f8fbf9] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[#2d5a4a]/80">
                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                 Active View:
-                <span data-po-overview-label class="text-[#1a3a2d]">{{ $overviewTabs[$activeOverviewTab]['label'] ?? 'Order Pipeline' }}</span>
+                <span data-po-overview-label class="text-[#1a3a2d]">{{ $overviewTabs[$activeOverviewTab]['label'] ?? 'Ready for PO' }}</span>
             </div>
         </div>
     </div>
@@ -969,7 +966,7 @@
             return fallback;
         }
 
-        return availablePanels.has('pipeline') ? 'pipeline' : (Array.from(availablePanels)[0] || null);
+        return availablePanels.has('ready') ? 'ready' : (Array.from(availablePanels)[0] || null);
     };
 
     const animatePanel = (panel, mode = 'show') => {

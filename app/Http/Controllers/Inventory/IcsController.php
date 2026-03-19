@@ -195,7 +195,7 @@ class IcsController extends Controller
             });
         }
 
-        $records = $query->orderBy('ics_no')->get();
+        $records = $query->orderByDesc('ics_no')->get();
 
         return view('inventory.ics.print-list', [
             'records' => $records,
@@ -241,7 +241,7 @@ class IcsController extends Controller
             });
         }
 
-        $records = $query->orderBy('ics_no')->get();
+        $records = $query->orderByDesc('ics_no')->get();
 
         $html = view('inventory.ics.excel', ['records' => $records])->render();
 

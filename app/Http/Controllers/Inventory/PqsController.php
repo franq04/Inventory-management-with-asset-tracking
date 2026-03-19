@@ -47,7 +47,7 @@ class PqsController extends Controller
         }
 
         $pqsRecords = $query
-            ->orderBy('property_no')
+            ->orderByDesc('property_no')
             ->paginate(5)
             ->withQueryString();
 
@@ -197,7 +197,7 @@ class PqsController extends Controller
             $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
         }
 
-        $records = $query->orderBy('property_no')->get();
+        $records = $query->orderByDesc('property_no')->get();
 
         return view('inventory.pqs.print', [
             'records' => $records,
@@ -240,7 +240,7 @@ class PqsController extends Controller
             $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
         }
 
-        $records = $query->orderBy('property_no')->get();
+        $records = $query->orderByDesc('property_no')->get();
 
         $html = view('inventory.pqs.excel', ['records' => $records])->render();
 

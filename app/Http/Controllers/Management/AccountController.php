@@ -52,7 +52,7 @@ class AccountController extends Controller
         }
 
         $accounts = $query
-            ->orderBy('username')
+            ->orderByDesc('account_id')
             ->paginate(5)
             ->withQueryString();
 
@@ -129,7 +129,7 @@ class AccountController extends Controller
             $query->where('role', $roleFilter);
         }
 
-        $accounts = $query->orderBy('username')->get();
+        $accounts = $query->orderByDesc('account_id')->get();
 
         return view('management.accounts.print', [
             'accounts' => $accounts,
@@ -164,7 +164,7 @@ class AccountController extends Controller
             $query->where('role', $roleFilter);
         }
 
-        $accounts = $query->orderBy('username')->get();
+        $accounts = $query->orderByDesc('account_id')->get();
 
         $html = view('management.accounts.excel', ['accounts' => $accounts])->render();
 
