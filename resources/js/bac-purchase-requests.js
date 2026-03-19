@@ -18,6 +18,7 @@ const initBacPurchaseRequestPage = function () {
     }
 
     let currentPrData = null;
+    let modalHideTimeout = null;
 
     function renderSignature(signatureDataUrl) {
         if (!signatureDataUrl) {
@@ -64,9 +65,37 @@ const initBacPurchaseRequestPage = function () {
         }, 4000);
     }
 
+    // Show modal
+    function showModal() {
+        if (modalHideTimeout) {
+            clearTimeout(modalHideTimeout);
+            modalHideTimeout = null;
+        }
+
+        const panel = modal.querySelector('.modal-panel');
+
+        modal.classList.remove('hidden', 'opacity-0');
+        if (panel) {
+            panel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+        }
+
+        document.body.style.overflow = 'hidden';
+        hideModalError();
+    }
+
     // Hide modal
     function hideModal() {
-        modal.classList.add('hidden');
+        const panel = modal.querySelector('.modal-panel');
+
+        modal.classList.add('opacity-0');
+        if (panel) {
+            panel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        }
+
+        modalHideTimeout = setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 250);
+
         document.body.style.overflow = '';
         currentPrData = null;
         hideModalError();
@@ -350,9 +379,9 @@ const initBacPurchaseRequestPage = function () {
                     }
                 }
                 
-                // For status 104 (For Approval), make unit cost editable
-                const isForApproval = data.status_id === 104;
-                const unitCostHtml = isForApproval && !item.removed_at
+                // For statuses 103/104, allow BAC to adjust unit costs
+                const canEditUnitCost = [103, 104].includes(data.status_id);
+                const unitCostHtml = canEditUnitCost && !item.removed_at
                     ? `<input type="number" min="0" step="0.01" 
                             class="js-item-unit-cost w-full border border-gray-300 rounded px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             data-pri-id="${item.pri_id}" 
@@ -360,7 +389,7 @@ const initBacPurchaseRequestPage = function () {
                             value="${parseFloat(item.estimated_unit_cost || 0).toFixed(2)}">`
                     : formatCurrency(item.estimated_unit_cost || 0);
                 
-                const totalCostHtml = isForApproval && !item.removed_at
+                const totalCostHtml = canEditUnitCost && !item.removed_at
                     ? `<span class="js-item-total-cost" data-pri-id="${item.pri_id}">${formatCurrency(itemTotal)}</span>`
                     : formatCurrency(itemTotal);
                 
@@ -539,15 +568,18 @@ const initBacPurchaseRequestPage = function () {
         const remarks = document.getElementById('bacRemarks').value.trim();
 
         // Validate funds for approval
-        if (actionType === 'approve') {
-            // First, save any edited item costs
+        if (actionType === 'approve' || actionType === 'review') {
+            // Save any edited item costs before moving status or final approval
             const costsSaved = await saveItemCosts(prNo);
             if (!costsSaved) {
                 return; // Error already shown
             }
-            
-            // Recalculate total from current inputs
-            recalculateGrandTotal();
+        }
+
+        // Recalculate total from current inputs after edits are captured
+        recalculateGrandTotal();
+
+        if (actionType === 'approve') {
             
             if (!fundsAvailable || parseFloat(fundsAvailable) <= 0) {
                 showModalError('Funds available must be set before approval');

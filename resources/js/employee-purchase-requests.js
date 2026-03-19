@@ -236,6 +236,21 @@ const initEmployeePurchaseRequests = () => {
             updateRowTotal($row);
             updateGrandTotal();
         });
+
+        $row.find('[data-unit-select]').on('change', function () {
+            const $select = $(this);
+            const $customInput = $row.find('[data-unit-custom]');
+
+            if ($select.val() === '__other__') {
+                $customInput.removeClass('hidden').val('').trigger('focus');
+                $select.removeAttr('name');
+                $customInput.attr('name', $select.data('fieldName'));
+                return;
+            }
+
+            $customInput.addClass('hidden').val('').removeAttr('name');
+            $select.attr('name', $select.data('fieldName'));
+        });
     };
 
     // Validate fund allocation when selection changes; fetch live remaining amount
@@ -309,7 +324,19 @@ const initEmployeePurchaseRequests = () => {
                     <input type="number" name="items[${idx}][quantity]" min="1" value="1" data-quantity class="w-full border border-gray-400 px-2 py-1 text-sm text-center font-semibold focus:border-[#1a3a2d] focus:ring-0" />
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
-                    <input type="text" name="items[${idx}][unit]" class="w-full border border-gray-400 px-2 py-1 text-sm focus:border-[#1a3a2d] focus:ring-0" placeholder="e.g., pcs, box" />
+                    <div class="space-y-2">
+                        <select name="items[${idx}][unit]" data-field-name="items[${idx}][unit]" data-unit-select class="w-full border border-gray-400 px-2 py-1 text-sm focus:border-[#1a3a2d] focus:ring-0">
+                            <option value="">Select unit</option>
+                            <option value="pcs">pcs</option>
+                            <option value="box">box</option>
+                            <option value="pack">pack</option>
+                            <option value="set">set</option>
+                            <option value="kg">kg</option>
+                            <option value="l">l</option>
+                            <option value="__other__">Other (type manually)</option>
+                        </select>
+                        <input type="text" data-unit-custom class="hidden w-full border border-gray-400 px-2 py-1 text-sm focus:border-[#1a3a2d] focus:ring-0" placeholder="Type custom unit" />
+                    </div>
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
                     <textarea name="items[${idx}][item_description]" class="w-full border border-gray-400 px-2 py-1 text-sm min-h-[72px] resize-y focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the item in detail..."></textarea>

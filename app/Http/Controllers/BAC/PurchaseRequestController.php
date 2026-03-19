@@ -115,6 +115,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->load([
             'items',
             'status',
+            'fundAllocation',
             'requester.employee',
             'division',
             'section',
@@ -404,7 +405,7 @@ class PurchaseRequestController extends Controller
             'purpose' => $pr->purpose,
             'sai_no' => $pr->sai_no,
             'alobs_no' => $pr->alobs_no,
-            'fund_cluster' => $pr->fund_cluster,
+            'fund_cluster' => $pr->fund_cluster ?: $pr->fundAllocation?->fund_cluster,
             'funds_available' => $pr->funds_available,
             'total_estimated_cost' => $pr->total_estimated_cost,
             'division' => $pr->division?->division_name,
@@ -617,16 +618,16 @@ class PurchaseRequestController extends Controller
     }
 
     /**
-     * Update item costs (for BAC in For Approval status)
+     * Update item costs (for BAC in review/for-approval statuses)
      */
     public function updateItemCosts(Request $request, PurchaseRequest $purchaseRequest)
     {
         // Only BAC can update costs
         $currentStatus = (int) $purchaseRequest->status_id;
-        if ($currentStatus !== Status::PR_FOR_APPROVAL) {
+        if (!in_array($currentStatus, [Status::PR_RECOMMENDED, Status::PR_FOR_APPROVAL], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Item costs can only be updated in the "For Approval" status.',
+                'message' => 'Item costs can only be updated while the request is under BAC review.',
             ], 422);
         }
 

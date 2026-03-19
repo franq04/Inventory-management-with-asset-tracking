@@ -81,8 +81,8 @@
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Unit of Issue</th>
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Item Description</th>
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Stock No.</th>
-                                        <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Estimated Unit Cost</th>
-                                        <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Estimated Cost</th>
+                                        <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Unit Cost</th>
+                                        <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Total Cost</th>
                                         <th class="border border-gray-500 px-3 py-2 text-center font-semibold">Actions</th>
                                     </tr>
                                 </thead>
@@ -91,7 +91,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50">
                                     <tr>
-                                        <td colspan="6" class="border border-gray-500 px-3 py-2 text-right font-bold text-gray-900 uppercase tracking-wide text-sm">Total Estimated Cost:</td>
+                                        <td colspan="6" class="border border-gray-500 px-3 py-2 text-right font-bold text-gray-900 uppercase tracking-wide text-sm">Total Cost:</td>
                                         <td class="border border-gray-500 px-3 py-2 text-center font-bold text-gray-900 text-sm" id="bacPrTotalCost">₱0.00</td>
                                     </tr>
                                 </tfoot>
