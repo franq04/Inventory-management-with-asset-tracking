@@ -283,6 +283,7 @@ const initBacPurchaseRequestPage = function () {
         
         // Requester info
         document.getElementById('bacPrRequestedPrintedName').textContent = data.requester || 'Unknown';
+        document.getElementById('bacPrRequestedDesignation').textContent = data.requester_designation || '';
         document.getElementById('bacPrRequestedDate').textContent = formatDate(data.created_at);
         const requestedSignature = document.getElementById('bacPrRequestedSignature');
         if (requestedSignature) {
@@ -291,8 +292,8 @@ const initBacPurchaseRequestPage = function () {
         
         // Recommender info
         document.getElementById('bacPrRecommendedPrintedName').textContent = data.recommended_by_name || '';
+        document.getElementById('bacPrRecommendedDesignation').textContent = data.recommended_designation || '';
         document.getElementById('bacPrRecommendedDate').textContent = formatDate(data.recommended_at);
-        document.getElementById('bacPrRecommendationRemarks').textContent = data.recommendation_remarks || '';
         const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
         if (recommendedSignature) {
             recommendedSignature.innerHTML = renderSignature(data.recommended_signature || '');
@@ -300,6 +301,8 @@ const initBacPurchaseRequestPage = function () {
         
         // Approver info (will be filled after approval)
         document.getElementById('bacPrApprovedPrintedName').textContent = data.approved_by || '';
+        document.getElementById('bacPrApprovedDesignation').textContent = data.approved_designation || '';
+        document.getElementById('bacPrApprovedDate').textContent = formatDate(data.approved_at);
         const approvedSignature = document.getElementById('bacPrApprovedSignature');
         if (approvedSignature) {
             approvedSignature.innerHTML = renderSignature(data.approved_signature || '');

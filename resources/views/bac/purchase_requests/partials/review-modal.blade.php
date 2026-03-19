@@ -116,7 +116,7 @@
                                         </div>
                                     </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrRequestedPrintedName"></span></div>
-                                    <div class="border-b border-gray-500 pb-2">Designation:</div>
+                                    <div class="border-b border-gray-500 pb-2">Designation: <span id="bacPrRequestedDesignation"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Date: <span id="bacPrRequestedDate"></span></div>
                                 </div>
                             </div>
@@ -130,9 +130,8 @@
                                         </div>
                                     </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrRecommendedPrintedName"></span></div>
-                                    <div class="border-b border-gray-500 pb-2">Designation: <span id="bacPrRecommendedDesignation">DIVISION.HEAD</span></div>
+                                    <div class="border-b border-gray-500 pb-2">Designation: <span id="bacPrRecommendedDesignation"></span></div>
                                     <div class="border-b border-gray-500 pb-2">Date: <span id="bacPrRecommendedDate"></span></div>
-                                    <div class="border-b border-gray-500 pb-2">Remarks: <span id="bacPrRecommendationRemarks"></span></div>
                                 </div>
                             </div>
                             <div>
@@ -145,7 +144,8 @@
                                         </div>
                                     </div>
                                     <div class="border-b border-gray-500 pb-2 whitespace-nowrap">Printed Name: <span id="bacPrApprovedPrintedName"></span></div>
-                                    <div class="border-b border-gray-500 pb-2">Designation:</div>
+                                    <div class="border-b border-gray-500 pb-2">Designation: <span id="bacPrApprovedDesignation"></span></div>
+                                    <div class="border-b border-gray-500 pb-2">Date: <span id="bacPrApprovedDate"></span></div>
                                 </div>
                             </div>
                         </div>
