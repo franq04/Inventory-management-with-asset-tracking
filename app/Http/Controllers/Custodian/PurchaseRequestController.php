@@ -372,6 +372,9 @@ class PurchaseRequestController extends Controller
         ]);
 
         $latestHistory = $purchaseRequest->statusHistory->first();
+        $requesterSignature = $this->signatureDataUri($purchaseRequest->requester?->employee?->signature);
+        $recommendedSignature = $this->signatureDataUri($purchaseRequest->recommender?->employee?->signature);
+        $approvedSignature = $this->signatureDataUri($purchaseRequest->approver?->employee?->signature);
 
         if ($request->wantsJson()) {
             $requesterSignature = $this->signatureDataUri($purchaseRequest->requester?->employee?->signature);
@@ -820,7 +823,15 @@ class PurchaseRequestController extends Controller
             return null;
         }
 
-        return 'data:image/png;base64,' . base64_encode($signature);
+        if (is_resource($signature)) {
+            $signature = stream_get_contents($signature);
+        }
+
+        if (! is_string($signature) || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode($signature);
     }
 
     protected function notifyRequesterOfItemChange(PurchaseRequestItem $item, ?string $previousStatus = null): void

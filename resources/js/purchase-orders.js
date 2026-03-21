@@ -181,6 +181,14 @@ const bindPoDetailsModal = () => {
                 $('#poDetailsConformeDate').text(data.conforme_date || '');
                 $('#poDetailsAuthorizedOfficial').text(data.authorized_official_name || '');
                 $('#poDetailsDesignation').text(data.authorized_official_designation || '');
+                const signatureTarget = $('#poDetailsAuthorizedOfficialSignature');
+                if (signatureTarget.length) {
+                    signatureTarget.html(
+                        data.authorized_official_signature
+                            ? `<img src="${data.authorized_official_signature}" alt="Authorized official signature" class="max-h-10 w-auto object-contain" />`
+                            : ''
+                    );
+                }
                 
                 $itemsTarget.empty();
                 (data.items || []).forEach((item, index) => {

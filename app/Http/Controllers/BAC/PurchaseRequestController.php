@@ -115,12 +115,13 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->load([
             'items',
             'status',
-            'requester.employee',
+            'fundAllocation',
+            'requester.employee.position',
             'division',
             'section',
-            'recommender.employee',
-            'approver.employee',
-            'statusHistory' => fn ($q) => $q->orderByDesc('changed_at'),
+            'recommender.employee.position',
+            'approver.employee.position',
+            'statusHistory' => fn ($q) => $q->with('account.employee.position')->orderByDesc('changed_at'),
         ]);
 
         if ($request->wantsJson()) {
@@ -393,9 +394,29 @@ class PurchaseRequestController extends Controller
      */
     protected function transformPurchaseRequest(PurchaseRequest $pr): array
     {
+        $approvalHistory = $pr->statusHistory
+            ->first(fn ($history) => (int) $history->new_status_id === Status::PR_APPROVED);
+
+        $approverAccount = $pr->approver ?: $approvalHistory?->account;
+
         $requesterSignature = $this->signatureDataUri($pr->requester?->employee?->signature);
         $recommendedSignature = $this->signatureDataUri($pr->recommender?->employee?->signature);
-        $approvedSignature = $this->signatureDataUri($pr->approver?->employee?->signature);
+        $approvedSignature = $this->signatureDataUri($approverAccount?->employee?->signature);
+
+        $approvedByName = $approverAccount?->employee
+            ? collect([
+                $approverAccount->employee->first_name,
+                $approverAccount->employee->middle_name,
+                $approverAccount->employee->last_name,
+                $approverAccount->employee->suffix,
+            ])->filter()->implode(' ')
+            : null;
+
+        if (!$approvedByName && $approverAccount?->username) {
+            $approvedByName = $approverAccount->username;
+        }
+
+        $approvedAtValue = $pr->approved_at ?: $approvalHistory?->changed_at;
 
         return [
             'pr_no' => $pr->pr_no,
@@ -404,7 +425,7 @@ class PurchaseRequestController extends Controller
             'purpose' => $pr->purpose,
             'sai_no' => $pr->sai_no,
             'alobs_no' => $pr->alobs_no,
-            'fund_cluster' => $pr->fund_cluster,
+            'fund_cluster' => $pr->fund_cluster ?: $pr->fundAllocation?->fund_cluster,
             'funds_available' => $pr->funds_available,
             'total_estimated_cost' => $pr->total_estimated_cost,
             'division' => $pr->division?->division_name,
@@ -418,6 +439,7 @@ class PurchaseRequestController extends Controller
                 ])->filter()->implode(' ')
                 : 'Unknown',
             'requester_signature' => $requesterSignature,
+            'requester_designation' => $pr->requester?->employee?->position?->position_title,
             'recommended_by_name' => $pr->recommender?->employee
                 ? collect([
                     $pr->recommender->employee->first_name,
@@ -427,22 +449,17 @@ class PurchaseRequestController extends Controller
                 ])->filter()->implode(' ')
                 : null,
             'recommended_signature' => $recommendedSignature,
+            'recommended_designation' => $pr->recommender?->employee?->position?->position_title,
             'recommended_at' => $pr->recommended_at instanceof \DateTimeInterface
                 ? $pr->recommended_at->toDateTimeString()
                 : ($pr->recommended_at ? (string) $pr->recommended_at : null),
             'recommendation_remarks' => $pr->recommendation_remarks,
-            'approved_by' => $pr->approver?->employee
-                ? collect([
-                    $pr->approver->employee->first_name,
-                    $pr->approver->employee->middle_name,
-                    $pr->approver->employee->last_name,
-                    $pr->approver->employee->suffix,
-                ])->filter()->implode(' ')
-                : null,
+            'approved_by' => $approvedByName,
             'approved_signature' => $approvedSignature,
-            'approved_at' => $pr->approved_at instanceof \DateTimeInterface
-                ? $pr->approved_at->toDateTimeString()
-                : ($pr->approved_at ? (string) $pr->approved_at : null),
+            'approved_designation' => $approverAccount?->employee?->position?->position_title,
+            'approved_at' => $approvedAtValue instanceof \DateTimeInterface
+                ? $approvedAtValue->toDateTimeString()
+                : ($approvedAtValue ? (string) $approvedAtValue : null),
             'approval_remarks' => $pr->approval_remarks,
             'created_at' => $pr->created_at instanceof \DateTimeInterface
                 ? $pr->created_at->toDateTimeString()
@@ -474,7 +491,15 @@ class PurchaseRequestController extends Controller
             return null;
         }
 
-        return 'data:image/png;base64,' . base64_encode($signature);
+        if (is_resource($signature)) {
+            $signature = stream_get_contents($signature);
+        }
+
+        if (! is_string($signature) || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode($signature);
     }
 
     /**
@@ -609,16 +634,16 @@ class PurchaseRequestController extends Controller
     }
 
     /**
-     * Update item costs (for BAC in For Approval status)
+     * Update item costs (for BAC in review/for-approval statuses)
      */
     public function updateItemCosts(Request $request, PurchaseRequest $purchaseRequest)
     {
         // Only BAC can update costs
         $currentStatus = (int) $purchaseRequest->status_id;
-        if ($currentStatus !== Status::PR_FOR_APPROVAL) {
+        if (!in_array($currentStatus, [Status::PR_RECOMMENDED, Status::PR_FOR_APPROVAL], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Item costs can only be updated in the "For Approval" status.',
+                'message' => 'Item costs can only be updated while the request is under BAC review.',
             ], 422);
         }
 

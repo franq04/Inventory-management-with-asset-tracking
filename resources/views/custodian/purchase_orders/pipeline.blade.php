@@ -846,6 +846,7 @@
                             <div>
                                 <p class="font-semibold mb-3 text-gray-800">Conforme:</p>
                                 <div class="mb-6 mt-8">
+                                    <div class="w-full h-10 mb-1"></div>
                                     <div class="w-full border-b border-gray-500 text-center text-sm font-semibold h-6 text-gray-900" id="poDetailsConformeName"></div>
                                     <label class="mt-1 block text-center text-xs text-gray-600">Signature over Printed Name of Supplier</label>
                                 </div>
@@ -857,6 +858,7 @@
                             <div>
                                 <p class="font-semibold mb-3 text-gray-800">Very truly yours,</p>
                                 <div class="mb-6 mt-8">
+                                    <div class="w-full flex h-10 items-end justify-center mb-1" id="poDetailsAuthorizedOfficialSignature"></div>
                                     <div class="w-full border-b border-gray-500 text-center text-sm font-semibold h-6 text-gray-900" id="poDetailsAuthorizedOfficial"></div>
                                     <label class="mt-1 block text-center text-xs text-gray-600">Signature over Printed Name of Authorized Official</label>
                                 </div>

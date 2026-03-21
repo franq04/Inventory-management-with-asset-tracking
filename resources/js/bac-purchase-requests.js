@@ -499,6 +499,7 @@ const initBacPurchaseRequestPage = function () {
         document.body.classList.remove('overflow-hidden');
         currentPrData = null;
         hideModalError();
+
         const requestedSignature = document.getElementById('bacPrRequestedSignature');
         const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
         const approvedSignature = document.getElementById('bacPrApprovedSignature');
@@ -683,6 +684,7 @@ const initBacPurchaseRequestPage = function () {
         
         // Requester info
         document.getElementById('bacPrRequestedPrintedName').textContent = data.requester || 'Unknown';
+        document.getElementById('bacPrRequestedDesignation').textContent = data.requester_designation || '';
         document.getElementById('bacPrRequestedDate').textContent = formatDate(data.created_at);
         const requestedSignature = document.getElementById('bacPrRequestedSignature');
         if (requestedSignature) {
@@ -691,8 +693,8 @@ const initBacPurchaseRequestPage = function () {
         
         // Recommender info
         document.getElementById('bacPrRecommendedPrintedName').textContent = data.recommended_by_name || '';
+        document.getElementById('bacPrRecommendedDesignation').textContent = data.recommended_designation || '';
         document.getElementById('bacPrRecommendedDate').textContent = formatDate(data.recommended_at);
-        document.getElementById('bacPrRecommendationRemarks').textContent = data.recommendation_remarks || '';
         const recommendedSignature = document.getElementById('bacPrRecommendedSignature');
         if (recommendedSignature) {
             recommendedSignature.innerHTML = renderSignature(data.recommended_signature || '');
@@ -700,6 +702,8 @@ const initBacPurchaseRequestPage = function () {
         
         // Approver info (will be filled after approval)
         document.getElementById('bacPrApprovedPrintedName').textContent = data.approved_by || '';
+        document.getElementById('bacPrApprovedDesignation').textContent = data.approved_designation || '';
+        document.getElementById('bacPrApprovedDate').textContent = formatDate(data.approved_at);
         const approvedSignature = document.getElementById('bacPrApprovedSignature');
         if (approvedSignature) {
             approvedSignature.innerHTML = renderSignature(data.approved_signature || '');
@@ -779,9 +783,9 @@ const initBacPurchaseRequestPage = function () {
                     }
                 }
                 
-                // For status 104 (For Approval), make unit cost editable
-                const isForApproval = data.status_id === 104;
-                const unitCostHtml = isForApproval && !item.removed_at
+                // For statuses 103/104, allow BAC to adjust unit costs
+                const canEditUnitCost = [103, 104].includes(data.status_id);
+                const unitCostHtml = canEditUnitCost && !item.removed_at
                     ? `<input type="number" min="0" step="0.01" 
                             class="js-item-unit-cost w-full border border-gray-300 rounded px-2 py-1 text-right text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" 
                             data-pri-id="${item.pri_id}" 
@@ -789,7 +793,7 @@ const initBacPurchaseRequestPage = function () {
                             value="${parseFloat(item.estimated_unit_cost || 0).toFixed(2)}">`
                     : formatCurrency(item.estimated_unit_cost || 0);
                 
-                const totalCostHtml = isForApproval && !item.removed_at
+                const totalCostHtml = canEditUnitCost && !item.removed_at
                     ? `<span class="js-item-total-cost" data-pri-id="${item.pri_id}">${formatCurrency(itemTotal)}</span>`
                     : formatCurrency(itemTotal);
                 
@@ -1004,15 +1008,18 @@ const initBacPurchaseRequestPage = function () {
         const remarks = document.getElementById('bacRemarks').value.trim();
 
         // Validate funds for approval
-        if (actionType === 'approve') {
-            // First, save any edited item costs
+        if (actionType === 'approve' || actionType === 'review') {
+            // Save any edited item costs before moving status or final approval
             const costsSaved = await saveItemCosts(prNo);
             if (!costsSaved) {
                 return; // Error already shown
             }
-            
-            // Recalculate total from current inputs
-            recalculateGrandTotal();
+        }
+
+        // Recalculate total from current inputs after edits are captured
+        recalculateGrandTotal();
+
+        if (actionType === 'approve') {
             
             if (!fundsAvailable || parseFloat(fundsAvailable) <= 0) {
                 showModalError('Funds available must be set before approval');
