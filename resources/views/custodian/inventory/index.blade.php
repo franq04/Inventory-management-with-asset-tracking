@@ -183,6 +183,7 @@
             store: @json(route('custodian.inventory.store', ['inspection_report_item' => '__ID__'])),
         },
         categories: @json($categoriesData),
+        locations: @json($locations),
     };
 </script>
 @vite('resources/js/inventory-assignment.js')

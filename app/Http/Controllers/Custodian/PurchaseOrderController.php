@@ -726,7 +726,7 @@ class PurchaseOrderController extends Controller
         $costChanged = abs($previousCost - (float) $updatedItem->unit_cost) > 0.009;
         $statusChanged = $previousStatus !== $updatedItem->fulfillment_status;
         $alternateChanged = $previousAlternate !== $updatedItem->alternate_description;
-    $waitChanged = optional($previousWaitUntil)->toDateString() !== optional($updatedItem->employee_wait_until)->toDateString();
+        $waitChanged = optional($previousWaitUntil)->toDateString() !== optional($updatedItem->employee_wait_until)->toDateString();
 
         if ($statusChanged || $costChanged || $alternateChanged || $waitChanged) {
             $this->notifyRequesterOfItemUpdate($updatedItem, $statusChanged, $costChanged, $waitChanged);

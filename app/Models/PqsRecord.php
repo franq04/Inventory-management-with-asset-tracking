@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class PqsRecord extends Model
 {
@@ -39,9 +38,11 @@ class PqsRecord extends Model
         'cat_id',
         // Asset tracking fields
         'current_location_id',
+        'current_custodian_employee_id',
         'assigned_division_id',
         'assigned_section_id',
         'asset_status',
+        'last_movement_at',
         'last_inventory_date',
         'last_inventoried_by',
     ];
@@ -51,6 +52,7 @@ class PqsRecord extends Model
         'unit_value' => 'decimal:2',
         'total_value' => 'decimal:2',
         'on_hand_per_count' => 'integer',
+        'last_movement_at' => 'datetime',
         'last_inventory_date' => 'date',
     ];
 
@@ -99,6 +101,14 @@ class PqsRecord extends Model
     }
 
     /**
+     * Get the current custodian employee
+     */
+    public function currentCustodian(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'current_custodian_employee_id', 'employee_id');
+    }
+
+    /**
      * Get the assigned division
      */
     public function assignedDivision(): BelongsTo
@@ -123,56 +133,11 @@ class PqsRecord extends Model
     }
 
     /**
-     * Get all asset assignments (polymorphic)
+     * Get recorded movement history for this asset
      */
-    public function assignments(): MorphMany
+    public function movements(): HasMany
     {
-        return $this->morphMany(AssetAssignment::class, 'asset', 'asset_type', 'asset_id');
-    }
-
-    /**
-     * Get current active assignment
-     */
-    public function currentAssignment()
-    {
-        return $this->assignments()
-            ->where('status', AssetAssignment::STATUS_ACTIVE)
-            ->latest('assigned_at')
-            ->first();
-    }
-
-    /**
-     * Get all asset transfers (polymorphic)
-     */
-    public function transfers(): MorphMany
-    {
-        return $this->morphMany(AssetTransfer::class, 'asset', 'asset_type', 'asset_id');
-    }
-
-    /**
-     * Get pending transfers
-     */
-    public function pendingTransfers()
-    {
-        return $this->transfers()->where('status', AssetTransfer::STATUS_PENDING);
-    }
-
-    /**
-     * Get condition logs (polymorphic)
-     */
-    public function conditionLogs(): MorphMany
-    {
-        return $this->morphMany(AssetConditionLog::class, 'asset', 'asset_type', 'asset_id');
-    }
-
-    /**
-     * Get latest condition
-     */
-    public function latestCondition()
-    {
-        return $this->conditionLogs()
-            ->orderBy('inspection_date', 'desc')
-            ->first();
+        return $this->hasMany(AssetMovement::class, 'property_no', 'property_no');
     }
 
     // ============================================
@@ -184,17 +149,20 @@ class PqsRecord extends Model
      */
     public function canBeTransferred(): bool
     {
-        // Cannot transfer if already in pending transfer
-        if ($this->pendingTransfers()->exists()) {
-            return false;
-        }
-
         // Cannot transfer disposed or lost assets
         if (in_array($this->asset_status, [self::STATUS_DISPOSED, self::STATUS_LOST])) {
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Check if asset can be turned over.
+     */
+    public function canBeTurnedOver(): bool
+    {
+        return $this->canBeTransferred();
     }
 
     /**

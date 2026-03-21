@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Custodian\AuditLogController;
+use App\Http\Controllers\Custodian\AssetMovementController;
 use App\Http\Controllers\Custodian\InspectionController;
 use App\Http\Controllers\Custodian\InventoryAssignmentController;
 use App\Http\Controllers\Custodian\PurchaseOrderController;
@@ -347,7 +348,15 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::get('pqs', [PqsController::class, 'index'])->name('pqs.index');
         Route::get('pqs/export/pdf', [PqsController::class, 'printPdf'])->name('pqs.print.pdf');
         Route::get('pqs/export/excel', [PqsController::class, 'exportExcel'])->name('pqs.export.excel');
+        Route::get('asset-movements', [AssetMovementController::class, 'report'])->name('pqs.movements.report');
+        Route::get('asset-movements/export/pdf', [AssetMovementController::class, 'printPdf'])->name('pqs.movements.print.pdf');
+        Route::get('asset-movements/export/excel', [AssetMovementController::class, 'exportExcel'])->name('pqs.movements.export.excel');
+        Route::get('asset-movements/export/csv', [AssetMovementController::class, 'exportCsv'])->name('pqs.movements.export.csv');
         Route::get('pqs/{pqsRecord}', [PqsController::class, 'show'])->name('pqs.show');
+        Route::get('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'timeline'])->name('pqs.movements.timeline');
+        Route::post('pqs/turnover', [AssetMovementController::class, 'processTurnover'])->name('pqs.movements.turnover');
+        Route::post('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'transfer'])->name('pqs.movements.transfer');
+        Route::get('reconciliation-summary', [AssetMovementController::class, 'reconciliationSummary'])->name('pqs.reconciliation.summary');
     });
 });
 

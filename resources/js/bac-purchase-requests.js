@@ -1,3 +1,11 @@
+import $ from 'jquery';
+import {
+    hideToast,
+    openConfirmModal as sharedOpenConfirmModal,
+    showToast as sharedShowToast,
+    toggleModal,
+} from './purchase-requests-shared.js';
+
 // BAC Purchase Request Review Modal Handler
 const initBacPurchaseRequestPage = function () {
     'use strict';
@@ -9,8 +17,16 @@ const initBacPurchaseRequestPage = function () {
     window.__bacPurchaseRequestsCleanup = () => controller.abort();
 
     const modal = document.getElementById('bacPrModal');
+    const $modal = $('#bacPrModal');
     const toast = document.getElementById('bacPrToast');
+    const toastSelector = toast ? '#bacPrToast' : '#prReviewToast';
     const alternativeModal = document.getElementById('bacAlternativeModal');
+    const actionConfirmModal = document.getElementById('bacActionConfirmModal');
+    const actionConfirmPanel = actionConfirmModal?.querySelector('.confirm-panel');
+    const actionConfirmTitle = document.getElementById('bacActionConfirmTitle');
+    const actionConfirmMessage = document.getElementById('bacActionConfirmMessage');
+    const actionConfirmIcon = document.getElementById('bacActionConfirmIcon');
+    const actionConfirmYes = document.getElementById('bacActionConfirmYes');
 
     if (!modal) {
         console.warn('BAC PR Modal not found');
@@ -18,6 +34,43 @@ const initBacPurchaseRequestPage = function () {
     }
 
     let currentPrData = null;
+    let actionConfirmResolver = null;
+    let isPerformingAction = false;
+    let isConfirmAnimating = false;
+    let previousFocusedElement = null;
+
+    const actionButtonConfig = {
+        review: {
+            elementId: 'bacBtnMoveToReview',
+            loadingText: 'Moving to approval...',
+        },
+        approve: {
+            elementId: 'bacBtnApprove',
+            loadingText: 'Approving...',
+        },
+        cancel: {
+            elementId: 'bacBtnCancel',
+            loadingText: 'Canceling request...',
+        },
+    };
+
+    const statusIdToTabKey = {
+        103: 'recommended',
+        104: 'for_approval',
+        105: 'approved',
+        106: 'cancelled',
+    };
+
+    const actionTargetStatusId = {
+        review: 104,
+        approve: 105,
+        cancel: 106,
+    };
+
+    const queuePageSelector = '#bacQueuePage';
+    let isQueueRequestInFlight = false;
+    let activeQueueRequestController = null;
+    let queueRequestToken = 0;
 
     function renderSignature(signatureDataUrl) {
         if (!signatureDataUrl) {
@@ -42,38 +95,408 @@ const initBacPurchaseRequestPage = function () {
         window.location.reload();
     };
 
-    // Show toast notification
     function showToast(message, type = 'success') {
-        if (!toast) return;
-        
-        toast.textContent = message;
-        toast.classList.remove('hidden', 'bg-emerald-600', 'bg-rose-600', 'bg-amber-600');
-        
-        if (type === 'error') {
-            toast.classList.add('bg-rose-600');
-        } else if (type === 'warning') {
-            toast.classList.add('bg-amber-600');
-        } else {
-            toast.classList.add('bg-emerald-600');
+        if (!message) {
+            return;
         }
-        
-        toast.classList.remove('hidden');
-        
+
+        if (toast) {
+            toast.classList.remove('border-[#2d5a4a]', 'bg-[#1a3a2d]', 'border-rose-700', 'bg-rose-700', 'border-amber-700', 'bg-amber-600');
+
+            if (type === 'error') {
+                toast.classList.add('border-rose-700', 'bg-rose-700');
+            } else if (type === 'warning') {
+                toast.classList.add('border-amber-700', 'bg-amber-600');
+            } else {
+                toast.classList.add('border-[#2d5a4a]', 'bg-[#1a3a2d]');
+            }
+        }
+
+        sharedShowToast(toastSelector, message);
+    }
+
+    const resetActionConfirmModalState = () => {
+        if (actionConfirmYes) {
+            actionConfirmYes.disabled = false;
+            actionConfirmYes.classList.remove('scale-95', 'ring-2', 'ring-offset-2', 'ring-emerald-200');
+            actionConfirmYes.classList.remove('bg-emerald-600', 'hover:bg-emerald-700', 'bg-rose-600', 'hover:bg-rose-700');
+            actionConfirmYes.classList.add('bg-amber-500', 'hover:bg-amber-600');
+            actionConfirmYes.innerHTML = 'Confirm';
+        }
+
+        if (actionConfirmIcon) {
+            actionConfirmIcon.classList.remove('bg-emerald-100', 'text-emerald-700', 'bg-rose-100', 'text-rose-700');
+            actionConfirmIcon.classList.add('bg-amber-100', 'text-amber-700');
+            actionConfirmIcon.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
+        }
+    };
+
+    const closeActionConfirmModal = (confirmed = false) => {
+        if (!actionConfirmModal) {
+            return;
+        }
+
+        if (isConfirmAnimating && !confirmed) {
+            return;
+        }
+
+        actionConfirmModal.classList.add('opacity-0');
+        if (actionConfirmPanel) {
+            actionConfirmPanel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        }
+
         setTimeout(() => {
-            toast.classList.add('hidden');
-        }, 4000);
-    }
+            actionConfirmModal.classList.add('hidden');
+            if (previousFocusedElement instanceof HTMLElement) {
+                previousFocusedElement.focus();
+            }
+            previousFocusedElement = null;
+            if (!confirmed) {
+                resetActionConfirmModalState();
+            }
+        }, 220);
 
-    // Show modal
-    function showModal() {
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
+        if (actionConfirmResolver) {
+            actionConfirmResolver(confirmed);
+            actionConfirmResolver = null;
+        }
 
-    // Hide modal
-    function hideModal() {
-        modal.classList.add('hidden');
-        document.body.style.overflow = '';
+        isConfirmAnimating = false;
+    };
+
+    const animateConfirmSuccess = () => {
+        if (!actionConfirmYes || isConfirmAnimating) {
+            return Promise.resolve();
+        }
+
+        isConfirmAnimating = true;
+        actionConfirmYes.disabled = true;
+        actionConfirmYes.classList.add('scale-95');
+        actionConfirmYes.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                actionConfirmYes.classList.remove('scale-95');
+                actionConfirmYes.classList.add('ring-2', 'ring-offset-2', 'ring-emerald-200');
+                actionConfirmYes.innerHTML = '<i class="fas fa-check mr-2"></i>Confirmed';
+
+                setTimeout(resolve, 170);
+            }, 170);
+        });
+    };
+
+    const openActionConfirmModal = ({ title, message, actionType, confirmLabel }) => {
+        if (!actionConfirmModal) {
+            return sharedOpenConfirmModal({
+                title: title || 'Confirm Action',
+                message: message || 'Are you sure you want to continue?',
+                confirmLabel: confirmLabel || 'Confirm',
+                tone: actionType === 'approve' ? 'success' : (actionType === 'cancel' ? 'danger' : 'warning'),
+            });
+        }
+
+        return new Promise((resolve) => {
+            actionConfirmResolver = resolve;
+
+            if (actionConfirmTitle) {
+                actionConfirmTitle.textContent = title || 'Confirm Action';
+            }
+
+            if (actionConfirmMessage) {
+                actionConfirmMessage.textContent = message || 'Are you sure you want to continue?';
+            }
+
+            if (actionConfirmYes) {
+                actionConfirmYes.textContent = confirmLabel || 'Confirm';
+                actionConfirmYes.disabled = false;
+                actionConfirmYes.classList.remove('bg-amber-500', 'hover:bg-amber-600', 'bg-emerald-600', 'hover:bg-emerald-700', 'bg-rose-600', 'hover:bg-rose-700', 'ring-2', 'ring-offset-2', 'ring-emerald-200', 'scale-95');
+
+                if (actionType === 'approve') {
+                    actionConfirmYes.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                } else if (actionType === 'cancel') {
+                    actionConfirmYes.classList.add('bg-rose-600', 'hover:bg-rose-700');
+                } else {
+                    actionConfirmYes.classList.add('bg-amber-500', 'hover:bg-amber-600');
+                }
+            }
+
+            if (actionConfirmIcon) {
+                actionConfirmIcon.classList.remove('bg-amber-100', 'text-amber-700', 'bg-emerald-100', 'text-emerald-700', 'bg-rose-100', 'text-rose-700');
+
+                if (actionType === 'approve') {
+                    actionConfirmIcon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    actionConfirmIcon.classList.add('bg-emerald-100', 'text-emerald-700');
+                } else if (actionType === 'cancel') {
+                    actionConfirmIcon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+                    actionConfirmIcon.classList.add('bg-rose-100', 'text-rose-700');
+                } else {
+                    actionConfirmIcon.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
+                    actionConfirmIcon.classList.add('bg-amber-100', 'text-amber-700');
+                }
+            }
+
+            previousFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            isConfirmAnimating = false;
+            actionConfirmModal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                actionConfirmModal.classList.remove('opacity-0');
+                if (actionConfirmPanel) {
+                    actionConfirmPanel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+                }
+                actionConfirmYes?.focus();
+            });
+        });
+    };
+
+    const setActionLoadingState = (actionType, isLoading) => {
+        const buttonIds = ['bacBtnMoveToReview', 'bacBtnApprove', 'bacBtnCancel'];
+        buttonIds.forEach((id) => {
+            const button = document.getElementById(id);
+            if (!button) {
+                return;
+            }
+
+            if (!button.dataset.defaultHtml) {
+                button.dataset.defaultHtml = button.innerHTML;
+            }
+
+            button.disabled = isLoading;
+            button.classList.toggle('opacity-70', isLoading);
+            button.classList.toggle('cursor-not-allowed', isLoading);
+        });
+
+        if (!isLoading) {
+            buttonIds.forEach((id) => {
+                const button = document.getElementById(id);
+                if (button?.dataset.defaultHtml) {
+                    button.innerHTML = button.dataset.defaultHtml;
+                }
+            });
+            return;
+        }
+
+        const config = actionButtonConfig[actionType];
+        const activeButton = config ? document.getElementById(config.elementId) : null;
+        if (!activeButton) {
+            return;
+        }
+
+        activeButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i>${config.loadingText}`;
+    };
+
+    const resetActionButtonState = (actionType) => {
+        if (!actionType) {
+            return;
+        }
+
+        setActionLoadingState(actionType, false);
+    };
+
+    const normalize = (value = '') => String(value).toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const getQueuePage = () => document.querySelector(queuePageSelector);
+
+    const getQueueRows = () => {
+        const tbody = document.querySelector('#bacPurchaseRequestsTable tbody');
+        if (!tbody) {
+            return [];
+        }
+
+        return Array.from(tbody.querySelectorAll('tr')).filter((row) => !row.dataset.staticRow);
+    };
+
+    const applyQueueFilter = (term = '') => {
+        const filterValue = normalize(term);
+        const rows = getQueueRows();
+
+        rows.forEach((row) => {
+            const rowSearch = normalize(row.textContent || '');
+            const matches = !filterValue || rowSearch.includes(filterValue);
+            row.classList.toggle('hidden', !matches);
+        });
+    };
+
+    const setQueueLoadingState = (loading) => {
+        const queuePage = getQueuePage();
+        if (!queuePage) {
+            return;
+        }
+
+        queuePage.classList.toggle('opacity-70', loading);
+        queuePage.classList.toggle('pointer-events-none', loading);
+
+        queuePage.querySelectorAll('[data-bac-tab], nav[aria-label="Pagination Navigation"] a').forEach((el) => {
+            el.classList.toggle('pointer-events-none', loading);
+        });
+    };
+
+    const swapQueuePage = (html, url, pushState = true) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const nextQueuePage = doc.querySelector(queuePageSelector);
+        const currentQueuePage = getQueuePage();
+
+        if (!nextQueuePage || !currentQueuePage) {
+            return;
+        }
+
+        nextQueuePage.classList.add('opacity-0', 'translate-y-1');
+        currentQueuePage.replaceWith(nextQueuePage);
+
+        if (pushState && window.location.href !== url) {
+            window.history.pushState({ bacQueueUrl: url }, '', url);
+        }
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                nextQueuePage.classList.remove('opacity-0', 'translate-y-1');
+            });
+        });
+    };
+
+    const loadQueueContent = async (url, options = {}) => {
+        const { pushState = true, searchTerm = '' } = options;
+        if (!url) {
+            return;
+        }
+
+        if (activeQueueRequestController) {
+            activeQueueRequestController.abort();
+        }
+
+        const requestToken = ++queueRequestToken;
+        activeQueueRequestController = new AbortController();
+
+        isQueueRequestInFlight = true;
+        setQueueLoadingState(true);
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                },
+                signal: activeQueueRequestController.signal,
+            });
+
+            if (!response.ok || requestToken !== queueRequestToken || !getQueuePage()) {
+                return;
+            }
+
+            const html = await response.text();
+            swapQueuePage(html, url, pushState);
+
+            const searchInput = document.getElementById('bacPurchaseRequestSearch');
+            if (searchInput) {
+                searchInput.value = searchTerm;
+            }
+            applyQueueFilter(searchTerm);
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.error('Failed to load BAC queue content:', error);
+            }
+        } finally {
+            if (requestToken === queueRequestToken) {
+                isQueueRequestInFlight = false;
+                setQueueLoadingState(false);
+            }
+        }
+    };
+
+    const parseCountValue = (raw) => {
+        if (!raw) {
+            return 0;
+        }
+
+        const cleaned = String(raw).replace(/,/g, '').trim();
+        const parsed = Number.parseInt(cleaned, 10);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const formatCountValue = (value) => Math.max(0, Number(value) || 0).toLocaleString('en-US');
+
+    const adjustCount = (key, delta) => {
+        if (!key || !delta) {
+            return;
+        }
+
+        const selectors = [
+            `[data-bac-count-card="${key}"]`,
+            `[data-bac-tab-count="${key}"]`,
+        ];
+
+        selectors.forEach((selector) => {
+            document.querySelectorAll(selector).forEach((node) => {
+                const current = parseCountValue(node.textContent);
+                node.textContent = formatCountValue(current + delta);
+            });
+        });
+    };
+
+    const ensureEmptyStateRow = (tbody) => {
+        if (!tbody) {
+            return;
+        }
+
+        const dataRows = Array.from(tbody.querySelectorAll('tr')).filter((row) => !row.dataset.staticRow);
+        if (dataRows.length > 0) {
+            return;
+        }
+
+        let emptyRow = tbody.querySelector('tr[data-static-row="empty"]');
+        if (emptyRow) {
+            emptyRow.classList.remove('hidden');
+            return;
+        }
+
+        emptyRow = document.createElement('tr');
+        emptyRow.dataset.staticRow = 'empty';
+        emptyRow.innerHTML = `
+            <td colspan="6" class="px-6 py-16 text-center text-gray-500">
+                <i class="fas fa-clipboard-list text-5xl text-gray-300 mb-4"></i>
+                <p class="font-medium text-lg">No purchase requests for BAC at the moment.</p>
+            </td>
+        `;
+        tbody.appendChild(emptyRow);
+    };
+
+    const removeQueueRowByPrNo = (prNo) => {
+        const tbody = document.querySelector('#bacPurchaseRequestsTable tbody');
+        if (!tbody || !prNo) {
+            return;
+        }
+
+        const row = Array.from(tbody.querySelectorAll('tr[data-pr-no]')).find((item) => item.dataset.prNo === prNo);
+        if (row) {
+            row.remove();
+        }
+
+        ensureEmptyStateRow(tbody);
+    };
+
+    const syncQueueAfterStatusChange = (prNo, previousStatusId, nextStatusId) => {
+        const fromKey = statusIdToTabKey[Number(previousStatusId)] || null;
+        const toKey = statusIdToTabKey[Number(nextStatusId)] || null;
+
+        if (fromKey) {
+            adjustCount(fromKey, -1);
+        }
+        if (toKey) {
+            adjustCount(toKey, 1);
+        }
+
+        removeQueueRowByPrNo(prNo);
+    };
+
+    const showModal = () => {
+        toggleModal($modal, true);
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const hideModal = () => {
+        toggleModal($modal, false);
+        document.body.classList.remove('overflow-hidden');
         currentPrData = null;
         hideModalError();
         const requestedSignature = document.getElementById('bacPrRequestedSignature');
@@ -83,7 +506,8 @@ const initBacPurchaseRequestPage = function () {
         if (requestedSignature) requestedSignature.innerHTML = '';
         if (recommendedSignature) recommendedSignature.innerHTML = '';
         if (approvedSignature) approvedSignature.innerHTML = '';
-    }
+        hideToast('#bacPrToast');
+    };
 
     // Show/hide alternative modal
     function showAlternativeModal(item) {
@@ -456,6 +880,23 @@ const initBacPurchaseRequestPage = function () {
         const btnMoveToReview = document.getElementById('bacBtnMoveToReview');
         const btnApprove = document.getElementById('bacBtnApprove');
         const btnCancel = document.getElementById('bacBtnCancel');
+        const actionStateNote = document.getElementById('bacActionStateNote');
+        const fundClusterInput = document.getElementById('bacFundCluster');
+        const fundsAvailableInput = document.getElementById('bacFundsAvailable');
+        const remarksInput = document.getElementById('bacRemarks');
+
+        const toggleActionInputs = (isReadOnly) => {
+            [fundClusterInput, fundsAvailableInput, remarksInput].forEach((input) => {
+                if (!input) {
+                    return;
+                }
+
+                input.readOnly = isReadOnly;
+                input.disabled = isReadOnly;
+                input.classList.toggle('bg-gray-100', isReadOnly);
+                input.classList.toggle('cursor-not-allowed', isReadOnly);
+            });
+        };
         
         // Status constants (from backend):
         // 103 = PR_RECOMMENDED (Awaiting BAC Review)
@@ -467,6 +908,13 @@ const initBacPurchaseRequestPage = function () {
         btnMoveToReview.style.display = 'none';
         btnApprove.style.display = 'none';
         btnCancel.style.display = 'none';
+
+        if (actionStateNote) {
+            actionStateNote.classList.add('hidden');
+            actionStateNote.textContent = '';
+        }
+
+        toggleActionInputs(false);
         
         if (statusId === 103) {
             // Status: Recommended (Awaiting BAC Review)
@@ -478,6 +926,14 @@ const initBacPurchaseRequestPage = function () {
             // Show: Approve + Cancel
             btnApprove.style.display = 'inline-flex';
             btnCancel.style.display = 'inline-flex';
+        } else if (statusId === 105 || statusId === 106) {
+            // Status: Approved/Cancelled (terminal)
+            // Show: no actions + read-only notice
+            toggleActionInputs(true);
+            if (actionStateNote) {
+                actionStateNote.textContent = 'This request is read-only. No further BAC actions are available for this status.';
+                actionStateNote.classList.remove('hidden');
+            }
         }
         // For Approved (105) or Cancelled (106), no action buttons shown (read-only)
     }
@@ -536,6 +992,10 @@ const initBacPurchaseRequestPage = function () {
 
     // Handle BAC actions
     async function handleBacAction(actionType, prNo) {
+        if (isPerformingAction) {
+            return;
+        }
+
         // Clear previous errors
         hideModalError();
         
@@ -565,17 +1025,45 @@ const initBacPurchaseRequestPage = function () {
                 return;
             }
 
-            if (!confirm('Approve this purchase request? This action is final.')) {
+            const confirmed = await openActionConfirmModal({
+                title: 'Approve Purchase Request',
+                message: 'Approve this purchase request? This action is final.',
+                actionType: 'approve',
+                confirmLabel: 'Approve',
+            });
+
+            if (!confirmed) {
+                resetActionButtonState(actionType);
                 return;
             }
         }
 
-        if (actionType === 'cancel' && !confirm('Cancel this purchase request? This cannot be undone.')) {
-            return;
+        if (actionType === 'cancel') {
+            const confirmed = await openActionConfirmModal({
+                title: 'Cancel Purchase Request',
+                message: 'Cancel this purchase request? This cannot be undone.',
+                actionType: 'cancel',
+                confirmLabel: 'Cancel Request',
+            });
+
+            if (!confirmed) {
+                resetActionButtonState(actionType);
+                return;
+            }
         }
 
-        if (actionType === 'review' && !confirm('Move this request to For Approval status?')) {
-            return;
+        if (actionType === 'review') {
+            const confirmed = await openActionConfirmModal({
+                title: 'Move to For Approval',
+                message: 'Move this request to For Approval status?',
+                actionType: 'review',
+                confirmLabel: 'Move to For Approval',
+            });
+
+            if (!confirmed) {
+                resetActionButtonState(actionType);
+                return;
+            }
         }
 
         const routes = {
@@ -594,7 +1082,12 @@ const initBacPurchaseRequestPage = function () {
         
         if (remarks) formData.append('remarks', remarks);
         
+        const previousStatusId = Number(currentPrData?.status_id || 0);
+
         try {
+            isPerformingAction = true;
+            setActionLoadingState(actionType, true);
+
             const response = await fetch(routes[actionType], {
                 method: 'POST',
                 headers: {
@@ -607,13 +1100,14 @@ const initBacPurchaseRequestPage = function () {
             const result = await response.json();
 
             if (response.ok) {
-                showToast(result.message || 'Action completed successfully', 'success');
+                const nextStatusId = Number(result?.data?.status_id || actionTargetStatusId[actionType] || previousStatusId);
+                syncQueueAfterStatusChange(prNo, previousStatusId, nextStatusId);
+                if (currentPrData) {
+                    currentPrData.status_id = nextStatusId;
+                }
+
                 hideModal();
-                
-                // Reload page after short delay
-                setTimeout(() => {
-                    softNavigate(window.location.href, { replace: true });
-                }, 1500);
+                showToast(result.message || 'Action completed successfully', 'success');
             } else {
                 // Handle validation errors from server
                 if (result.errors) {
@@ -626,61 +1120,134 @@ const initBacPurchaseRequestPage = function () {
         } catch (error) {
             console.error('Error performing BAC action:', error);
             showModalError(error.message || 'Failed to complete action');
+        } finally {
+            isPerformingAction = false;
+            setActionLoadingState(actionType, false);
         }
     }
 
     // Event listeners
-    document.querySelectorAll('.js-view-bac-pr').forEach(button => {
-        button.addEventListener('click', function() {
-            const showUrl = this.dataset.showUrl;
-            const prNo = this.dataset.prNo;
-            
-            if (showUrl && prNo) {
-                loadPrDetails(showUrl, prNo);
-            }
-        });
-    });
+    document.addEventListener('click', (event) => {
+        const button = event.target instanceof Element ? event.target.closest('.js-view-bac-pr') : null;
+        if (!button) {
+            return;
+        }
+
+        event.preventDefault();
+        const showUrl = button.dataset.showUrl;
+        const prNo = button.dataset.prNo;
+
+        if (showUrl && prNo) {
+            loadPrDetails(showUrl, prNo);
+        }
+    }, { signal });
 
     // Close modal buttons
-    document.querySelectorAll('[data-close-modal]').forEach(button => {
-        button.addEventListener('click', hideModal);
+    modal.querySelectorAll('[data-close-modal]').forEach(button => {
+        button.addEventListener('click', hideModal, { signal });
     });
+
+    modal.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target.closest('[data-close-modal]') : null;
+        if (target) {
+            hideModal();
+        }
+    }, { signal });
 
     // BAC action buttons
     document.getElementById('bacBtnMoveToReview')?.addEventListener('click', function() {
         if (currentPrData?.pr_no) {
             handleBacAction('review', currentPrData.pr_no);
         }
-    });
+    }, { signal });
 
     document.getElementById('bacBtnApprove')?.addEventListener('click', function() {
         if (currentPrData?.pr_no) {
             handleBacAction('approve', currentPrData.pr_no);
         }
-    });
+    }, { signal });
 
     document.getElementById('bacBtnCancel')?.addEventListener('click', function() {
         if (currentPrData?.pr_no) {
             handleBacAction('cancel', currentPrData.pr_no);
         }
-    });
+    }, { signal });
 
-    // Search functionality
-    const searchInput = document.getElementById('bacPurchaseRequestSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#bacPurchaseRequestsTable tbody tr:not([data-static-row])');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+    // Search functionality (delegated so it still works after queue partial swaps)
+    document.addEventListener('input', (event) => {
+        const input = event.target;
+        if (!(input instanceof HTMLInputElement) || input.id !== 'bacPurchaseRequestSearch') {
+            return;
+        }
+
+        applyQueueFilter(input.value);
+    }, { signal });
+
+    document.addEventListener('click', (event) => {
+        const tabLink = event.target instanceof Element ? event.target.closest(`${queuePageSelector} [data-bac-tab]`) : null;
+        if (!tabLink) {
+            return;
+        }
+
+        event.preventDefault();
+        if (isQueueRequestInFlight) {
+            return;
+        }
+
+        const url = tabLink.getAttribute('href');
+        if (!url) {
+            return;
+        }
+
+        const searchTerm = String(document.getElementById('bacPurchaseRequestSearch')?.value || '');
+        loadQueueContent(url, { pushState: true, searchTerm });
+    }, { signal });
+
+    document.addEventListener('click', (event) => {
+        const pageLink = event.target instanceof Element
+            ? event.target.closest(`${queuePageSelector} nav[aria-label="Pagination Navigation"] a`)
+            : null;
+
+        if (!pageLink) {
+            return;
+        }
+
+        event.preventDefault();
+        if (isQueueRequestInFlight) {
+            return;
+        }
+
+        const url = pageLink.getAttribute('href');
+        if (!url) {
+            return;
+        }
+
+        const searchTerm = String(document.getElementById('bacPurchaseRequestSearch')?.value || '');
+        loadQueueContent(url, { pushState: true, searchTerm });
+    }, { signal });
+
+    if (!window.__bacQueuePopstateBound) {
+        window.addEventListener('popstate', () => {
+            if (!getQueuePage() || isQueueRequestInFlight) {
+                return;
+            }
+
+            const searchTerm = String(document.getElementById('bacPurchaseRequestSearch')?.value || '');
+            loadQueueContent(window.location.href, { pushState: false, searchTerm });
         });
+
+        window.__bacQueuePopstateBound = true;
     }
+
+    applyQueueFilter(String(document.getElementById('bacPurchaseRequestSearch')?.value || ''));
 
     // Close modal on escape key
     document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && actionConfirmModal && !actionConfirmModal.classList.contains('hidden')) {
+            closeActionConfirmModal(false);
+            return;
+        }
+
         if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
             hideModal();
         }
@@ -691,13 +1258,24 @@ const initBacPurchaseRequestPage = function () {
 
     // Alternative modal close buttons
     document.querySelectorAll('[data-close-alternative-modal]').forEach(button => {
-        button.addEventListener('click', hideAlternativeModal);
+        button.addEventListener('click', hideAlternativeModal, { signal });
     });
+
+    if (actionConfirmModal) {
+        actionConfirmModal.querySelectorAll('[data-close-action-confirm], [data-confirm-no]').forEach((button) => {
+            button.addEventListener('click', () => closeActionConfirmModal(false), { signal });
+        });
+
+        actionConfirmYes?.addEventListener('click', async () => {
+            await animateConfirmSuccess();
+            closeActionConfirmModal(true);
+        }, { signal });
+    }
 
     // Alternative unit cost change handler
     const alternativeUnitCostInput = document.getElementById('alternativeUnitCost');
     if (alternativeUnitCostInput) {
-        alternativeUnitCostInput.addEventListener('input', updateAlternativeTotalCost);
+        alternativeUnitCostInput.addEventListener('input', updateAlternativeTotalCost, { signal });
     }
 
     // Alternative form submission
@@ -771,7 +1349,7 @@ const initBacPurchaseRequestPage = function () {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Suggestion';
             }
-        });
+        }, { signal });
     }
     document.addEventListener('turbo:before-cache', window.__bacPurchaseRequestsCleanup, { once: true, signal });
 };

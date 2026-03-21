@@ -434,6 +434,14 @@ const bindInspectionPagination = () => {
         });
     };
 
+    window.__refreshInspectionQueue = () => {
+        if (isLoading || !$(inspectionRootSelector).length) {
+            return;
+        }
+
+        loadInspectionPage(window.location.href, { pushState: false });
+    };
+
     $(document)
         .off('click.inspectionPagination', `${inspectionRootSelector} nav[aria-label="Pagination Navigation"] a[href]`)
         .on('click.inspectionPagination', `${inspectionRootSelector} nav[aria-label="Pagination Navigation"] a[href]`, function (event) {
@@ -459,6 +467,30 @@ const bindInspectionPagination = () => {
     }
 
     revealRows($root);
+};
+
+const setupInspectionAutoRefresh = () => {
+    if (window.__inspectionAutoRefreshTimer) {
+        return;
+    }
+
+    window.__inspectionAutoRefreshTimer = window.setInterval(() => {
+        if (document.hidden) {
+            return;
+        }
+
+        if (!$(inspectionRootSelector).length) {
+            return;
+        }
+
+        if ($('#inspectionModal').length && !$('#inspectionModal').hasClass('hidden')) {
+            return;
+        }
+
+        if (typeof window.__refreshInspectionQueue === 'function') {
+            window.__refreshInspectionQueue();
+        }
+    }, 30000);
 };
 
 const initInspectionModal = () => {
@@ -845,4 +877,5 @@ $(() => {
     prunePendingAccepted();
     initInspectionFilters();
     bindInspectionPagination();
+    setupInspectionAutoRefresh();
 });

@@ -252,7 +252,7 @@ export const showToast = (selector, message, isHtml = false) => {
         if (!fallback) {
             fallback = document.createElement('div');
             fallback.id = fallbackId;
-            fallback.className = 'fixed bottom-6 right-6 z-[90] hidden max-w-sm rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white shadow-lg';
+            fallback.className = 'pointer-events-none fixed top-20 right-4 sm:right-6 z-[100] hidden min-w-[250px] max-w-md rounded-xl border border-[#2d5a4a] bg-[#1a3a2d] px-5 py-4 text-sm font-semibold text-white shadow-2xl opacity-0 transition-all duration-300';
             document.body.appendChild(fallback);
         }
 
@@ -276,6 +276,148 @@ export const showToast = (selector, message, isHtml = false) => {
     toast.removeClass('hidden opacity-0');
     const timerId = setTimeout(() => hideToast(selector), 5000);
     toast.data('toastTimerId', timerId);
+};
+
+export const openConfirmModal = ({
+    title = 'Confirm Action',
+    message = 'Are you sure you want to continue?',
+    confirmLabel = 'Confirm',
+    cancelLabel = 'Cancel',
+    tone = 'warning',
+} = {}) => {
+    const modalId = 'pqs-shared-confirm-modal';
+    let modal = document.getElementById(modalId);
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'fixed inset-0 z-[120] hidden opacity-0 transition-opacity duration-300';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.innerHTML = `
+            <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-confirm-close></div>
+            <div class="relative flex min-h-screen items-center justify-center p-4">
+                <div class="confirm-panel w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+                    <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                        <div id="pqsConfirmIcon" class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                            <i class="fas fa-circle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h4 id="pqsConfirmTitle" class="text-base font-bold text-[#1a3a2d]">Confirm Action</h4>
+                            <p class="text-xs text-gray-500">Please review before proceeding.</p>
+                        </div>
+                    </div>
+                    <div class="px-5 py-4">
+                        <p id="pqsConfirmMessage" class="text-sm text-gray-700">Are you sure you want to continue?</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                        <button type="button" id="pqsConfirmNo" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-confirm-close>
+                            Cancel
+                        </button>
+                        <button type="button" id="pqsConfirmYes" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
+                            Confirm
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+    }
+
+    const panel = modal.querySelector('.confirm-panel');
+    const icon = modal.querySelector('#pqsConfirmIcon');
+    const titleNode = modal.querySelector('#pqsConfirmTitle');
+    const messageNode = modal.querySelector('#pqsConfirmMessage');
+    const confirmButton = modal.querySelector('#pqsConfirmYes');
+    const cancelButton = modal.querySelector('#pqsConfirmNo');
+    const closeTargets = modal.querySelectorAll('[data-confirm-close]');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    if (titleNode) {
+        titleNode.textContent = title;
+    }
+
+    if (messageNode) {
+        messageNode.textContent = message;
+    }
+
+    if (confirmButton) {
+        confirmButton.textContent = confirmLabel;
+    }
+
+    if (cancelButton) {
+        cancelButton.textContent = cancelLabel;
+    }
+
+    if (icon && confirmButton) {
+        icon.className = 'flex h-10 w-10 items-center justify-center rounded-full';
+        confirmButton.className = 'rounded-xl px-4 py-2 text-sm font-semibold text-white transition';
+
+        if (tone === 'success') {
+            icon.classList.add('bg-emerald-100', 'text-emerald-700');
+            icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+            confirmButton.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+        } else if (tone === 'danger') {
+            icon.classList.add('bg-rose-100', 'text-rose-700');
+            icon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+            confirmButton.classList.add('bg-rose-600', 'hover:bg-rose-700');
+        } else {
+            icon.classList.add('bg-amber-100', 'text-amber-700');
+            icon.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
+            confirmButton.classList.add('bg-amber-500', 'hover:bg-amber-600');
+        }
+    }
+
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            panel?.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            confirmButton?.focus();
+        });
+    });
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const cleanup = () => {
+            closeTargets.forEach((target) => target.removeEventListener('click', onCancel));
+            confirmButton?.removeEventListener('click', onConfirm);
+            document.removeEventListener('keydown', onKeydown);
+        };
+
+        const settle = (result) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            cleanup();
+            modal.classList.add('opacity-0');
+            panel?.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+
+            window.setTimeout(() => {
+                modal.classList.add('hidden');
+                if (previousFocus) {
+                    previousFocus.focus();
+                }
+                resolve(result);
+            }, 220);
+        };
+
+        const onCancel = () => settle(false);
+        const onConfirm = () => settle(true);
+        const onKeydown = (event) => {
+            if (event.key === 'Escape') {
+                onCancel();
+            }
+        };
+
+        closeTargets.forEach((target) => target.addEventListener('click', onCancel));
+        confirmButton?.addEventListener('click', onConfirm);
+        document.addEventListener('keydown', onKeydown);
+    });
 };
 
 // This function only handles showing and hiding the modal.

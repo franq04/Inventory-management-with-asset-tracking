@@ -108,6 +108,9 @@
                             <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
                                <i class="fas fa-undo"></i>
                            </a>
+                          <a href="{{ route('pqs.movements.report') }}" class="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100">
+                              <i class="fas fa-timeline"></i> Movement Report
+                          </a>
                            <button type="button" id="pqsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
                                 <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
                             </button>
@@ -146,6 +149,43 @@
                             <div class="bg-emerald-500 h-2.5 rounded-full" style="width: {{ $completion }}%"></div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-emerald-950/10 bg-white p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.7)]">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-lg font-semibold text-[#1a3a2d]">Reconciliation Summary</h3>
+                    <button type="button" id="pqsReconcileRefresh" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-[#1a3a2d] hover:bg-[#f7faf8]">
+                        <i class="fas fa-rotate-right text-xs"></i>
+                    </button>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Assets</p>
+                        <p id="pqsRecAssets" class="mt-1 text-lg font-bold text-gray-900">—</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Active</p>
+                        <p id="pqsRecActive" class="mt-1 text-lg font-bold text-emerald-700">—</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">For Repair</p>
+                        <p id="pqsRecRepair" class="mt-1 text-lg font-bold text-amber-700">—</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Unlocated</p>
+                        <p id="pqsRecUnlocated" class="mt-1 text-lg font-bold text-rose-700">—</p>
+                    </div>
+                </div>
+                <div class="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                    <p class="text-xs uppercase tracking-wide text-gray-500">Stale Inventory</p>
+                    <p id="pqsRecStale" class="mt-1 text-base font-semibold text-gray-900">—</p>
+                </div>
+                <div class="mt-4">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Top Locations</p>
+                    <ul id="pqsRecTopLocations" class="mt-2 space-y-2 text-sm text-gray-700">
+                        <li class="text-gray-400 italic">Loading summary...</li>
+                    </ul>
                 </div>
             </div>
 
@@ -485,6 +525,47 @@
     const documentBadge = document.getElementById('pqsViewDocumentBadge');
     const documentMeta = document.getElementById('pqsViewDocumentMeta');
     const documentExtra = document.getElementById('pqsViewDocumentExtra');
+    const currentLocationEl = document.getElementById('pqsViewCurrentLocation');
+    const currentCustodianEl = document.getElementById('pqsViewCurrentCustodian');
+    const currentDivisionEl = document.getElementById('pqsViewCurrentDivision');
+    const currentSectionEl = document.getElementById('pqsViewCurrentSection');
+    const lastMovementEl = document.getElementById('pqsViewLastMovement');
+    const movementTimelineEl = document.getElementById('pqsMovementTimeline');
+    const transferForm = document.getElementById('pqsTransferForm');
+    const transferSubmit = document.getElementById('pqsTransferSubmit');
+    const transferError = document.getElementById('pqsTransferError');
+    const transferLocation = document.getElementById('pqsTransferLocation');
+    const transferCustodian = document.getElementById('pqsTransferCustodian');
+    const transferDivision = document.getElementById('pqsTransferDivision');
+    const transferSection = document.getElementById('pqsTransferSection');
+    const transferReason = document.getElementById('pqsTransferReason');
+    const transferRemarks = document.getElementById('pqsTransferRemarks');
+    const transferMovementType = document.getElementById('pqsTransferMovementType');
+    const transferFieldErrors = Array.from(document.querySelectorAll('[data-transfer-error-for]'));
+    const transferInputMap = {
+        movement_type: transferMovementType,
+        to_location_id: transferLocation,
+        to_custodian_employee_id: transferCustodian,
+        to_division_id: transferDivision,
+        to_section_id: transferSection,
+        reason_code: transferReason,
+        remarks: transferRemarks,
+    };
+    const turnoverForm = document.getElementById('pqsTurnoverForm');
+    const turnoverSubmit = document.getElementById('pqsTurnoverSubmit');
+    const turnoverError = document.getElementById('pqsTurnoverError');
+    const turnoverSuccess = document.getElementById('pqsTurnoverSuccess');
+    const turnoverEmployee = document.getElementById('pqsTurnoverEmployee');
+    const turnoverLocation = document.getElementById('pqsTurnoverLocation');
+    const turnoverEffectiveAt = document.getElementById('pqsTurnoverEffectiveAt');
+    const turnoverRemarks = document.getElementById('pqsTurnoverRemarks');
+    const turnoverFieldErrors = Array.from(document.querySelectorAll('[data-turnover-error-for]'));
+    const turnoverInputMap = {
+        employee_id: turnoverEmployee,
+        stockroom_location_id: turnoverLocation,
+        effective_at: turnoverEffectiveAt,
+        remarks: turnoverRemarks,
+    };
     const dateAcquiredChip = document.getElementById('pqsViewDateAcquiredChip');
     const snapshotArticleEl = document.getElementById('pqsViewSnapshotArticle');
     const propertyNoSnapshotEl = document.getElementById('pqsViewPropertyNoSnapshot');
@@ -537,6 +618,17 @@
     const defaultDocumentExtra = 'Generate PQS record to create custodial documents automatically.';
     const defaultEntityName = 'Department of Agriculture - Bureau of Plant Industry';
     const defaultFundCluster = '01';
+    let currentRecord = null;
+    let currentShowUrl = null;
+
+    const recAssets = document.getElementById('pqsRecAssets');
+    const recActive = document.getElementById('pqsRecActive');
+    const recRepair = document.getElementById('pqsRecRepair');
+    const recUnlocated = document.getElementById('pqsRecUnlocated');
+    const recStale = document.getElementById('pqsRecStale');
+    const recTopLocations = document.getElementById('pqsRecTopLocations');
+    const recRefresh = document.getElementById('pqsReconcileRefresh');
+    const reconcileEndpoint = "{{ route('pqs.reconciliation.summary') }}";
 
     const setText = (element, value, fallback = '—') => {
         if (!element) {
@@ -554,6 +646,244 @@
         const rawValue = value ?? '';
         const stringValue = typeof rawValue === 'number' ? rawValue.toString() : String(rawValue);
         element.textContent = stringValue.trim() !== '' ? stringValue : '____________________';
+    };
+
+    const setTransferError = (message = '') => {
+        if (!transferError) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        transferError.classList.toggle('hidden', !hasMessage);
+        transferError.textContent = hasMessage ? message : '';
+    };
+
+    const clearTransferFieldErrors = () => {
+        transferFieldErrors.forEach((fieldError) => {
+            fieldError.classList.add('hidden');
+            fieldError.textContent = '';
+        });
+
+        Object.values(transferInputMap).forEach((field) => {
+            if (!field) {
+                return;
+            }
+
+            field.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+            field.classList.add('border-gray-200');
+        });
+    };
+
+    const clearTransferFieldError = (fieldName) => {
+        const fieldError = transferFieldErrors.find((item) => item.dataset.transferErrorFor === fieldName);
+        if (fieldError) {
+            fieldError.classList.add('hidden');
+            fieldError.textContent = '';
+        }
+
+        const field = transferInputMap[fieldName];
+        if (field) {
+            field.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+            field.classList.add('border-gray-200');
+        }
+    };
+
+    const setTransferFieldErrors = (errors = {}) => {
+        clearTransferFieldErrors();
+
+        Object.entries(errors).forEach(([fieldName, messages]) => {
+            const message = Array.isArray(messages) ? messages[0] : messages;
+            const fieldError = transferFieldErrors.find((item) => item.dataset.transferErrorFor === fieldName);
+
+            if (fieldError && message) {
+                fieldError.textContent = String(message);
+                fieldError.classList.remove('hidden');
+            }
+
+            const field = transferInputMap[fieldName];
+            if (field) {
+                field.classList.remove('border-gray-200');
+                field.classList.add('border-rose-400', 'ring-2', 'ring-rose-200');
+            }
+        });
+    };
+
+    const setTransferLoading = (isLoading) => {
+        if (!transferSubmit) {
+            return;
+        }
+
+        if (isLoading) {
+            transferSubmit.dataset.originalHtml = transferSubmit.innerHTML;
+            transferSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            transferSubmit.disabled = true;
+            return;
+        }
+
+        if (transferSubmit.dataset.originalHtml) {
+            transferSubmit.innerHTML = transferSubmit.dataset.originalHtml;
+        }
+        transferSubmit.disabled = false;
+    };
+
+    const setTurnoverError = (message = '') => {
+        if (!turnoverError) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        turnoverError.classList.toggle('hidden', !hasMessage);
+        turnoverError.textContent = hasMessage ? message : '';
+    };
+
+    const setTurnoverSuccess = (message = '') => {
+        if (!turnoverSuccess) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        turnoverSuccess.classList.toggle('hidden', !hasMessage);
+        turnoverSuccess.textContent = hasMessage ? message : '';
+    };
+
+    const clearTurnoverFieldErrors = () => {
+        turnoverFieldErrors.forEach((fieldError) => {
+            fieldError.classList.add('hidden');
+            fieldError.textContent = '';
+        });
+
+        Object.values(turnoverInputMap).forEach((field) => {
+            if (!field) {
+                return;
+            }
+
+            field.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+            field.classList.add('border-gray-200');
+        });
+    };
+
+    const clearTurnoverFieldError = (fieldName) => {
+        const fieldError = turnoverFieldErrors.find((item) => item.dataset.turnoverErrorFor === fieldName);
+        if (fieldError) {
+            fieldError.classList.add('hidden');
+            fieldError.textContent = '';
+        }
+
+        const field = turnoverInputMap[fieldName];
+        if (field) {
+            field.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+            field.classList.add('border-gray-200');
+        }
+    };
+
+    const setTurnoverFieldErrors = (errors = {}) => {
+        clearTurnoverFieldErrors();
+
+        Object.entries(errors).forEach(([fieldName, messages]) => {
+            const message = Array.isArray(messages) ? messages[0] : messages;
+            const fieldError = turnoverFieldErrors.find((item) => item.dataset.turnoverErrorFor === fieldName);
+
+            if (fieldError && message) {
+                fieldError.textContent = String(message);
+                fieldError.classList.remove('hidden');
+            }
+
+            const field = turnoverInputMap[fieldName];
+            if (field) {
+                field.classList.remove('border-gray-200');
+                field.classList.add('border-rose-400', 'ring-2', 'ring-rose-200');
+            }
+        });
+    };
+
+    const setTurnoverLoading = (isLoading) => {
+        if (!turnoverSubmit) {
+            return;
+        }
+
+        if (isLoading) {
+            turnoverSubmit.dataset.originalHtml = turnoverSubmit.innerHTML;
+            turnoverSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            turnoverSubmit.disabled = true;
+            return;
+        }
+
+        if (turnoverSubmit.dataset.originalHtml) {
+            turnoverSubmit.innerHTML = turnoverSubmit.dataset.originalHtml;
+        }
+        turnoverSubmit.disabled = false;
+    };
+
+    const renderMovementTimeline = (movements = []) => {
+        if (!movementTimelineEl) {
+            return;
+        }
+
+        if (!Array.isArray(movements) || movements.length === 0) {
+            movementTimelineEl.innerHTML = '<p class="text-gray-400 italic">No movement records yet.</p>';
+            return;
+        }
+
+        movementTimelineEl.innerHTML = movements.map((movement) => {
+            const fromLocation = movement.from_location || 'Unspecified';
+            const toLocation = movement.to_location || 'Unspecified';
+            const movedBy = movement.moved_by || 'System';
+            const when = movement.effective_at ? formatDate(movement.effective_at) : '—';
+            const remarks = movement.remarks ? `<p class="mt-1 text-xs text-gray-500">${escapeHtml(movement.remarks)}</p>` : '';
+
+            return `
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="font-semibold text-gray-800">${escapeHtml((movement.movement_type || 'movement').replace('_', ' '))}</p>
+                        <span class="text-xs text-gray-500">${escapeHtml(when)}</span>
+                    </div>
+                    <p class="text-sm text-gray-700 mt-1">${escapeHtml(fromLocation)} → ${escapeHtml(toLocation)}</p>
+                    <p class="text-xs text-gray-500">By ${escapeHtml(movedBy)}</p>
+                    ${remarks}
+                </div>
+            `;
+        }).join('');
+    };
+
+    const syncSectionOptions = () => {
+        if (!transferDivision || !transferSection) {
+            return;
+        }
+
+        const selectedDivision = transferDivision.value;
+        Array.from(transferSection.options).forEach((option) => {
+            const divisionId = option.dataset.divisionId || '';
+            const keepOption = option.value === '';
+            const visible = keepOption || selectedDivision === '' || selectedDivision === divisionId;
+            option.hidden = !visible;
+            if (!visible && option.selected) {
+                transferSection.value = '';
+            }
+        });
+    };
+
+    const applyLocationDefaults = () => {
+        if (!transferLocation || !transferDivision || !transferSection) {
+            return;
+        }
+
+        const selected = transferLocation.selectedOptions[0];
+        if (!selected) {
+            return;
+        }
+
+        const divisionId = selected.dataset.divisionId || '';
+        const sectionId = selected.dataset.sectionId || '';
+
+        if (divisionId) {
+            transferDivision.value = divisionId;
+        }
+
+        syncSectionOptions();
+
+        if (sectionId) {
+            transferSection.value = sectionId;
+        }
     };
 
     const escapeHtml = (value = '') => String(value)
@@ -691,6 +1021,7 @@
     };
 
     const resetModal = () => {
+        currentRecord = null;
         setText(articleEl);
         setText(propertyNoEl);
         setText(dateAcquiredEl);
@@ -752,6 +1083,26 @@
         setLineField(icsFields.receivedByDate, '');
 
         setBadgeState('pending');
+        setText(currentLocationEl, '', 'Unassigned');
+        setText(currentCustodianEl, '', 'Unassigned');
+        setText(currentDivisionEl, '', 'Unassigned');
+        setText(currentSectionEl, '', 'Unassigned');
+        setText(lastMovementEl, '', '—');
+        renderMovementTimeline([]);
+
+        if (transferForm) {
+            transferForm.reset();
+            setTransferError('');
+            clearTransferFieldErrors();
+            syncSectionOptions();
+        }
+
+        if (turnoverForm) {
+            turnoverForm.reset();
+            setTurnoverError('');
+            setTurnoverSuccess('');
+            clearTurnoverFieldErrors();
+        }
 
         if (documentMeta) {
             documentMeta.textContent = defaultDocumentMeta;
@@ -846,6 +1197,7 @@
         setText(snapshotArticleEl, articleValue);
 
         const propertyNumber = record.property_no || '—';
+        currentRecord = record;
         setText(propertyNoEl, propertyNumber);
         setText(propertyNoSnapshotEl, propertyNumber);
 
@@ -903,6 +1255,37 @@
         }
 
         setText(remarksEl, record.remarks, defaultRemarksText);
+        setText(currentLocationEl, record.current_location?.name || '', 'Unassigned');
+        setText(currentCustodianEl, record.current_custodian?.name || '', 'Unassigned');
+        setText(currentDivisionEl, record.assigned_division || '', 'Unassigned');
+        setText(currentSectionEl, record.assigned_section || '', 'Unassigned');
+        setText(lastMovementEl, formatDate(record.last_movement_at), '—');
+
+        renderMovementTimeline(record.recent_movements || []);
+
+        if (transferLocation) {
+            transferLocation.value = record.current_location_id || '';
+        }
+        if (transferCustodian) {
+            transferCustodian.value = record.current_custodian_employee_id || '';
+        }
+        if (transferDivision) {
+            transferDivision.value = record.assigned_division_id || '';
+        }
+        syncSectionOptions();
+        if (transferSection) {
+            transferSection.value = record.assigned_section_id || '';
+        }
+        if (transferMovementType) {
+            transferMovementType.value = 'transfer';
+        }
+        if (transferReason) {
+            transferReason.value = '';
+        }
+        if (transferRemarks) {
+            transferRemarks.value = '';
+        }
+        setTransferError('');
 
         const { ics_record: icsRecord, par_record: parRecord } = record;
 
@@ -1019,6 +1402,27 @@
         }
     };
 
+    const fetchAndPopulateRecord = async (url) => {
+        const response = await fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const text = await response.text().catch(() => '<no response body>');
+            throw new Error(`Unable to fetch PQS record (status ${response.status}): ${text}`);
+        }
+
+        const payload = await response.json();
+        if (!payload?.data) {
+            throw new Error('Incomplete response received from server.');
+        }
+
+        populateModal(payload.data);
+    };
+
     resultsContainer.addEventListener('click', async (event) => {
         const target = event.target instanceof Element ? event.target : null;
         const trigger = target ? target.closest('.js-pqs-view') : null;
@@ -1035,24 +1439,8 @@
 
         try {
             toggleLoadingState(trigger, true);
-            const response = await fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                const text = await response.text().catch(() => '<no response body>');
-                throw new Error(`Unable to fetch PQS record (status ${response.status}): ${text}`);
-            }
-
-            const payload = await response.json();
-            if (!payload?.data) {
-                throw new Error('Incomplete response received from server.');
-            }
-
-            populateModal(payload.data);
+            currentShowUrl = url;
+            await fetchAndPopulateRecord(url);
             openModal();
         } catch (error) {
             console.error(error);
@@ -1103,6 +1491,186 @@
             closeModal();
         }
     });
+
+    transferLocation?.addEventListener('change', () => {
+        applyLocationDefaults();
+        clearTransferFieldError('to_location_id');
+    });
+
+    transferDivision?.addEventListener('change', () => {
+        syncSectionOptions();
+        clearTransferFieldError('to_division_id');
+    });
+
+    transferSection?.addEventListener('change', () => clearTransferFieldError('to_section_id'));
+    transferCustodian?.addEventListener('change', () => clearTransferFieldError('to_custodian_employee_id'));
+    transferMovementType?.addEventListener('change', () => clearTransferFieldError('movement_type'));
+    transferReason?.addEventListener('input', () => clearTransferFieldError('reason_code'));
+    transferRemarks?.addEventListener('input', () => clearTransferFieldError('remarks'));
+
+    turnoverEmployee?.addEventListener('change', () => clearTurnoverFieldError('employee_id'));
+    turnoverLocation?.addEventListener('change', () => clearTurnoverFieldError('stockroom_location_id'));
+    turnoverEffectiveAt?.addEventListener('change', () => clearTurnoverFieldError('effective_at'));
+    turnoverRemarks?.addEventListener('input', () => clearTurnoverFieldError('remarks'));
+
+    transferForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        if (!currentRecord?.property_no) {
+            clearTransferFieldErrors();
+            setTransferError('Open a record first before submitting movement.');
+            return;
+        }
+
+        clearTransferFieldErrors();
+        setTransferError('');
+        setTransferLoading(true);
+
+        try {
+            const transferUrl = "{{ route('pqs.movements.transfer', ['pqsRecord' => '__PROPERTY__']) }}".replace('__PROPERTY__', encodeURIComponent(currentRecord.property_no));
+
+            const payload = {
+                movement_type: transferMovementType?.value || 'transfer',
+                to_location_id: transferLocation?.value || null,
+                to_custodian_employee_id: transferCustodian?.value || null,
+                to_division_id: transferDivision?.value || null,
+                to_section_id: transferSection?.value || null,
+                reason_code: transferReason?.value?.trim() || null,
+                remarks: transferRemarks?.value?.trim() || null,
+            };
+
+            const response = await fetch(transferUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (data?.errors) {
+                    setTransferFieldErrors(data.errors);
+                }
+                const validationMessage = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to save movement.';
+                throw new Error(validationMessage);
+            }
+
+            if (currentShowUrl) {
+                await fetchAndPopulateRecord(currentShowUrl);
+            }
+
+            fetchRecords();
+        } catch (error) {
+            setTransferError(error?.message || 'Unable to save movement right now.');
+        } finally {
+            setTransferLoading(false);
+        }
+    });
+
+    turnoverForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        clearTurnoverFieldErrors();
+        setTurnoverError('');
+        setTurnoverSuccess('');
+        setTurnoverLoading(true);
+
+        try {
+            const turnoverUrl = "{{ route('pqs.movements.turnover') }}";
+
+            const payload = {
+                employee_id: turnoverEmployee?.value || null,
+                stockroom_location_id: turnoverLocation?.value || null,
+                effective_at: turnoverEffectiveAt?.value || null,
+                remarks: turnoverRemarks?.value?.trim() || null,
+            };
+
+            const response = await fetch(turnoverUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                if (data?.errors) {
+                    setTurnoverFieldErrors(data.errors);
+                }
+                const validationMessage = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to process turnover.';
+                throw new Error(validationMessage);
+            }
+
+            setTurnoverSuccess(data?.message || 'Employee asset turnover completed successfully.');
+            turnoverForm?.reset();
+
+            if (currentShowUrl) {
+                await fetchAndPopulateRecord(currentShowUrl);
+            }
+
+            fetchRecords();
+        } catch (error) {
+            setTurnoverError(error?.message || 'Unable to process turnover right now.');
+        } finally {
+            setTurnoverLoading(false);
+        }
+    });
+
+    const loadReconciliationSummary = async () => {
+        if (!reconcileEndpoint) {
+            return;
+        }
+
+        try {
+            recTopLocations && (recTopLocations.innerHTML = '<li class="text-gray-400 italic">Loading summary...</li>');
+
+            const response = await fetch(reconcileEndpoint, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load reconciliation summary.');
+            }
+
+            const payload = await response.json();
+            const totals = payload?.data?.totals || {};
+            const byLocation = payload?.data?.breakdown?.by_location || [];
+
+            recAssets && (recAssets.textContent = Number(totals.assets || 0).toLocaleString('en-PH'));
+            recActive && (recActive.textContent = Number(totals.active || 0).toLocaleString('en-PH'));
+            recRepair && (recRepair.textContent = Number(totals.for_repair || 0).toLocaleString('en-PH'));
+            recUnlocated && (recUnlocated.textContent = Number(totals.unlocated || 0).toLocaleString('en-PH'));
+            recStale && (recStale.textContent = Number(totals.stale_inventory || 0).toLocaleString('en-PH'));
+
+            if (recTopLocations) {
+                if (!Array.isArray(byLocation) || byLocation.length === 0) {
+                    recTopLocations.innerHTML = '<li class="text-gray-400 italic">No location distribution yet.</li>';
+                } else {
+                    recTopLocations.innerHTML = byLocation.slice(0, 4).map((item) => {
+                        const label = item.location_name || 'Unassigned';
+                        const total = Number(item.total || 0).toLocaleString('en-PH');
+                        return `<li class="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"><span class="truncate pr-3">${escapeHtml(label)}</span><span class="font-semibold text-[#1a3a2d]">${total}</span></li>`;
+                    }).join('');
+                }
+            }
+        } catch (error) {
+            recTopLocations && (recTopLocations.innerHTML = '<li class="text-rose-600 text-xs">Unable to load summary.</li>');
+        }
+    };
+
+    recRefresh?.addEventListener('click', loadReconciliationSummary);
+    loadReconciliationSummary();
 })();
 
 // PDF and Excel Export Handlers

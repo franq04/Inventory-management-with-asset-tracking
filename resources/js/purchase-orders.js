@@ -1,4 +1,7 @@
 import $ from 'jquery';
+import { openConfirmModal as sharedOpenConfirmModal } from './purchase-requests-shared.js';
+
+const purchaseOrderPipelineSelector = '#purchaseOrderPipelineSection';
 
 const csrfToken = () => $('meta[name="csrf-token"]').attr('content');
 
@@ -41,7 +44,7 @@ const ensureToast = () => {
 
     toast = document.createElement('div');
     toast.id = 'pqs-global-toast';
-    toast.className = 'fixed bottom-6 right-6 z-[90] hidden max-w-sm rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg';
+    toast.className = 'pointer-events-none fixed top-20 right-4 sm:right-6 z-[100] hidden min-w-[250px] max-w-md rounded-xl border border-[#2d5a4a] bg-[#1a3a2d] px-5 py-4 text-sm font-semibold text-white shadow-2xl opacity-0 transition-all duration-300';
     document.body.appendChild(toast);
     return toast;
 };
@@ -49,13 +52,21 @@ const ensureToast = () => {
 const showToast = (message, type = 'error') => {
     const toast = ensureToast();
     toast.textContent = message;
-    toast.classList.remove('hidden', 'bg-rose-600', 'bg-emerald-600', 'bg-amber-600');
-    toast.classList.add(type === 'success' ? 'bg-emerald-600' : type === 'warning' ? 'bg-amber-600' : 'bg-rose-600');
+    toast.classList.remove('hidden', 'opacity-0', 'border-[#2d5a4a]', 'bg-[#1a3a2d]', 'border-rose-700', 'bg-rose-700', 'border-amber-700', 'bg-amber-600');
+
+    if (type === 'success') {
+        toast.classList.add('border-[#2d5a4a]', 'bg-[#1a3a2d]');
+    } else if (type === 'warning') {
+        toast.classList.add('border-amber-700', 'bg-amber-600');
+    } else {
+        toast.classList.add('border-rose-700', 'bg-rose-700');
+    }
 
     window.clearTimeout(showToast._timer);
     showToast._timer = window.setTimeout(() => {
-        toast.classList.add('hidden');
-    }, 2600);
+        toast.classList.add('opacity-0');
+        window.setTimeout(() => toast.classList.add('hidden'), 300);
+    }, 5000);
 };
 
 const fulfillmentMeta = {
@@ -113,13 +124,17 @@ const bindPoDetailsModal = () => {
         if (open) {
             $modal.removeClass('hidden');
             requestAnimationFrame(() => {
-                $modal.removeClass('opacity-0');
-                $panel.removeClass('opacity-0 scale-95 translate-y-2');
+                requestAnimationFrame(() => {
+                    $modal.removeClass('opacity-0');
+                    $panel.removeClass('opacity-0 scale-95 translate-y-2');
+                });
             });
+            document.body.classList.add('overflow-hidden');
         } else {
             $modal.addClass('opacity-0');
             $panel.addClass('opacity-0 scale-95 translate-y-2');
-            setTimeout(() => $modal.addClass('hidden'), 250);
+            setTimeout(() => $modal.addClass('hidden'), 300);
+            document.body.classList.remove('overflow-hidden');
         }
     };
 
@@ -238,6 +253,45 @@ const bindPoDetailsModal = () => {
             },
         });
     });
+};
+
+const syncPurchaseOrderOverviewHeaderFromParsed = ($parsed) => {
+    const copyText = (currentSelector, incomingSelector) => {
+        const $current = $(currentSelector).first();
+        const $incoming = $parsed.find(incomingSelector).first();
+        if ($current.length && $incoming.length) {
+            $current.text($incoming.text());
+        }
+    };
+
+    copyText('#purchaseOrderReadyCount', '#purchaseOrderReadyCount');
+    copyText('#purchaseOrderPipelineCount', '#purchaseOrderPipelineCount');
+    copyText('#purchaseOrderRegisterCount', '#purchaseOrderRegisterCount');
+
+    const $currentTabs = $('[data-po-overview-tab]');
+    $currentTabs.each(function () {
+        const tabKey = String($(this).data('po-overview-tab') || '').trim();
+        if (!tabKey) {
+            return;
+        }
+
+        const $incomingTab = $parsed.find(`[data-po-overview-tab="${tabKey}"]`).first();
+        const $currentCount = $(this).find('.po-overview-tab-count').first();
+        const $incomingCount = $incomingTab.find('.po-overview-tab-count').first();
+
+        if ($currentCount.length && $incomingCount.length) {
+            $currentCount.text($incomingCount.text());
+        }
+    });
+
+    const $currentLabel = $('[data-po-overview-label]').first();
+    const $activeIncomingTab = $parsed.find('[data-po-overview-tab].is-selected').first();
+    if ($currentLabel.length && $activeIncomingTab.length) {
+        const labelText = $activeIncomingTab.find('span').first().text().trim();
+        if (labelText) {
+            $currentLabel.text(labelText);
+        }
+    }
 };
 
 const bindPurchaseOrderForm = () => {
@@ -496,6 +550,7 @@ const bindPurchaseOrderForm = () => {
     $form.on('submit', function (event) {
         event.preventDefault();
         $errors.addClass('hidden').empty();
+
         const submitBtn = $form.find('button[type="submit"]');
         submitBtn.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
 
@@ -505,14 +560,20 @@ const bindPurchaseOrderForm = () => {
             data: $form.serialize(),
             headers: { 'X-CSRF-TOKEN': csrfToken() },
             success: (response) => {
-                softNavigate(response.redirect || config.redirectUrl || '/custodian/purchase-orders');
+                showToast(response?.message || 'Purchase order generated successfully.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(response.redirect || config.redirectUrl || '/custodian/purchase-orders');
+                }, 500);
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
                     const messages = Object.values(xhr.responseJSON.errors).flat();
                     $errors.html(messages.map((msg) => `<div>${msg}</div>`).join('')).removeClass('hidden');
+                    showToast(messages[0] || 'Please check the highlighted fields.', 'error');
                 } else {
-                    $errors.text('An unexpected error occurred. Please try again.').removeClass('hidden');
+                    const message = xhr.responseJSON?.message || 'An unexpected error occurred. Please try again.';
+                    $errors.text(message).removeClass('hidden');
+                    showToast(message, 'error');
                 }
             },
             complete: () => {
@@ -520,7 +581,9 @@ const bindPurchaseOrderForm = () => {
             },
         });
     });
+
 };
+
 
 const togglePartialItemFields = ($form) => {
     const status = $form.find('.js-item-status').val();
@@ -556,8 +619,7 @@ const bindPartialOrderActions = () => {
     });
 
     $container.on('change', '.js-item-status', function () {
-        const $form = $(this).closest('form');
-        togglePartialItemFields($form);
+        togglePartialItemFields($(this).closest('form'));
     });
 
     $container.on('submit', '.js-update-po-item', function (event) {
@@ -579,15 +641,18 @@ const bindPartialOrderActions = () => {
                 'X-CSRF-TOKEN': csrfToken(),
                 'X-HTTP-Method-Override': 'PATCH',
             },
-            success: () => {
-                softNavigate(window.location.href, { replace: true });
+            success: (response) => {
+                showToast(response?.message || 'Item updated successfully.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(window.location.href, { replace: true });
+                }, 350);
             },
             error: (xhr) => {
                 let message = 'Unable to update this item. Please try again.';
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
                     message = Object.values(xhr.responseJSON.errors).flat().join('\n');
                 }
-                showToast(message);
+                showToast(message, 'error');
             },
             complete: () => {
                 $submitBtn.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -608,12 +673,15 @@ const bindPartialOrderActions = () => {
             method: 'POST',
             url,
             data: { _token: csrfToken() },
-            success: () => {
-                softNavigate(window.location.href, { replace: true });
+            success: (response) => {
+                showToast(response?.message || 'Original item retained successfully.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(window.location.href, { replace: true });
+                }, 350);
             },
             error: (xhr) => {
                 const message = xhr.responseJSON?.message || 'Unable to retain the original item right now.';
-                showToast(message);
+                showToast(message, 'error');
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -621,16 +689,109 @@ const bindPartialOrderActions = () => {
         });
     });
 };
+const applyPurchaseOrderPageSnapshot = (html) => {
+    const $parsed = $('<div>').append($.parseHTML(html, document, true));
+    syncPurchaseOrderOverviewHeaderFromParsed($parsed);
+
+    const $pipelineCurrent = $(purchaseOrderPipelineSelector).first();
+    const $pipelineIncoming = $parsed.find(purchaseOrderPipelineSelector).first();
+    const $registerCurrent = $('#purchaseOrderRegisterSection').first();
+    const $registerIncoming = $parsed.find('#purchaseOrderRegisterSection').first();
+
+    if ($pipelineCurrent.length && $pipelineIncoming.length) {
+        const activeTab = $pipelineCurrent.find('.pipeline-tab.is-selected').data('tab') || $pipelineCurrent.find('.pipeline-tab').first().data('tab') || null;
+        const searchValue = $pipelineCurrent.find('input[type="search"]').val() || '';
+
+        $pipelineIncoming.addClass('opacity-0 translate-y-1');
+        $pipelineCurrent.replaceWith($pipelineIncoming);
+
+        const $newPipelineSection = $(purchaseOrderPipelineSelector).first();
+        if (activeTab) {
+            $newPipelineSection.find('.pipeline-tab').each(function () {
+                const $tab = $(this);
+                const isActive = String($tab.data('tab')) === String(activeTab);
+                $tab.toggleClass('bg-[#1a3a2d] text-white shadow-lg shadow-[#1a3a2d]/30 border-[#1a3a2d]', isActive);
+                $tab.toggleClass('border-gray-200 bg-[#fbfcfb] text-gray-600 hover:bg-gray-100 hover:border-gray-300', !isActive);
+            });
+
+            $newPipelineSection.find('.pipeline-panel').addClass('hidden');
+            $newPipelineSection.find(`.pipeline-panel[data-panel="${activeTab}"]`).removeClass('hidden');
+        }
+
+        const $search = $newPipelineSection.find('input[type="search"]').first();
+        if ($search.length) {
+            $search.val(searchValue);
+        }
+
+        bindPartialOrderActions();
+        bindReceiveItemActions();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $newPipelineSection.removeClass('opacity-0 translate-y-1');
+            });
+        });
+    }
+
+    if ($registerCurrent.length && $registerIncoming.length) {
+        const searchValue = $registerCurrent.find('input[type="search"]').val() || '';
+
+        $registerIncoming.addClass('opacity-0 translate-y-1');
+        $registerCurrent.replaceWith($registerIncoming);
+
+        const $newRegisterSection = $('#purchaseOrderRegisterSection').first();
+        const $search = $newRegisterSection.find('input[type="search"]').first();
+        if ($search.length) {
+            $search.val(searchValue);
+        }
+
+        bindPurchaseOrderRegisterPagination();
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                $newRegisterSection.removeClass('opacity-0 translate-y-1');
+            });
+        });
+    }
+};
+
+const refreshPurchaseOrderSections = () => {
+    const $pipelineSection = $(purchaseOrderPipelineSelector);
+    const $registerSection = $('#purchaseOrderRegisterSection');
+
+    if (! $pipelineSection.length && ! $registerSection.length) {
+        return;
+    }
+
+    $.ajax({
+        method: 'GET',
+        url: window.location.href,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            Accept: 'text/html',
+        },
+        success: (html) => {
+            applyPurchaseOrderPageSnapshot(html);
+        },
+    });
+};
 
 const bindAcceptPoActions = () => {
-    $('#purchaseOrderPipeline').on('click', '.js-accept-po', function () {
+    $(purchaseOrderPipelineSelector).on('click', '.js-accept-po', async function () {
         const $button = $(this);
         const url = $button.data('accept-url');
         if (!url) {
             return;
         }
 
-        if (!confirm('Are you sure you want to accept this purchase order and send it to the supplier?')) {
+        const confirmed = await sharedOpenConfirmModal({
+            title: 'Accept Purchase Order',
+            message: 'Are you sure you want to accept this purchase order and send it to the supplier?',
+            confirmLabel: 'Accept PO',
+            tone: 'success',
+        });
+
+        if (!confirmed) {
             return;
         }
 
@@ -640,15 +801,18 @@ const bindAcceptPoActions = () => {
             method: 'POST',
             url,
             data: { _token: csrfToken() },
-            success: () => {
-                softNavigate(window.location.href, { replace: true });
+            success: (response) => {
+                showToast(response?.message || 'Purchase order accepted successfully.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(window.location.href, { replace: true });
+                }, 350);
             },
             error: (xhr) => {
                 let message = 'Unable to accept this purchase order. Please try again.';
                 if (xhr.status === 422 && xhr.responseJSON?.message) {
                     message = xhr.responseJSON.message;
                 }
-                showToast(message);
+                showToast(message, 'error');
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -658,12 +822,12 @@ const bindAcceptPoActions = () => {
 };
 
 const bindReceiveItemActions = () => {
-    const $container = $('#purchaseOrderPipeline');
+    const $container = $(purchaseOrderPipelineSelector);
     if (!$container.length) {
         return;
     }
 
-    $container.on('submit', '.js-receive-item', function (event) {
+    $container.on('submit', '.js-receive-item', async function (event) {
         event.preventDefault();
 
         const $form = $(this);
@@ -672,7 +836,14 @@ const bindReceiveItemActions = () => {
             return;
         }
 
-        if (!confirm('Mark this item as received?')) {
+        const confirmed = await sharedOpenConfirmModal({
+            title: 'Mark Item as Received',
+            message: 'Mark this item as received?',
+            confirmLabel: 'Mark Received',
+            tone: 'success',
+        });
+
+        if (!confirmed) {
             return;
         }
 
@@ -683,12 +854,15 @@ const bindReceiveItemActions = () => {
             method: 'POST',
             url,
             data: $form.serialize(),
-            success: () => {
-                softNavigate(window.location.href, { replace: true });
+            success: (response) => {
+                showToast(response?.message || 'Item marked as received successfully.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(window.location.href, { replace: true });
+                }, 350);
             },
             error: (xhr) => {
                 const message = xhr.responseJSON?.message || 'Unable to mark this item as received right now.';
-                showToast(message);
+                showToast(message, 'error');
             },
             complete: () => {
                 $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
@@ -987,6 +1161,41 @@ const bindPurchaseOrderRegisterPagination = () => {
     }
 };
 
+const setupPurchaseOrderPipelineAutoRefresh = () => {
+    if (window.__purchaseOrderPipelineAutoRefreshTimer) {
+        return;
+    }
+
+    const hasOpenModal = () => {
+        const modalSelectors = [
+            '#poDetailsModal',
+            '#custodianPrModal',
+            '#purchaseOrderFormModal',
+        ];
+
+        return modalSelectors.some((selector) => {
+            const $modal = $(selector);
+            return $modal.length > 0 && !$modal.hasClass('hidden');
+        });
+    };
+
+    window.__purchaseOrderPipelineAutoRefreshTimer = window.setInterval(() => {
+        if (document.hidden) {
+            return;
+        }
+
+        if (!$(purchaseOrderPipelineSelector).length) {
+            return;
+        }
+
+        if (hasOpenModal()) {
+            return;
+        }
+
+        refreshPurchaseOrderSections();
+    }, 30000);
+};
+
 $(() => {
     bindPoDetailsModal();
     bindCustodianRequestViewFallback();
@@ -995,4 +1204,5 @@ $(() => {
     bindPartialOrderActions();
     bindAcceptPoActions();
     bindReceiveItemActions();
+    setupPurchaseOrderPipelineAutoRefresh();
 });

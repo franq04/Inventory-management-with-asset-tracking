@@ -3,7 +3,7 @@
 @section('title', 'Division Head - Purchase Requests')
 
 @section('content')
-<div class="space-y-6">
+<div id="divisionHeadQueuePage" class="space-y-6">
     {{-- Page Header --}}
     <div class="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -11,9 +11,19 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-[#1a3a2d]">Division Head - Purchase Requests</h1>
                 <p class="text-xs sm:text-sm text-gray-600 mt-1">Review and recommend purchase requests for your division.</p>
             </div>
-            <span class="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white">
-                <i class="fas fa-user-tie"></i> Division Head Access
-            </span>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+                    <span>Auto refresh</span>
+                    <span class="text-emerald-500/70">in</span>
+                    <span data-division-head-refresh-countdown>30s</span>
+                    <span class="hidden sm:inline text-emerald-500/70">|</span>
+                    <span class="hidden sm:inline text-emerald-600/80" data-division-head-refresh-status>updated just now</span>
+                </span>
+                <span class="hidden sm:inline-flex items-center gap-2 rounded-full bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white">
+                    <i class="fas fa-user-tie"></i> Division Head Access
+                </span>
+            </div>
         </div>
     </div>
 
@@ -42,6 +52,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             @foreach ($tabMeta as $key => $meta)
                 <a href="?tab={{ $key }}"
+                    data-division-head-tab-key="{{ $key }}"
                     class="group flex items-center justify-between rounded-xl border-2 p-4 transition-all duration-300
                            {{ $activeTab === $key 
                               ? 'border-' . $meta['color'] . '-500 bg-' . $meta['color'] . '-50 shadow-lg' 
@@ -57,7 +68,7 @@
                             </p>
                         </div>
                     </div>
-                    <span class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full 
+                    <span data-division-head-tab-count="{{ $key }}" class="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full 
                                  bg-{{ $meta['color'] }}-100 text-sm font-bold text-{{ $meta['color'] }}-700">
                         {{ $tabCounts[$key] ?? 0 }}
                     </span>
@@ -127,3 +138,7 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+@vite('resources/js/division-head-purchase-requests.js')
+@endpush

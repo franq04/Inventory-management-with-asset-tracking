@@ -314,7 +314,7 @@
 <div id="poDetailsModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" data-close-modal></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="modal-panel relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+        <div class="modal-panel relative bg-white w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             <div class="flex-shrink-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white shadow-md">
                 <div class="flex-1">
                     <h3 class="text-2xl font-bold tracking-tight">Purchase Order Details</h3>

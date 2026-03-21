@@ -12,6 +12,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Status;
 use App\Models\StatusHistory;
+use App\Support\PurchaseRequestStatusSynchronizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -255,6 +256,121 @@ class InspectionController extends Controller
                     'message' => "Item from inspection {$inspectionReportItem->ia_no} has been accepted and is ready for PQS recording.",
                     'type' => 'task',
                 ]);
+            }
+
+            $inspectionReportItem->loadMissing(['report.purchaseOrder.items', 'report.purchaseOrder.inspectionReports.items']);
+            $report = $inspectionReportItem->report;
+            $purchaseOrder = $report?->purchaseOrder;
+
+            if (! $purchaseOrder) {
+                return;
+            }
+
+            $latestInspectionItems = collect();
+            $purchaseOrder->inspectionReports
+                ->flatMap(function (InspectionReport $inspectionReport) {
+                    return $inspectionReport->items;
+                })
+                ->sortBy('ia_item_id')
+                ->each(function (InspectionReportItem $item) use ($latestInspectionItems) {
+                    $latestInspectionItems->put($item->po_item_id, $item);
+                });
+
+            $purchaseOrder->items->each(function (PurchaseOrderItem $item) use ($latestInspectionItems) {
+                /** @var InspectionReportItem|null $latest */
+                $latest = $latestInspectionItems->get($item->poi_id);
+
+                if (! $latest) {
+                    return;
+                }
+
+                $dirty = false;
+
+                if ($item->inspection_status_id !== $latest->inspection_status_id) {
+                    $item->inspection_status_id = $latest->inspection_status_id;
+                    $dirty = true;
+                }
+
+                if ($item->inspection_remarks !== $latest->inspection_remarks) {
+                    $item->inspection_remarks = $latest->inspection_remarks;
+                    $dirty = true;
+                }
+
+                if ($dirty) {
+                    $item->save();
+                }
+            });
+
+            $latestStatuses = $latestInspectionItems->pluck('inspection_status_id')->filter()->values()->all();
+
+            $normalizedStatuses = collect($latestStatuses)
+                ->map(fn ($status) => (int) $status)
+                ->map(fn ($status) => $status === Status::ITEM_RECORDED ? Status::ITEM_ACCEPTED : $status);
+
+            $reportOverallStatus = Status::ITEM_PENDING_INSPECTION;
+            if ($normalizedStatuses->isNotEmpty()) {
+                if ($normalizedStatuses->every(fn ($status) => $status === Status::ITEM_ACCEPTED)) {
+                    $reportOverallStatus = Status::ITEM_ACCEPTED;
+                } elseif ($normalizedStatuses->contains(Status::ITEM_DEFECTIVE)) {
+                    $reportOverallStatus = Status::ITEM_DEFECTIVE;
+                } elseif ($normalizedStatuses->contains(Status::ITEM_RETURNED)) {
+                    $reportOverallStatus = Status::ITEM_RETURNED;
+                } elseif ($normalizedStatuses->contains(Status::ITEM_REPLACED)) {
+                    $reportOverallStatus = Status::ITEM_REPLACED;
+                }
+            }
+
+            if ($report && $report->overall_status_id !== $reportOverallStatus) {
+                $previousReportStatus = $report->overall_status_id ?? Status::ITEM_PENDING_INSPECTION;
+                $report->update([
+                    'accepted_by' => $accountId,
+                    'accepted_date' => $now->toDateString(),
+                    'overall_status_id' => $reportOverallStatus,
+                ]);
+
+                StatusHistory::create([
+                    'table_name' => 'inspection_acceptance',
+                    'record_id' => $report->ia_no,
+                    'old_status_id' => $previousReportStatus,
+                    'new_status_id' => $reportOverallStatus,
+                    'changed_by' => $accountId,
+                    'remarks' => 'Inspection report reconciled after acceptance.',
+                    'changed_at' => $now,
+                ]);
+            }
+
+            $previousOrderStatus = $purchaseOrder->status_id;
+            $orderStatus = Status::PO_DELIVERED_PENDING_INSPECTION;
+
+            if ($normalizedStatuses->isEmpty()) {
+                $orderStatus = Status::PO_DELIVERED_PENDING_INSPECTION;
+            } elseif ($normalizedStatuses->contains(Status::ITEM_PENDING_INSPECTION)) {
+                $orderStatus = Status::PO_DELIVERED_PENDING_INSPECTION;
+            } elseif ($normalizedStatuses->every(fn ($status) => in_array($status, [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED], true))) {
+                $orderStatus = Status::PO_CLOSED;
+            } else {
+                $orderStatus = Status::PO_PARTIALLY_DELIVERED;
+            }
+
+            if ($previousOrderStatus !== $orderStatus) {
+                $purchaseOrder->status_id = $orderStatus;
+                $purchaseOrder->save();
+
+                StatusHistory::create([
+                    'table_name' => 'purchase_orders',
+                    'record_id' => $purchaseOrder->po_no,
+                    'old_status_id' => $previousOrderStatus,
+                    'new_status_id' => $orderStatus,
+                    'changed_by' => $accountId,
+                    'remarks' => 'Inspection acceptance updated purchase order status.',
+                    'changed_at' => $now,
+                ]);
+
+                PurchaseRequestStatusSynchronizer::sync(
+                    $purchaseOrder,
+                    $accountId,
+                    sprintf('Inspection acceptance updated purchase order %s status.', $purchaseOrder->po_no)
+                );
             }
         });
 
