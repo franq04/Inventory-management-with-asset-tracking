@@ -54,4 +54,24 @@ class PqsRecordPolicy
         // Item must be accepted to create PQS
         return (int) $inspectionItem->inspection_status_id === Status::ITEM_ACCEPTED;
     }
+
+    /**
+     * Determine if the user can transfer an asset record.
+     */
+    public function transfer(Account $user, PqsRecord $pqsRecord): bool
+    {
+        if ($user->role !== 'custodian') {
+            return false;
+        }
+
+        return $pqsRecord->canBeTransferred();
+    }
+
+    /**
+     * Determine if the user can process a bulk turnover.
+     */
+    public function turnover(Account $user): bool
+    {
+        return $user->role === 'custodian';
+    }
 }

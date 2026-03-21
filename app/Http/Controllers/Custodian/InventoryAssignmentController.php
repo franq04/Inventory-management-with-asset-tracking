@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Custodian;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssetMovement;
 use App\Models\AuditLog;
 use App\Models\Category;
+use App\Models\Employee;
 use App\Models\IcsRecord;
 use App\Models\InspectionReportItem;
 use App\Models\Notification;
 use App\Models\ParRecord;
+use App\Models\PhysicalLocation;
 use App\Models\PqsRecord;
 use App\Models\Status;
 use App\Models\StatusHistory;
@@ -28,6 +31,34 @@ class InventoryAssignmentController extends Controller
     public function index(): View
     {
         $categories = Category::parentsWithChildren();
+        $locations = PhysicalLocation::query()
+            ->with('parent')
+            ->where('is_active', true)
+            ->orderBy('location_name')
+            ->get()
+            ->map(function (PhysicalLocation $location) {
+                $suffix = [];
+
+                if ($location->location_code) {
+                    $suffix[] = $location->location_code;
+                }
+
+                if ($location->parent?->location_name) {
+                    $suffix[] = $location->parent->location_name;
+                }
+
+                $label = $location->location_name;
+                if ($suffix) {
+                    $label .= ' ('.implode(' | ', $suffix).')';
+                }
+
+                return [
+                    'id' => $location->location_id,
+                    'name' => $location->location_name,
+                    'label' => $label,
+                ];
+            })
+            ->values();
 
         // Aggregate stats for the dashboard cards
         $totalAccepted = InspectionReportItem::query()
@@ -55,6 +86,7 @@ class InventoryAssignmentController extends Controller
 
         return view('custodian.inventory.index', [
             'categories' => $categories,
+            'locations' => $locations,
             'stats' => $stats,
         ]);
     }
@@ -221,6 +253,7 @@ class InventoryAssignmentController extends Controller
             'unit_cost' => ['required', 'numeric', 'min:0'],
             'date_acquired' => ['required', 'date'],
             'estimated_useful_life' => ['nullable', 'string', 'max:100'],
+            'initial_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
             'serial_numbers' => ['nullable', 'array'],
             'serial_numbers.*' => ['nullable', 'string', 'max:255'],
         ]);
@@ -295,12 +328,17 @@ class InventoryAssignmentController extends Controller
         $account = Auth::user();
         $purchaseRequest = $inspectionReportItem->purchaseOrderItem?->purchaseOrder?->purchaseRequest;
         $accountableOfficer = $purchaseRequest?->requester?->employee;
+        $accountableOfficer?->loadMissing('section');
         $accountableOfficerId = $accountableOfficer?->employee_id;
+        $assignedSectionId = $accountableOfficer?->section?->section_id;
+        $assignedDivisionId = $accountableOfficer?->section?->division_id;
+        $requestedLocationId = (int) $request->input('initial_location_id', 0) ?: null;
+        $initialLocationId = $requestedLocationId ?: $this->suggestLocationForEmployee($accountableOfficer);
 
         $dateAcquired = Carbon::parse($validated['date_acquired']);
         $year = (int) $dateAcquired->format('Y');
 
-        $result = DB::transaction(function () use ($inspectionReportItem, $parentCategory, $subCategory, $validated, $quantity, $unitCost, $totalCost, $account, $serialNumbers, $accountableOfficerId, $year) {
+        $result = DB::transaction(function () use ($inspectionReportItem, $parentCategory, $subCategory, $validated, $quantity, $unitCost, $totalCost, $account, $serialNumbers, $accountableOfficerId, $assignedSectionId, $assignedDivisionId, $initialLocationId, $year) {
             $reservedPropertyNumbers = [];
             $createdPropertyNumbers = [];
 
@@ -334,6 +372,27 @@ class InventoryAssignmentController extends Controller
                     'remarks' => $remarks,
                     'accountable_officer_id' => $accountableOfficerId,
                     'cat_id' => $subCategory->cat_id,
+                    'current_location_id' => $initialLocationId,
+                    'current_custodian_employee_id' => $accountableOfficerId,
+                    'assigned_division_id' => $assignedDivisionId,
+                    'assigned_section_id' => $assignedSectionId,
+                    'asset_status' => PqsRecord::STATUS_ACTIVE,
+                    'last_movement_at' => now(),
+                ]);
+
+                AssetMovement::create([
+                    'property_no' => $propertyNo,
+                    'to_location_id' => $initialLocationId,
+                    'to_custodian_employee_id' => $accountableOfficerId,
+                    'to_division_id' => $assignedDivisionId,
+                    'to_section_id' => $assignedSectionId,
+                    'movement_type' => 'initial_assignment',
+                    'reason_code' => 'inspection_recording',
+                    'effective_at' => now(),
+                    'recorded_by' => $account?->account_id,
+                    'source_table' => 'inspection_acceptance',
+                    'source_record_id' => $inspectionReportItem->ia_no,
+                    'remarks' => 'Initial assignment during PQS recording.',
                 ]);
 
                 if ($unitCost < 50000) {
@@ -487,6 +546,10 @@ class InventoryAssignmentController extends Controller
             return $base;
         }
 
+        $recommendedLocationId = $this->suggestLocationForEmployee($accountableOfficer);
+
+        $base['recommended_initial_location_id'] = $recommendedLocationId;
+
         $base['property_record'] = $propertyRecord ? [
             'property_no' => $propertyRecord->property_no,
             'description' => $propertyRecord->description,
@@ -500,6 +563,7 @@ class InventoryAssignmentController extends Controller
             'remarks' => $propertyRecord->remarks,
             'accountable_officer_id' => $propertyRecord->accountable_officer_id,
             'accountable_officer_name' => $propertyRecord->accountableOfficer?->full_name,
+            'current_location_id' => $propertyRecord->current_location_id,
         ] : null;
 
         if ($propertyRecord?->icsRecord) {
@@ -527,6 +591,45 @@ class InventoryAssignmentController extends Controller
         $base['purchase_request_account_id'] = $pr?->account_id;
 
         return $base;
+    }
+
+    protected function suggestLocationForEmployee(?Employee $employee): ?int
+    {
+        if (! $employee) {
+            return null;
+        }
+
+        $employee->loadMissing('section');
+        $sectionId = $employee->section_id ?: $employee->section?->section_id;
+        $divisionId = $employee->section?->division_id;
+
+        $baseQuery = PhysicalLocation::query()
+            ->where('is_active', true)
+            ->orderByRaw("CASE WHEN section_id IS NOT NULL THEN 0 WHEN division_id IS NOT NULL THEN 1 ELSE 2 END")
+            ->orderByRaw("CASE location_type WHEN 'room' THEN 0 WHEN 'storage' THEN 1 WHEN 'floor' THEN 2 WHEN 'building' THEN 3 ELSE 4 END")
+            ->orderBy('location_name');
+
+        if ($sectionId) {
+            $sectionLocation = (clone $baseQuery)
+                ->where('section_id', $sectionId)
+                ->first();
+
+            if ($sectionLocation) {
+                return (int) $sectionLocation->location_id;
+            }
+        }
+
+        if ($divisionId) {
+            $divisionLocation = (clone $baseQuery)
+                ->where('division_id', $divisionId)
+                ->first();
+
+            if ($divisionLocation) {
+                return (int) $divisionLocation->location_id;
+            }
+        }
+
+        return null;
     }
 
     protected function generatePropertyNumber(string $categoryId, string $subCategoryId, int $year, array $reservedNumbers = []): string

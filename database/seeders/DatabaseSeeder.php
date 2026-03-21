@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             StatusSeeder::class,
             DivisionSectionPositionSeeder::class,
             RoleAccountsSeeder::class,
+            PhysicalLocationSeeder::class,
         ]);
     }
 }

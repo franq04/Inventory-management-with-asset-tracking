@@ -1,4 +1,4 @@
-<div id="bacPrToast" class="fixed bottom-6 right-6 hidden px-5 py-3 rounded-xl shadow-lg text-white bg-[#1a3a2d] text-sm font-semibold"></div>
+<div id="bacPrToast" class="pointer-events-none fixed top-20 right-4 sm:right-6 z-[100] hidden min-w-[250px] max-w-md rounded-xl border border-[#2d5a4a] bg-[#1a3a2d] px-5 py-4 text-sm font-semibold text-white shadow-2xl opacity-0 transition-all duration-300"></div>
 
 <div id="bacPrModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300" aria-labelledby="bacPrModalTitle" role="dialog" aria-modal="true">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>
@@ -9,7 +9,7 @@
                     <h3 id="bacPrModalTitle" class="text-2xl font-bold tracking-tight">BAC Purchase Request Review</h3>
                     <p class="text-sm text-white/90 mt-1" id="bacPrNumber"></p>
                 </div>
-                <button class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all" data-close-modal>
+                <button class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all" data-close-modal data-focus>
                     <i class="fas fa-times text-xl"></i>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -181,6 +181,8 @@
                         <textarea id="bacRemarks" rows="3" class="w-full border-2 border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#1a3a2d] focus:border-transparent transition-all resize-y" placeholder="Optional notes..."></textarea>
                     </div>
 
+                    <div id="bacActionStateNote" class="hidden mb-4 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700"></div>
+
                     {{-- Error Display Area --}}
                     <div id="bacModalError" class="hidden mb-4 p-4 bg-rose-50 border-l-4 border-rose-500 rounded-lg">
                         <div class="flex items-start gap-3">
@@ -193,17 +195,17 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3">
-                        <button type="button" id="bacBtnMoveToReview" data-loading-on-click="true" data-loading-text="Moving to approval..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnMoveToReview" data-no-global-loading="true" data-loading-on-click="true" data-loading-text="Moving to approval..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-amber-500 text-white font-semibold text-sm hover:bg-amber-600 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-clipboard-check"></i>
                             Move to For Approval
                         </button>
                         
-                        <button type="button" id="bacBtnApprove" data-loading-on-click="true" data-loading-text="Approving..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnApprove" data-no-global-loading="true" data-loading-on-click="true" data-loading-text="Approving..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-emerald-600 text-white font-semibold text-sm hover:bg-emerald-700 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-check-circle"></i>
                             Approve
                         </button>
                         
-                        <button type="button" id="bacBtnCancel" data-loading-on-click="true" data-loading-text="Canceling request..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-semibold text-sm hover:bg-rose-700 transition-all shadow-md hover:shadow-lg">
+                        <button type="button" id="bacBtnCancel" data-no-global-loading="true" data-loading-on-click="true" data-loading-text="Canceling request..." class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-rose-600 text-white font-semibold text-sm hover:bg-rose-700 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-times-circle"></i>
                             Cancel Request
                         </button>
@@ -302,6 +304,36 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<div id="bacActionConfirmModal" class="fixed inset-0 z-[70] hidden opacity-0 transition-opacity duration-300" aria-labelledby="bacActionConfirmTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-action-confirm></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2 confirm-panel">
+            <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                <div id="bacActionConfirmIcon" class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <i class="fas fa-circle-exclamation"></i>
+                </div>
+                <div>
+                    <h4 id="bacActionConfirmTitle" class="text-base font-bold text-[#1a3a2d]">Confirm Action</h4>
+                    <p class="text-xs text-gray-500">Please review before proceeding.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-4">
+                <p id="bacActionConfirmMessage" class="text-sm text-gray-700">Are you sure you want to continue?</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <button type="button" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-close-action-confirm data-confirm-no>
+                    Cancel
+                </button>
+                <button type="button" id="bacActionConfirmYes" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600" data-confirm-yes>
+                    Confirm
+                </button>
+            </div>
         </div>
     </div>
 </div>

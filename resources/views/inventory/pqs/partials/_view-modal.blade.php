@@ -389,6 +389,175 @@
                                 <p id="pqsViewRemarks" class="mt-3 text-sm text-gray-700">No additional remarks recorded.</p>
                             </div>
                         </section>
+
+                        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Current Assignment</h4>
+                                <div class="mt-3 space-y-2 text-sm text-gray-700">
+                                    <p><span class="font-semibold text-gray-500">Location:</span> <span id="pqsViewCurrentLocation">Unassigned</span></p>
+                                    <p><span class="font-semibold text-gray-500">Custodian:</span> <span id="pqsViewCurrentCustodian">Unassigned</span></p>
+                                    <p><span class="font-semibold text-gray-500">Division:</span> <span id="pqsViewCurrentDivision">Unassigned</span></p>
+                                    <p><span class="font-semibold text-gray-500">Section:</span> <span id="pqsViewCurrentSection">Unassigned</span></p>
+                                    <p><span class="font-semibold text-gray-500">Last Movement:</span> <span id="pqsViewLastMovement">—</span></p>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                                <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Transfer Asset</h4>
+                                <form id="pqsTransferForm" class="mt-3 space-y-3">
+                                    <div>
+                                        <label for="pqsTransferMovementType" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Movement Type</label>
+                                        <select id="pqsTransferMovementType" name="movement_type" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                            <option value="transfer">Transfer</option>
+                                            <option value="relocation">Relocation</option>
+                                            <option value="inventory_correction">Inventory Correction</option>
+                                            <option value="maintenance_out">Maintenance Out</option>
+                                            <option value="maintenance_in">Maintenance In</option>
+                                        </select>
+                                        <p data-transfer-error-for="movement_type" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+
+                                    <div>
+                                        <label for="pqsTransferLocation" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Target Location</label>
+                                        <select id="pqsTransferLocation" name="to_location_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                            <option value="">Keep current</option>
+                                            @foreach($transferLocations as $location)
+                                                <option value="{{ $location->location_id }}" data-division-id="{{ $location->division_id }}" data-section-id="{{ $location->section_id }}">
+                                                    {{ $location->location_name }}{{ $location->location_code ? ' ('.$location->location_code.')' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p data-transfer-error-for="to_location_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+
+                                    <div>
+                                        <label for="pqsTransferCustodian" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Target Custodian</label>
+                                        <select id="pqsTransferCustodian" name="to_custodian_employee_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                            <option value="">Keep current</option>
+                                            @foreach($transferCustodians as $custodian)
+                                                <option value="{{ $custodian->employee_id }}">
+                                                    {{ $custodian->full_name }} ({{ $custodian->employee_id }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p data-transfer-error-for="to_custodian_employee_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div>
+                                            <label for="pqsTransferDivision" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Target Division</label>
+                                            <select id="pqsTransferDivision" name="to_division_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                                <option value="">Keep current</option>
+                                                @foreach($transferDivisions as $division)
+                                                    <option value="{{ $division->division_id }}">{{ $division->division_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <p data-transfer-error-for="to_division_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                        </div>
+                                        <div>
+                                            <label for="pqsTransferSection" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Target Section</label>
+                                            <select id="pqsTransferSection" name="to_section_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                                <option value="">Keep current</option>
+                                                @foreach($transferSections as $section)
+                                                    <option value="{{ $section->section_id }}" data-division-id="{{ $section->division_id }}">{{ $section->section_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <p data-transfer-error-for="to_section_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label for="pqsTransferReason" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Reason Code</label>
+                                        <input id="pqsTransferReason" name="reason_code" type="text" maxlength="100" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="optional reason code">
+                                        <p data-transfer-error-for="reason_code" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+
+                                    <div>
+                                        <label for="pqsTransferRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks</label>
+                                        <textarea id="pqsTransferRemarks" name="remarks" rows="2" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="optional notes"></textarea>
+                                        <p data-transfer-error-for="remarks" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+
+                                    <div id="pqsTransferError" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"></div>
+
+                                    <button id="pqsTransferSubmit" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#285641]">
+                                        <i class="fas fa-random"></i>
+                                        Save Movement
+                                    </button>
+                                </form>
+                            </div>
+                        </section>
+
+                        <section class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h4 class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Bulk Employee Turnover</h4>
+                                    <p class="mt-2 text-sm text-gray-600">Use this when an employee resigns and their assigned assets must be moved to the stockroom.</p>
+                                </div>
+                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                                    Storage only
+                                </span>
+                            </div>
+
+                            <div id="pqsTurnoverSuccess" class="hidden mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700"></div>
+
+                            <form id="pqsTurnoverForm" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <div>
+                                    <label for="pqsTurnoverEmployee" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Resigning Employee</label>
+                                    <select id="pqsTurnoverEmployee" name="employee_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                        <option value="">Select employee</option>
+                                        @foreach($turnoverEmployees as $employee)
+                                            <option value="{{ $employee->employee_id }}">
+                                                {{ $employee->full_name }} ({{ $employee->employee_id }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <p data-turnover-error-for="employee_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                </div>
+
+                                <div>
+                                    <label for="pqsTurnoverLocation" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Stockroom Location</label>
+                                    <select id="pqsTurnoverLocation" name="stockroom_location_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                        <option value="">Select stockroom</option>
+                                        @foreach($turnoverLocations as $location)
+                                            <option value="{{ $location->location_id }}">
+                                                {{ $location->location_name }}{{ $location->location_code ? ' ('.$location->location_code.')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <p data-turnover-error-for="stockroom_location_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                </div>
+
+                                <div>
+                                    <label for="pqsTurnoverEffectiveAt" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Effective Date</label>
+                                    <input id="pqsTurnoverEffectiveAt" name="effective_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                    <p data-turnover-error-for="effective_at" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                </div>
+
+                                <div>
+                                    <label for="pqsTurnoverRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks</label>
+                                    <textarea id="pqsTurnoverRemarks" name="remarks" rows="3" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Optional turnover notes"></textarea>
+                                    <p data-turnover-error-for="remarks" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                </div>
+
+                                <div id="pqsTurnoverError" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 md:col-span-2"></div>
+
+                                <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+                                    <button id="pqsTurnoverSubmit" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                                        <i class="fas fa-people-arrows"></i>
+                                        Process Turnover
+                                    </button>
+                                    <p class="text-xs text-gray-500">This will move all selected employee assets to the chosen stockroom and clear custody in one transaction.</p>
+                                </div>
+                            </form>
+                        </section>
+
+                        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                            <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Movement Timeline</h4>
+                            <div id="pqsMovementTimeline" class="mt-3 space-y-3 text-sm text-gray-700">
+                                <p class="text-gray-400 italic">No movement records yet.</p>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>

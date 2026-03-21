@@ -1,4 +1,4 @@
-<div id="custodianPrToast" class="fixed bottom-6 right-6 hidden px-5 py-3 rounded-xl shadow-lg text-white bg-[#1a3a2d] text-sm font-semibold"></div>
+<div id="custodianPrToast" class="pointer-events-none fixed top-20 right-4 sm:right-6 z-[100] hidden min-w-[250px] max-w-md rounded-xl border border-[#2d5a4a] bg-[#1a3a2d] px-5 py-4 text-sm font-semibold text-white shadow-2xl opacity-0 transition-all duration-300"></div>
 
 <div id="custodianPrModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300" aria-labelledby="custodianPrModalTitle" role="dialog" aria-modal="true">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>

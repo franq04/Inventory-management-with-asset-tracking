@@ -172,15 +172,159 @@
 
 @push('scripts')
 <script>
-function acceptItem(itemId) {
-    if (confirm('Accept this item?')) {
+function ensureInspectionConfirmModal() {
+    let modal = document.getElementById('inspectionActionConfirmModal');
+    if (modal) {
+        return modal;
+    }
+
+    modal = document.createElement('div');
+    modal.id = 'inspectionActionConfirmModal';
+    modal.className = 'fixed inset-0 z-[120] hidden opacity-0 transition-opacity duration-300';
+    modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-inspection-confirm-close></div>
+        <div class="relative flex min-h-screen items-center justify-center p-4">
+            <div class="inspection-confirm-panel w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+                <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                    <div id="inspectionConfirmIcon" class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                        <i class="fas fa-circle-exclamation"></i>
+                    </div>
+                    <div>
+                        <h4 id="inspectionConfirmTitle" class="text-base font-bold text-[#1a3a2d]">Confirm Action</h4>
+                        <p class="text-xs text-gray-500">Please review before proceeding.</p>
+                    </div>
+                </div>
+                <div class="px-5 py-4">
+                    <p id="inspectionConfirmMessage" class="text-sm text-gray-700">Are you sure you want to continue?</p>
+                </div>
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                    <button type="button" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-inspection-confirm-close>
+                        Cancel
+                    </button>
+                    <button type="button" id="inspectionConfirmYes" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function openInspectionConfirmModal(options) {
+    const {
+        title = 'Confirm Action',
+        message = 'Are you sure you want to continue?',
+        confirmLabel = 'Confirm',
+        tone = 'warning',
+    } = options || {};
+
+    const modal = ensureInspectionConfirmModal();
+    const panel = modal.querySelector('.inspection-confirm-panel');
+    const icon = modal.querySelector('#inspectionConfirmIcon');
+    const titleNode = modal.querySelector('#inspectionConfirmTitle');
+    const messageNode = modal.querySelector('#inspectionConfirmMessage');
+    const confirmButton = modal.querySelector('#inspectionConfirmYes');
+    const closeTargets = modal.querySelectorAll('[data-inspection-confirm-close]');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    titleNode.textContent = title;
+    messageNode.textContent = message;
+    confirmButton.textContent = confirmLabel;
+
+    icon.className = 'flex h-10 w-10 items-center justify-center rounded-full';
+    confirmButton.className = 'rounded-xl px-4 py-2 text-sm font-semibold text-white transition';
+
+    if (tone === 'success') {
+        icon.classList.add('bg-emerald-100', 'text-emerald-700');
+        icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+        confirmButton.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+    } else if (tone === 'danger') {
+        icon.classList.add('bg-rose-100', 'text-rose-700');
+        icon.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        confirmButton.classList.add('bg-rose-600', 'hover:bg-rose-700');
+    } else {
+        icon.classList.add('bg-amber-100', 'text-amber-700');
+        icon.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
+        confirmButton.classList.add('bg-amber-500', 'hover:bg-amber-600');
+    }
+
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            panel.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            confirmButton.focus();
+        });
+    });
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const cleanup = () => {
+            closeTargets.forEach((target) => target.removeEventListener('click', onCancel));
+            confirmButton.removeEventListener('click', onConfirm);
+            document.removeEventListener('keydown', onKeydown);
+        };
+
+        const settle = (result) => {
+            if (settled) {
+                return;
+            }
+
+            settled = true;
+            cleanup();
+            modal.classList.add('opacity-0');
+            panel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+
+            window.setTimeout(() => {
+                modal.classList.add('hidden');
+                if (previousFocus) {
+                    previousFocus.focus();
+                }
+                resolve(result);
+            }, 220);
+        };
+
+        const onCancel = () => settle(false);
+        const onConfirm = () => settle(true);
+        const onKeydown = (event) => {
+            if (event.key === 'Escape') {
+                onCancel();
+            }
+        };
+
+        closeTargets.forEach((target) => target.addEventListener('click', onCancel));
+        confirmButton.addEventListener('click', onConfirm);
+        document.addEventListener('keydown', onKeydown);
+    });
+}
+
+async function acceptItem(itemId) {
+    const confirmed = await openInspectionConfirmModal({
+        title: 'Accept Item',
+        message: 'Accept this item?',
+        confirmLabel: 'Accept',
+        tone: 'success',
+    });
+
+    if (confirmed) {
         // TODO: Implement accept item functionality
         console.log('Accepting item:', itemId);
     }
 }
 
-function rejectItem(itemId) {
-    if (confirm('Reject this item as defective?')) {
+async function rejectItem(itemId) {
+    const confirmed = await openInspectionConfirmModal({
+        title: 'Reject Item',
+        message: 'Reject this item as defective?',
+        confirmLabel: 'Reject',
+        tone: 'danger',
+    });
+
+    if (confirmed) {
         // TODO: Implement reject item functionality
         console.log('Rejecting item:', itemId);
     }

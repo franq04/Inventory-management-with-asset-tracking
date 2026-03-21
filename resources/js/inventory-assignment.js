@@ -13,6 +13,7 @@ $(() => {
     const config = window.inventoryAssignmentConfig || {};
     const routes = config.routes || {};
     const categories = config.categories || [];
+    const locations = config.locations || [];
 
     const $itemsBody = $('#inventoryItemsBody');
     const $search = $('#inventorySearch');
@@ -46,6 +47,8 @@ $(() => {
     const $totalCostField = $('#inventoryTotalCost');
     const $dateAcquiredField = $('#inventoryDateAcquired');
     const $usefulLifeField = $('#inventoryUsefulLife');
+    const $initialLocationField = $('#inventoryInitialLocation');
+    const $initialCustodianField = $('#inventoryInitialCustodian');
     const $serialsContainer = $('#inventorySerialsContainer');
 
     const $itemDescription = $('#inventoryItemDescription');
@@ -55,6 +58,14 @@ $(() => {
     const $itemAccountableOfficer = $('#inventoryAccountableOfficer');
 
     const $viewModal = $('#inventoryViewModal');
+    const $successModal = $('#inventorySuccessModal');
+    const $successMessage = $('#inventorySuccessMessage');
+    const $feedbackModal = $('#inventoryFeedbackModal');
+    const $feedbackTitle = $('#inventoryFeedbackTitle');
+    const $feedbackSubtitle = $('#inventoryFeedbackSubtitle');
+    const $feedbackMessage = $('#inventoryFeedbackMessage');
+    const $feedbackIcon = $('#inventoryFeedbackIcon');
+    const $feedbackClose = $('#inventoryFeedbackClose');
     const $viewPropertyNo = $('#inventoryViewPropertyNo');
     const $viewSource = $('#inventoryViewSource');
     const $viewDateAcquired = $('#inventoryViewDateAcquired');
@@ -85,6 +96,28 @@ $(() => {
         .replace(/'/g, '&#039;');
 
     const escapeAttr = (value = '') => escapeHtml(value);
+
+    const renderLocationOptions = (selectedLocation = null) => {
+        if (!$initialLocationField.length) {
+            return;
+        }
+
+        const selected = selectedLocation == null ? '' : String(selectedLocation);
+        const options = ['<option value="">No location selected</option>'];
+
+        locations.forEach((location) => {
+            const value = String(location.id ?? '');
+            if (!value) {
+                return;
+            }
+
+            const label = escapeHtml(location.label || location.name || value);
+            const selectedAttr = selected !== '' && value === selected ? ' selected' : '';
+            options.push(`<option value="${escapeAttr(value)}"${selectedAttr}>${label}</option>`);
+        });
+
+        $initialLocationField.html(options.join(''));
+    };
 
     const getCurrentPageFromUrl = () => {
         const params = new URLSearchParams(window.location.search);
@@ -178,15 +211,64 @@ $(() => {
                 currentStoreUrl = null;
                 populateSubCategories(null, null);
                 $categorySelect.empty();
+                renderLocationOptions(null);
                 $totalCostField.val('0.00');
                 renderSerialInputs(1);
                 $itemAccountableOfficer.text('—');
+                $initialCustodianField.val('');
             }
 
-            if ($createModal.hasClass('hidden') && $viewModal.hasClass('hidden')) {
+            if ($createModal.hasClass('hidden') && $viewModal.hasClass('hidden') && $successModal.hasClass('hidden') && $feedbackModal.hasClass('hidden')) {
                 $('body').removeClass('overflow-hidden');
             }
         }, 300);
+    };
+
+    const showSuccessModal = (message) => {
+        if ($successMessage.length) {
+            $successMessage.text(message || 'PQS record created successfully.');
+        }
+
+        toggleModal($successModal, true);
+    };
+
+    const showFeedbackModal = ({
+        title = 'Notice',
+        subtitle = 'Please review this message.',
+        message = 'Something needs your attention.',
+        tone = 'warning',
+        buttonLabel = 'OK',
+    } = {}) => {
+        if ($feedbackTitle.length) {
+            $feedbackTitle.text(title);
+        }
+        if ($feedbackSubtitle.length) {
+            $feedbackSubtitle.text(subtitle);
+        }
+        if ($feedbackMessage.length) {
+            $feedbackMessage.text(message);
+        }
+        if ($feedbackClose.length) {
+            $feedbackClose.text(buttonLabel);
+            $feedbackClose.removeClass('bg-amber-500 hover:bg-amber-600 bg-rose-600 hover:bg-rose-700 bg-blue-600 hover:bg-blue-700');
+        }
+
+        if ($feedbackIcon.length) {
+            $feedbackIcon.removeClass('bg-amber-100 text-amber-700 bg-rose-100 text-rose-700 bg-blue-100 text-blue-700');
+        }
+
+        if (tone === 'error') {
+            $feedbackIcon.html('<i class="fas fa-triangle-exclamation"></i>').addClass('bg-rose-100 text-rose-700');
+            $feedbackClose.addClass('bg-rose-600 hover:bg-rose-700');
+        } else if (tone === 'info') {
+            $feedbackIcon.html('<i class="fas fa-circle-info"></i>').addClass('bg-blue-100 text-blue-700');
+            $feedbackClose.addClass('bg-blue-600 hover:bg-blue-700');
+        } else {
+            $feedbackIcon.html('<i class="fas fa-circle-exclamation"></i>').addClass('bg-amber-100 text-amber-700');
+            $feedbackClose.addClass('bg-amber-500 hover:bg-amber-600');
+        }
+
+        toggleModal($feedbackModal, true);
     };
 
     $(document).on('click', '[data-close-modal]', function () {
@@ -204,6 +286,8 @@ $(() => {
         if (event.key === 'Escape') {
             if (!$createModal.hasClass('hidden')) toggleModal($createModal, false);
             if (!$viewModal.hasClass('hidden')) toggleModal($viewModal, false);
+            if (!$successModal.hasClass('hidden')) toggleModal($successModal, false);
+            if (!$feedbackModal.hasClass('hidden')) toggleModal($feedbackModal, false);
         }
     });
 
@@ -485,6 +569,19 @@ $(() => {
         });
     };
 
+    window.__refreshInventoryAssignment = () => {
+        if (
+            $('#inventoryCreateModal').length && !$('#inventoryCreateModal').hasClass('hidden')
+            || $('#inventoryViewModal').length && !$('#inventoryViewModal').hasClass('hidden')
+            || $('#inventorySuccessModal').length && !$('#inventorySuccessModal').hasClass('hidden')
+            || $('#inventoryFeedbackModal').length && !$('#inventoryFeedbackModal').hasClass('hidden')
+        ) {
+            return;
+        }
+
+        fetchItems();
+    };
+
     const debounceFetch = () => {
         clearTimeout(fetchTimeout);
         fetchTimeout = setTimeout(fetchItems, 350);
@@ -572,7 +669,12 @@ $(() => {
 
         // Simple validation: if one is provided ensure the other is too
         if ((from && !to) || (!from && to)) {
-            alert('Please provide both start and end dates to apply the date range.');
+            showFeedbackModal({
+                title: 'Incomplete Date Range',
+                subtitle: 'Both dates are required to filter records.',
+                message: 'Please provide both start and end dates to apply the date range.',
+                tone: 'warning',
+            });
             return;
         }
 
@@ -601,6 +703,10 @@ $(() => {
         $totalCostField.val((acceptedQuantity * (item.unit_cost ?? 0)).toFixed(2));
         $dateAcquiredField.val(item.property_record?.date_acquired || todayIso());
         $usefulLifeField.val(item.property_record?.estimated_useful_life || '');
+        const preferredLocationId = item.property_record?.current_location_id
+            || item.recommended_initial_location_id
+            || null;
+        renderLocationOptions(preferredLocationId);
         renderSerialInputs(acceptedQuantity);
 
         $itemDescription.text(item.item_description ?? '—');
@@ -608,6 +714,7 @@ $(() => {
         $itemAccepted.text(`${acceptedQuantity} accepted`);
         $itemSupplier.text(item.supplier_name ?? '—');
         $itemAccountableOfficer.text(item.accountable_officer_name ?? '—');
+        $initialCustodianField.val(item.accountable_officer_name || 'No accountable officer linked');
     };
 
     const openCreateModal = (button) => {
@@ -615,7 +722,12 @@ $(() => {
         currentStoreUrl = button.data('storeUrl');
 
         if (!showUrl || !currentStoreUrl) {
-            alert('Endpoints for this item are not configured.');
+            showFeedbackModal({
+                title: 'Configuration Missing',
+                subtitle: 'Action cannot proceed right now.',
+                message: 'Endpoints for this item are not configured.',
+                tone: 'error',
+            });
             return;
         }
 
@@ -628,7 +740,12 @@ $(() => {
                 toggleModal($createModal, true);
             },
             error: () => {
-                alert('Unable to load item details.');
+                showFeedbackModal({
+                    title: 'Load Failed',
+                    subtitle: 'Unable to open create form.',
+                    message: 'Unable to load item details.',
+                    tone: 'error',
+                });
             },
         });
     };
@@ -646,7 +763,12 @@ $(() => {
             success: (response) => {
                 const data = response.data || {};
                 if (!data.property_no && !data.property_record) {
-                    alert('No PQS record found for this item yet.');
+                    showFeedbackModal({
+                        title: 'No Record Yet',
+                        subtitle: 'This item has not been recorded in PQS.',
+                        message: 'No PQS record found for this item yet.',
+                        tone: 'info',
+                    });
                     return;
                 }
 
@@ -743,7 +865,12 @@ $(() => {
                 toggleModal($viewModal, true);
             },
             error: () => {
-                alert('Unable to load PQS record.');
+                showFeedbackModal({
+                    title: 'Load Failed',
+                    subtitle: 'Unable to open the PQS record.',
+                    message: 'Unable to load PQS record.',
+                    tone: 'error',
+                });
             },
         });
     };
@@ -765,7 +892,12 @@ $(() => {
     $createForm.on('submit', function (event) {
         event.preventDefault();
         if (!currentStoreUrl) {
-            alert('No endpoint configured for saving this record.');
+            showFeedbackModal({
+                title: 'Configuration Missing',
+                subtitle: 'Save action is not available.',
+                message: 'No endpoint configured for saving this record.',
+                tone: 'error',
+            });
             return;
         }
 
@@ -783,7 +915,9 @@ $(() => {
             },
             success: (response) => {
                 toggleModal($createModal, false);
-                alert(response.message || 'PQS record created successfully.');
+                setTimeout(() => {
+                    showSuccessModal(response.message || 'PQS record created successfully.');
+                }, 320);
                 fetchItems();
             },
             error: (xhr) => {
@@ -805,6 +939,19 @@ $(() => {
 
     // Initialize state
     populateSubCategories(null, null);
+    renderLocationOptions(null);
     renderSerialInputs(1);
     fetchItems();
+
+    if (!window.__inventoryAssignmentAutoRefreshTimer) {
+        window.__inventoryAssignmentAutoRefreshTimer = window.setInterval(() => {
+            if (document.hidden) {
+                return;
+            }
+
+            if (typeof window.__refreshInventoryAssignment === 'function') {
+                window.__refreshInventoryAssignment();
+            }
+        }, 30000);
+    }
 });

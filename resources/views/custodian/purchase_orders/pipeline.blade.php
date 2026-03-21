@@ -92,7 +92,7 @@
 
 <div class="mt-8 space-y-8 transition-all duration-200 ease-out">
     {{-- Hero Summary Band --}}
-    <div class="animate-card rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10 overflow-hidden relative">
+    <div id="purchaseOrderOverviewSummaryBand" class="animate-card rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10 overflow-hidden relative">
         <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.18),_transparent_60%)]"></div>
         <div class="absolute -right-8 bottom-0 h-32 w-32 rounded-full border border-white/10 bg-white/5 blur-2xl"></div>
         <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
@@ -110,17 +110,17 @@
             <div class="grid w-full gap-3 sm:grid-cols-3 lg:max-w-2xl">
                 <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Ready for PO</p>
-                        <p class="mt-2 text-2xl font-bold">{{ number_format($readyForPoCount) }}</p>
+                    <p id="purchaseOrderReadyCount" class="mt-2 text-2xl font-bold">{{ number_format($readyForPoCount) }}</p>
                         <p class="mt-1 text-xs text-white/65">Approved requests</p>
                     </div>
                     <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">In Pipeline</p>
-                        <p class="mt-2 text-2xl font-bold">{{ number_format($totalPipelineOrders) }}</p>
+                    <p id="purchaseOrderPipelineCount" class="mt-2 text-2xl font-bold">{{ number_format($totalPipelineOrders) }}</p>
                         <p class="mt-1 text-xs text-white/65">Active orders tracked</p>
                     </div>
                     <div class="rounded-2xl border border-white/12 bg-white/10 px-4 py-4 backdrop-blur-sm">
                         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Total Orders</p>
-                        <p class="mt-2 text-2xl font-bold">{{ number_format($purchaseOrders->total()) }}</p>
+                    <p id="purchaseOrderRegisterCount" class="mt-2 text-2xl font-bold">{{ number_format($purchaseOrders->total()) }}</p>
                         <p class="mt-1 text-xs text-white/65">All-time registered</p>
                     </div>
                 </div>
@@ -716,7 +716,7 @@
 <div id="poDetailsModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity duration-300" data-close-modal></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="modal-panel relative bg-white w-full max-w-4xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+        <div class="modal-panel relative bg-white w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             <div class="flex-shrink-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white shadow-md">
                 <div class="flex-1">
                     <h3 class="text-2xl font-bold tracking-tight">Purchase Order Details</h3>

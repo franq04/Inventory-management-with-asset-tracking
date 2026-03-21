@@ -50,6 +50,13 @@ class Employee extends Model
         return $this->belongsTo(Position::class, 'position_id', 'position_id');
     }
 
+    public function getDivisionAttribute(): ?Division
+    {
+        $this->loadMissing('section.division');
+
+        return $this->section?->division;
+    }
+
     public function getFullNameAttribute(): string
     {
         $parts = [

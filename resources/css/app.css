@@ -39,3 +39,12 @@
         display: none !important;
     }
 }
+
+@layer components {
+    /* Keep large work modals consistent and wider, without affecting compact alerts. */
+    .modal-panel[class*='max-w-4xl'],
+    .modal-panel[class*='max-w-5xl'],
+    .modal-panel[class*='max-w-6xl'] {
+        max-width: min(96vw, 88rem) !important;
+    }
+}

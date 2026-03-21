@@ -1,7 +1,7 @@
 <div id="inventoryCreateModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" data-close-modal></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="modal-panel relative bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+        <div class="modal-panel relative bg-white w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white shadow-md">
                 <div>
                     <h3 class="text-2xl font-bold tracking-tight uppercase">Generate Property Acknowledgement Receipt</h3>
@@ -116,6 +116,21 @@
                                     <input type="text" name="estimated_useful_life" id="inventoryUsefulLife" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" placeholder="e.g. 5 years">
                                 </div>
                             </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Initial Location</label>
+                                    <select name="initial_location_id" id="inventoryInitialLocation" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400">
+                                        <option value="">No location selected</option>
+                                    </select>
+                                    <p class="text-xs text-gray-500">Auto-selected from the initial employee section/division when mapped; you may still override if needed.</p>
+                                </div>
+                                <div class="flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Initial Employee</label>
+                                    <input type="text" id="inventoryInitialCustodian" class="w-full border border-gray-300 rounded px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed" readonly>
+                                    <p class="text-xs text-gray-500">Automatically assigned from the accountable officer in the source purchase request.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,7 +155,7 @@
     <div class="relative flex min-h-screen items-center justify-center p-4">
         
         {{-- FIX: This is the main modal panel, now using a flexbox column layout --}}
-        <div class="modal-panel relative flex flex-col w-full max-w-4xl rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+        <div class="modal-panel relative flex flex-col w-full max-w-6xl rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
             
             {{-- Modal Header (Flex item, does not shrink) --}}
             <div class="flex-shrink-0 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-8 py-6 text-white">
@@ -235,6 +250,60 @@
             <div class="flex-shrink-0 flex items-center justify-end gap-3 border-t bg-gray-50 px-8 py-4">
                 <button type="button" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-modal>
                     Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="inventorySuccessModal" class="fixed inset-0 z-[60] hidden opacity-0 transition-opacity duration-300" aria-labelledby="inventorySuccessTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="modal-panel w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div>
+                    <h4 id="inventorySuccessTitle" class="text-base font-bold text-[#1a3a2d]">PQS Record Created</h4>
+                    <p class="text-xs text-gray-500">The item has been successfully recorded.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-4">
+                <p id="inventorySuccessMessage" class="text-sm text-gray-700">PQS record created successfully.</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <button type="button" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700" data-close-modal>
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="inventoryFeedbackModal" class="fixed inset-0 z-[65] hidden opacity-0 transition-opacity duration-300" aria-labelledby="inventoryFeedbackTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-modal></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="modal-panel w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                <div id="inventoryFeedbackIcon" class="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                    <i class="fas fa-circle-exclamation"></i>
+                </div>
+                <div>
+                    <h4 id="inventoryFeedbackTitle" class="text-base font-bold text-[#1a3a2d]">Notice</h4>
+                    <p id="inventoryFeedbackSubtitle" class="text-xs text-gray-500">Please review this message.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-4">
+                <p id="inventoryFeedbackMessage" class="text-sm text-gray-700">Something needs your attention.</p>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <button type="button" id="inventoryFeedbackClose" class="rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600" data-close-modal>
+                    OK
                 </button>
             </div>
         </div>
