@@ -149,7 +149,7 @@
             {{-- Scrollable content area: includes print-ready template and on-screen summary --}}
             <div class="flex-1 overflow-y-auto bg-gray-50/50 px-6 py-7 sm:px-8">
                 <div class="mx-auto w-full max-w-5xl space-y-6 pqs-print-wrapper">
-                    <div id="pqsPrintArea" class="rounded-2xl border-2 border-gray-400 bg-white shadow-sm" style="min-height:auto;">
+                    <div id="pqsPrintArea" class="pqs-detail-section rounded-2xl border-2 border-gray-400 bg-white shadow-sm" style="min-height:auto;">
                         <div id="pqsParTemplate" class="hidden px-6 py-7 text-gray-900 pqs-template pqs-template-par">
                             <div class="relative mb-6 flex items-center justify-center">
                                 <img src="{{ asset('images/bpi-logo.png') }}" alt="Department of Agriculture" class="absolute left-0 top-0 h-16 w-16 object-contain">
@@ -304,7 +304,7 @@
                     </div>
 
                     <div class="space-y-6">
-                        <section>
+                        <section class="pqs-detail-section">
                             <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Property Record Snapshot</h4>
                             <div class="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 text-sm text-gray-800 md:grid-cols-2">
                                 <div>
@@ -335,7 +335,7 @@
                             </div>
                         </section>
 
-                        <section>
+                        <section class="pqs-detail-section">
                             <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Valuation Summary</h4>
                             <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -365,7 +365,7 @@
                             </div>
                         </section>
 
-                        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <section class="pqs-detail-section grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                                 <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Custodial Documentation</h4>
                                 <p id="pqsViewDocumentMeta" class="mt-3 text-sm font-semibold text-gray-900">No custodial document generated yet.</p>
@@ -377,7 +377,7 @@
                             </div>
                         </section>
 
-                        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                        <section class="pqs-detail-section grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                                 <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Serial Numbers</h4>
                                 <ul id="pqsViewSerials" class="mt-3 space-y-2 text-sm text-gray-700">
@@ -390,19 +390,20 @@
                             </div>
                         </section>
 
-                        <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                                <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Current Assignment</h4>
-                                <div class="mt-3 space-y-2 text-sm text-gray-700">
-                                    <p><span class="font-semibold text-gray-500">Location:</span> <span id="pqsViewCurrentLocation">Unassigned</span></p>
-                                    <p><span class="font-semibold text-gray-500">Custodian:</span> <span id="pqsViewCurrentCustodian">Unassigned</span></p>
-                                    <p><span class="font-semibold text-gray-500">Division:</span> <span id="pqsViewCurrentDivision">Unassigned</span></p>
-                                    <p><span class="font-semibold text-gray-500">Section:</span> <span id="pqsViewCurrentSection">Unassigned</span></p>
-                                    <p><span class="font-semibold text-gray-500">Last Movement:</span> <span id="pqsViewLastMovement">—</span></p>
-                                </div>
+                        <section class="pqs-detail-section rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                            <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Current Assignment</h4>
+                            <div class="mt-3 grid grid-cols-1 gap-3 text-sm text-gray-700 sm:grid-cols-2 lg:grid-cols-3">
+                                <p><span class="font-semibold text-gray-500">Location:</span> <span id="pqsViewCurrentLocation">Unassigned</span></p>
+                                <p><span class="font-semibold text-gray-500">Custodian:</span> <span id="pqsViewCurrentCustodian">Unassigned</span></p>
+                                <p><span class="font-semibold text-gray-500">Division:</span> <span id="pqsViewCurrentDivision">Unassigned</span></p>
+                                <p><span class="font-semibold text-gray-500">Section:</span> <span id="pqsViewCurrentSection">Unassigned</span></p>
+                                <p><span class="font-semibold text-gray-500">Last Movement:</span> <span id="pqsViewLastMovement">—</span></p>
                             </div>
+                        </section>
 
-                            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                        <section id="pqsActionWorkspace" class="hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+
+                            <div id="pqsActionTransferPane" class="mt-1">
                                 <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Transfer Asset</h4>
                                 <form id="pqsTransferForm" class="mt-3 space-y-3">
                                     <div>
@@ -486,22 +487,21 @@
                                     </button>
                                 </form>
                             </div>
-                        </section>
 
-                        <section class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
-                            <div class="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <h4 class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Bulk Employee Turnover</h4>
-                                    <p class="mt-2 text-sm text-gray-600">Use this when an employee resigns and their assigned assets must be moved to the stockroom.</p>
+                            <div id="pqsActionTurnoverPane" class="mt-4 hidden rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <h4 class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Bulk Employee Turnover</h4>
+                                        <p class="mt-2 text-sm text-gray-600">Use this when an employee resigns and their assigned assets must be moved to the stockroom.</p>
+                                    </div>
+                                    <span class="inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                                        Storage only
+                                    </span>
                                 </div>
-                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
-                                    Storage only
-                                </span>
-                            </div>
 
-                            <div id="pqsTurnoverSuccess" class="hidden mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700"></div>
+                                <div id="pqsTurnoverSuccess" class="hidden mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700"></div>
 
-                            <form id="pqsTurnoverForm" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <form id="pqsTurnoverForm" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                 <div>
                                     <label for="pqsTurnoverEmployee" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Resigning Employee</label>
                                     <select id="pqsTurnoverEmployee" name="employee_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
@@ -550,9 +550,40 @@
                                     <p class="text-xs text-gray-500">This will move all selected employee assets to the chosen stockroom and clear custody in one transaction.</p>
                                 </div>
                             </form>
+                            </div>
+
+                            <div id="pqsActionConditionPane" class="mt-4 hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-4 shadow-sm">
+                                <h4 class="text-xs font-semibold uppercase tracking-wide text-rose-700">Asset Serviceability</h4>
+                                <p class="mt-2 text-sm text-gray-600">Use this to mark the current asset as serviceable or unserviceable while preserving movement history.</p>
+
+                                <div id="pqsConditionSuccess" class="hidden mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700"></div>
+                                <div id="pqsConditionError" class="hidden mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"></div>
+
+                                <form id="pqsConditionForm" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div>
+                                        <label for="pqsConditionEffectiveAt" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Effective Date</label>
+                                        <input id="pqsConditionEffectiveAt" name="effective_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                    </div>
+                                    <div>
+                                        <label for="pqsConditionRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks</label>
+                                        <textarea id="pqsConditionRemarks" name="remarks" rows="2" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Optional condition notes"></textarea>
+                                    </div>
+
+                                    <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+                                        <button type="button" id="pqsConditionServiceable" data-condition-value="serviceable" class="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                                            <i class="fas fa-circle-check"></i>
+                                            Mark Serviceable
+                                        </button>
+                                        <button type="button" id="pqsConditionUnserviceable" data-condition-value="unserviceable" class="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800">
+                                            <i class="fas fa-triangle-exclamation"></i>
+                                            Mark Unserviceable
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </section>
 
-                        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                        <section class="pqs-detail-section rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                             <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Movement Timeline</h4>
                             <div id="pqsMovementTimeline" class="mt-3 space-y-3 text-sm text-gray-700">
                                 <p class="text-gray-400 italic">No movement records yet.</p>
@@ -563,10 +594,25 @@
             </div>
 
             {{-- FIX: Modal Footer (Flex item, does not shrink, always visible) --}}
-            <div class="flex-shrink-0 flex items-center justify-end gap-3 border-t bg-gray-50 px-8 py-4">
-                <button type="button" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-modal>
-                    Close
-                </button>
+            <div class="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 border-t bg-gray-50 px-8 py-4">
+                <div class="flex flex-wrap items-center justify-center gap-2">
+                    <button type="button" data-pqs-action-tab="details" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#285641]">
+                        <i class="fas fa-eye"></i>
+                        Details
+                    </button>
+                    <button type="button" data-pqs-action-tab="transfer" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50">
+                        <i class="fas fa-right-left"></i>
+                        Transfer
+                    </button>
+                    <button type="button" data-pqs-action-tab="turnover" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50">
+                        <i class="fas fa-people-arrows-left-right"></i>
+                        Turnover
+                    </button>
+                    <button type="button" data-pqs-action-tab="condition" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50">
+                        <i class="fas fa-screwdriver-wrench"></i>
+                        Condition
+                    </button>
+                </div>
             </div>
         </div>
     </div>

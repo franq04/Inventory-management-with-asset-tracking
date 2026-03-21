@@ -356,6 +356,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::get('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'timeline'])->name('pqs.movements.timeline');
         Route::post('pqs/turnover', [AssetMovementController::class, 'processTurnover'])->name('pqs.movements.turnover');
         Route::post('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'transfer'])->name('pqs.movements.transfer');
+        Route::post('pqs/{pqsRecord}/condition', [AssetMovementController::class, 'updateCondition'])->name('pqs.movements.condition');
         Route::get('reconciliation-summary', [AssetMovementController::class, 'reconciliationSummary'])->name('pqs.reconciliation.summary');
     });
 });

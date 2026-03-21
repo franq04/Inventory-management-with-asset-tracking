@@ -381,6 +381,90 @@ class AssetMovementController extends Controller
         ]);
     }
 
+    public function updateCondition(Request $request, PqsRecord $pqsRecord): JsonResponse
+    {
+        $this->authorize('transfer', $pqsRecord);
+
+        if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Disposed or lost assets cannot be updated to serviceable or unserviceable.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'condition' => ['required', 'in:serviceable,unserviceable'],
+            'effective_at' => ['nullable', 'date'],
+            'remarks' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $account = Auth::user();
+        $condition = $validated['condition'];
+        $effectiveAt = $validated['effective_at'] ?? now();
+
+        $movementType = $condition === 'unserviceable' ? 'maintenance_out' : 'maintenance_in';
+        $targetStatus = $condition === 'unserviceable'
+            ? PqsRecord::STATUS_FOR_REPAIR
+            : PqsRecord::STATUS_ACTIVE;
+
+        $movement = DB::transaction(function () use ($pqsRecord, $account, $movementType, $targetStatus, $effectiveAt, $validated): AssetMovement {
+            $movement = AssetMovement::create([
+                'property_no' => $pqsRecord->property_no,
+                'from_location_id' => $pqsRecord->current_location_id,
+                'to_location_id' => $pqsRecord->current_location_id,
+                'from_custodian_employee_id' => $pqsRecord->current_custodian_employee_id,
+                'to_custodian_employee_id' => $pqsRecord->current_custodian_employee_id,
+                'from_division_id' => $pqsRecord->assigned_division_id,
+                'to_division_id' => $pqsRecord->assigned_division_id,
+                'from_section_id' => $pqsRecord->assigned_section_id,
+                'to_section_id' => $pqsRecord->assigned_section_id,
+                'movement_type' => $movementType,
+                'reason_code' => 'condition_update',
+                'effective_at' => $effectiveAt,
+                'recorded_by' => $account?->account_id,
+                'source_table' => 'pqs',
+                'source_record_id' => $pqsRecord->property_no,
+                'remarks' => $validated['remarks'] ?? null,
+            ]);
+
+            $pqsRecord->update([
+                'asset_status' => $targetStatus,
+                'last_movement_at' => $effectiveAt,
+            ]);
+
+            StatusHistory::create([
+                'table_name' => 'asset_movements',
+                'record_id' => (string) $movement->movement_id,
+                'old_status_id' => Status::ITEM_RECORDED,
+                'new_status_id' => Status::ITEM_RECORDED,
+                'changed_by' => $account?->account_id,
+                'remarks' => sprintf('Asset %s condition updated to %s.', $pqsRecord->property_no, $targetStatus),
+                'changed_at' => now(),
+            ]);
+
+            AuditLog::create([
+                'account_id' => $account?->account_id,
+                'table_name' => 'asset_movements',
+                'action' => 'CONDITION_UPDATE',
+                'description' => sprintf('Updated asset %s condition to %s', $pqsRecord->property_no, $targetStatus),
+                'log_time' => now(),
+            ]);
+
+            return $movement;
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $condition === 'unserviceable'
+                ? 'Asset marked as unserviceable successfully.'
+                : 'Asset marked as serviceable successfully.',
+            'data' => [
+                'movement' => $movement,
+                'asset' => $pqsRecord->fresh(['currentLocation', 'currentCustodian', 'assignedDivision', 'assignedSection']),
+            ],
+        ]);
+    }
+
     public function timeline(Request $request, PqsRecord $pqsRecord): JsonResponse
     {
         $this->authorize('view', $pqsRecord);

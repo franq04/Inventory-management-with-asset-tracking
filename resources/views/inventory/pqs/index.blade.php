@@ -504,6 +504,7 @@
 (() => {
     const modal = document.getElementById('pqsViewModal');
     const modalPanel = modal ? modal.querySelector('.modal-panel') : null;
+    const modalBody = modalPanel ? modalPanel.querySelector('.flex-1') : null;
     const modalFocusTarget = modal ? modal.querySelector('[data-focus]') : null;
     const resultsContainer = document.getElementById('pqsResults');
     if (!modal || !resultsContainer) {
@@ -559,6 +560,19 @@
     const turnoverLocation = document.getElementById('pqsTurnoverLocation');
     const turnoverEffectiveAt = document.getElementById('pqsTurnoverEffectiveAt');
     const turnoverRemarks = document.getElementById('pqsTurnoverRemarks');
+    const actionTabButtons = Array.from(document.querySelectorAll('[data-pqs-action-tab]'));
+    const detailSections = Array.from(document.querySelectorAll('.pqs-detail-section'));
+    const actionWorkspace = document.getElementById('pqsActionWorkspace');
+    const actionTransferPane = document.getElementById('pqsActionTransferPane');
+    const actionTurnoverPane = document.getElementById('pqsActionTurnoverPane');
+    const actionConditionPane = document.getElementById('pqsActionConditionPane');
+    const conditionForm = document.getElementById('pqsConditionForm');
+    const conditionSuccess = document.getElementById('pqsConditionSuccess');
+    const conditionError = document.getElementById('pqsConditionError');
+    const conditionEffectiveAt = document.getElementById('pqsConditionEffectiveAt');
+    const conditionRemarks = document.getElementById('pqsConditionRemarks');
+    const conditionServiceableBtn = document.getElementById('pqsConditionServiceable');
+    const conditionUnserviceableBtn = document.getElementById('pqsConditionUnserviceable');
     const turnoverFieldErrors = Array.from(document.querySelectorAll('[data-turnover-error-for]'));
     const turnoverInputMap = {
         employee_id: turnoverEmployee,
@@ -812,6 +826,88 @@
             turnoverSubmit.innerHTML = turnoverSubmit.dataset.originalHtml;
         }
         turnoverSubmit.disabled = false;
+    };
+
+    const setActionTab = (tabName = 'details') => {
+        const paneMap = {
+            transfer: actionTransferPane,
+            turnover: actionTurnoverPane,
+            condition: actionConditionPane,
+        };
+
+        if (tabName === 'details') {
+            if (actionWorkspace) {
+                actionWorkspace.classList.add('hidden');
+            }
+
+            detailSections.forEach((section) => section.classList.remove('hidden'));
+        } else {
+            if (actionWorkspace) {
+                actionWorkspace.classList.remove('hidden');
+            }
+
+            detailSections.forEach((section) => section.classList.add('hidden'));
+
+            Object.entries(paneMap).forEach(([name, pane]) => {
+                if (!pane) {
+                    return;
+                }
+                pane.classList.toggle('hidden', name !== tabName);
+            });
+        }
+
+        actionTabButtons.forEach((button) => {
+            const isActive = button.dataset.pqsActionTab === tabName;
+            if (isActive) {
+                button.classList.remove('border', 'border-gray-200', 'bg-white', 'text-gray-700');
+                button.classList.add('bg-[#1a3a2d]', 'text-white');
+            } else {
+                button.classList.remove('bg-[#1a3a2d]', 'text-white');
+                button.classList.add('border', 'border-gray-200', 'bg-white', 'text-gray-700');
+            }
+        });
+
+        if (modalBody) {
+            modalBody.scrollTop = 0;
+        }
+    };
+
+    const setConditionMessage = (target, message = '', kind = 'error') => {
+        if (!target) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        target.classList.toggle('hidden', !hasMessage);
+        target.textContent = hasMessage ? message : '';
+
+        if (kind === 'success') {
+            target.classList.remove('border-rose-200', 'bg-rose-50', 'text-rose-700');
+            target.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+        } else {
+            target.classList.remove('border-emerald-200', 'bg-emerald-50', 'text-emerald-700');
+            target.classList.add('border-rose-200', 'bg-rose-50', 'text-rose-700');
+        }
+    };
+
+    const setConditionLoading = (isLoading) => {
+        [conditionServiceableBtn, conditionUnserviceableBtn].forEach((button) => {
+            if (!button) {
+                return;
+            }
+
+            if (isLoading) {
+                button.dataset.originalHtml = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                button.disabled = true;
+                return;
+            }
+
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+            }
+            button.disabled = false;
+        });
     };
 
     const renderMovementTimeline = (movements = []) => {
@@ -1103,6 +1199,14 @@
             setTurnoverSuccess('');
             clearTurnoverFieldErrors();
         }
+
+        if (conditionForm) {
+            conditionForm.reset();
+            setConditionMessage(conditionSuccess, '', 'success');
+            setConditionMessage(conditionError, '', 'error');
+        }
+
+        setActionTab('details');
 
         if (documentMeta) {
             documentMeta.textContent = defaultDocumentMeta;
@@ -1497,6 +1601,13 @@
         clearTransferFieldError('to_location_id');
     });
 
+    actionTabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const tabName = button.dataset.pqsActionTab || 'transfer';
+            setActionTab(tabName);
+        });
+    });
+
     transferDivision?.addEventListener('change', () => {
         syncSectionOptions();
         clearTransferFieldError('to_division_id');
@@ -1623,6 +1734,59 @@
             setTurnoverLoading(false);
         }
     });
+
+    const submitConditionUpdate = async (conditionValue) => {
+        if (!currentRecord?.property_no || !conditionValue) {
+            setConditionMessage(conditionError, 'Open a record first before updating condition.', 'error');
+            return;
+        }
+
+        setConditionMessage(conditionError, '', 'error');
+        setConditionMessage(conditionSuccess, '', 'success');
+        setConditionLoading(true);
+
+        try {
+            const conditionUrl = "{{ route('pqs.movements.condition', ['pqsRecord' => '__PROPERTY__']) }}".replace('__PROPERTY__', encodeURIComponent(currentRecord.property_no));
+
+            const payload = {
+                condition: conditionValue,
+                effective_at: conditionEffectiveAt?.value || null,
+                remarks: conditionRemarks?.value?.trim() || null,
+            };
+
+            const response = await fetch(conditionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const message = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to update asset condition.';
+                throw new Error(message);
+            }
+
+            setConditionMessage(conditionSuccess, data?.message || 'Asset condition updated successfully.', 'success');
+
+            if (currentShowUrl) {
+                await fetchAndPopulateRecord(currentShowUrl);
+            }
+
+            fetchRecords();
+        } catch (error) {
+            setConditionMessage(conditionError, error?.message || 'Unable to update condition right now.', 'error');
+        } finally {
+            setConditionLoading(false);
+        }
+    };
+
+    conditionServiceableBtn?.addEventListener('click', () => submitConditionUpdate('serviceable'));
+    conditionUnserviceableBtn?.addEventListener('click', () => submitConditionUpdate('unserviceable'));
 
     const loadReconciliationSummary = async () => {
         if (!reconcileEndpoint) {
