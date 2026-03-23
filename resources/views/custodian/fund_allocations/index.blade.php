@@ -119,6 +119,7 @@
                     <input type="text" id="fundCluster" name="fund_cluster"
                            class="w-full rounded-xl border border-emerald-950/15 bg-[#f8faf9] px-4 py-2.5 text-sm text-gray-800 focus:border-[#1a3a2d] focus:bg-white focus:ring-2 focus:ring-[#1a3a2d]/20"
                            placeholder="e.g., FY2025-GEN-001">
+                    <p id="fundClusterError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                 </div>
 
                 <div>
@@ -131,6 +132,7 @@
                                class="w-full rounded-xl border border-emerald-950/15 bg-[#f8faf9] py-2.5 pl-8 pr-4 text-sm text-gray-800 focus:border-[#1a3a2d] focus:bg-white focus:ring-2 focus:ring-[#1a3a2d]/20"
                                placeholder="0.00">
                     </div>
+                    <p id="totalAmountError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                     <p class="mt-1 text-xs text-gray-500" id="allocatedNote"></p>
                 </div>
 
@@ -198,6 +200,10 @@
     const $deleteClusterName = $('#deleteAllocationClusterName');
     const $confirmDeleteBtn = $('#confirmDeleteAllocationBtn');
     const $deleteFocusTarget = $deleteModal.find('[data-delete-focus]').first();
+    const $fundCluster = $('#fundCluster');
+    const $fundClusterError = $('#fundClusterError');
+    const $totalAmount = $('#totalAmount');
+    const $totalAmountError = $('#totalAmountError');
     const tableLoadingOverlayId = 'fundTableLoadingOverlay';
     let pendingDelete = null;
     let activeEditId = null;
@@ -379,6 +385,85 @@
         }
     };
 
+    const clearFieldError = ($field, $error) => {
+        if (!$field?.length || !$error?.length) {
+            return;
+        }
+
+        $field.removeClass('border-red-400 ring-2 ring-red-100 focus:border-red-500 focus:ring-red-100');
+        $field.attr('aria-invalid', 'false');
+        $error.text('').addClass('hidden');
+    };
+
+    const setFieldError = ($field, $error, message) => {
+        if (!$field?.length || !$error?.length) {
+            return;
+        }
+
+        $field.addClass('border-red-400 ring-2 ring-red-100 focus:border-red-500 focus:ring-red-100');
+        $field.attr('aria-invalid', 'true');
+        $error.text(message || 'Invalid value.').removeClass('hidden');
+    };
+
+    const clearInlineErrors = () => {
+        clearFieldError($fundCluster, $fundClusterError);
+        clearFieldError($totalAmount, $totalAmountError);
+    };
+
+    const validateFundCluster = () => {
+        const value = String($fundCluster.val() || '').trim();
+        if (!value) {
+            setFieldError($fundCluster, $fundClusterError, 'Fund Cluster is required.');
+            return false;
+        }
+        if (value.length > 100) {
+            setFieldError($fundCluster, $fundClusterError, 'Fund Cluster must not exceed 100 characters.');
+            return false;
+        }
+
+        clearFieldError($fundCluster, $fundClusterError);
+        return true;
+    };
+
+    const validateTotalAmount = () => {
+        const rawValue = String($totalAmount.val() || '').trim();
+        if (!rawValue) {
+            setFieldError($totalAmount, $totalAmountError, 'Total Amount is required.');
+            return false;
+        }
+
+        const numericValue = Number(rawValue);
+        if (!Number.isFinite(numericValue) || numericValue < 0) {
+            setFieldError($totalAmount, $totalAmountError, 'Total Amount must be a valid number greater than or equal to 0.');
+            return false;
+        }
+
+        clearFieldError($totalAmount, $totalAmountError);
+        return true;
+    };
+
+    const validateAllocationForm = () => {
+        const clusterOk = validateFundCluster();
+        const amountOk = validateTotalAmount();
+        return clusterOk && amountOk;
+    };
+
+    const renderServerErrors = (messages = []) => {
+        const safeMessages = Array.isArray(messages) ? messages : [];
+        $errorsContent.empty();
+
+        safeMessages.forEach((message) => {
+            const line = $('<div/>', {
+                class: 'mb-1',
+                text: `• ${String(message ?? '')}`,
+            });
+            $errorsContent.append(line);
+        });
+    };
+
+    $fundCluster.on('input blur', validateFundCluster);
+    $totalAmount.on('input blur', validateTotalAmount);
+
     $(document)
         .off('click.fundCreate', '#openCreateModal')
         .on('click.fundCreate', '#openCreateModal', () => {
@@ -391,6 +476,7 @@
         $('#allocatedNote').text('');
         $form[0].reset();
         $errors.addClass('hidden');
+        clearInlineErrors();
 
         // Fetch suggested fund cluster code and prefill
         $.ajax({
@@ -445,6 +531,7 @@
         $('#totalAmount').val(total);
         $('#allocatedNote').text(`Already allocated: ₱${parseFloat(allocated).toLocaleString('en-PH', {minimumFractionDigits: 2})}`);
         $errors.addClass('hidden');
+        clearInlineErrors();
         toggleModal($modal, true);
     });
 
@@ -498,6 +585,13 @@
     $form.on('submit', function(e) {
         e.preventDefault();
         $errors.addClass('hidden');
+        clearInlineErrors();
+
+        if (!validateAllocationForm()) {
+            showToast('Please correct the highlighted fields before saving.', 'error');
+            return;
+        }
+
         const method = $('#formMethod').val();
         const id = String(activeEditId || $('#allocationId').val() || $form.data('allocationId') || '').trim();
 
@@ -523,8 +617,17 @@
             },
             error: (xhr) => {
                 if (xhr.status === 422 && xhr.responseJSON?.errors) {
-                    const messages = Object.values(xhr.responseJSON.errors).flat();
-                    $errorsContent.html(messages.map(msg => `<div class="mb-1">• ${msg}</div>`).join(''));
+                    const serverErrors = xhr.responseJSON.errors;
+                    const messages = Object.values(serverErrors).flat();
+
+                    if (serverErrors.fund_cluster?.[0]) {
+                        setFieldError($fundCluster, $fundClusterError, serverErrors.fund_cluster[0]);
+                    }
+                    if (serverErrors.total_amount?.[0]) {
+                        setFieldError($totalAmount, $totalAmountError, serverErrors.total_amount[0]);
+                    }
+
+                    renderServerErrors(messages);
                     $errors.removeClass('hidden');
                 } else {
                     const message = xhr.responseJSON?.message || `An error occurred while saving allocation (HTTP ${xhr.status || 'ERR'}).`;

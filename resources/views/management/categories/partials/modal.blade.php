@@ -20,16 +20,19 @@
                 <div>
                     <label for="categoryIdField" class="block text-sm font-semibold text-gray-700">Category ID</label>
                     <input id="categoryIdField" name="cat_id" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="e.g., CAT-2001">
+                    <p id="categoryIdFieldError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                 </div>
 
                 <div>
                     <label for="categoryNameField" class="block text-sm font-semibold text-gray-700">Category Name</label>
                     <input id="categoryNameField" name="cat_name" type="text" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Enter category name">
+                    <p id="categoryNameFieldError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                 </div>
 
                 <div>
                     <label for="categoryDescriptionField" class="block text-sm font-semibold text-gray-700">Description <span class="text-xs text-gray-400">(optional)</span></label>
                     <textarea id="categoryDescriptionField" name="description" rows="3" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Add a brief description"></textarea>
+                    <p id="categoryDescriptionFieldError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                 </div>
 
                 <div class="hidden" data-parent-indicator>

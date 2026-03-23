@@ -1,15 +1,15 @@
-<div id="icsViewModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-200 ease-out">
+<div id="icsViewModal" class="fixed inset-0 z-50 hidden opacity-0 transition-opacity duration-300 ease-out">
     {{-- Backdrop --}}
     <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" data-close-modal></div>
 
     {{-- Outer wrapper centers the modal and provides safe padding --}}
-    <div class="relative flex min-h-screen items-center justify-center p-4">
+    <div class="relative flex min-h-screen items-center justify-center p-3 sm:p-4">
 
         {{-- Main modal panel uses flexbox and max-height to ensure it fits the screen --}}
-        <div class="relative flex w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)]">
+        <div class="relative flex h-[calc(100vh-1.5rem)] w-full max-w-[min(96vw,1700px)] flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-1.5rem)] sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)]">
 
             {{-- Modal Header (Flex item, does not shrink) --}}
-            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-8 py-6 text-white">
+            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-6 py-5 text-white sm:px-8 sm:py-6">
                 <div class="space-y-3">
                     <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Inventory Custodian Slip</span>
                     <div class="flex flex-wrap items-center gap-2 text-sm font-semibold text-white/90">
@@ -35,8 +35,8 @@
             </div>
 
             {{-- Scrollable content area --}}
-            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-6 py-8 sm:px-8">
-                <div class="mx-auto w-full max-w-5xl space-y-8">
+            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-4 py-6 sm:px-6 lg:px-8">
+                <div class="mx-auto w-full max-w-none space-y-8">
                     <section>
                         <h4 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Property Record Snapshot</h4>
                         <div class="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 text-sm text-gray-800 md:grid-cols-2">
@@ -117,7 +117,7 @@
             </div>
 
             {{-- Modal Footer (Flex item, does not shrink, always visible) --}}
-            <div class="flex-shrink-0 flex items-center justify-end gap-3 border-t bg-gray-50 px-8 py-4">
+            <div class="flex-shrink-0 flex items-center justify-end gap-3 border-t bg-gray-50 px-6 py-4 sm:px-8">
                 <button type="button" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-modal>
                     Close
                 </button>

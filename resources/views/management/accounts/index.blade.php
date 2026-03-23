@@ -240,6 +240,7 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <p id="accountEditPasswordFieldError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                     </div>
                     <div>
                         <label for="accountEditPasswordConfirm" class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">Confirm Password</label>
@@ -251,6 +252,7 @@
                                 <i class="fas fa-eye"></i>
                             </button>
                         </div>
+                        <p id="accountEditPasswordConfirmError" class="mt-1 hidden text-xs font-medium text-red-600"></p>
                     </div>
                 </div>
                 <p id="accountEditPasswordError" class="-mt-1 hidden text-xs font-medium text-red-600"></p>
@@ -304,6 +306,8 @@
         const editRoleError = document.getElementById('accountEditRoleError');
         const editPasswordInput = document.getElementById('accountEditPassword');
         const editPasswordConfirmInput = document.getElementById('accountEditPasswordConfirm');
+        const editPasswordFieldError = document.getElementById('accountEditPasswordFieldError');
+        const editPasswordConfirmError = document.getElementById('accountEditPasswordConfirmError');
         const passwordToggleButtons = Array.from(document.querySelectorAll('[data-target-input]'));
         const editPasswordError = document.getElementById('accountEditPasswordError');
         const editSaveBtn = document.getElementById('accountEditSaveBtn');
@@ -527,6 +531,9 @@
                 editRoleError.textContent = '';
                 editRoleError.classList.add('hidden');
             }
+            clearAccountFieldError(editRoleSelect, editRoleError);
+            clearAccountFieldError(editPasswordInput, editPasswordFieldError);
+            clearAccountFieldError(editPasswordConfirmInput, editPasswordConfirmError);
             if (editPasswordError) {
                 editPasswordError.textContent = '';
                 editPasswordError.classList.add('hidden');
@@ -538,6 +545,73 @@
                 editPasswordConfirmInput.value = '';
             }
             toggleEditModal(true);
+        };
+
+        const clearAccountFieldError = (field, errorNode) => {
+            if (field) {
+                field.classList.remove('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+                field.setAttribute('aria-invalid', 'false');
+            }
+
+            if (errorNode) {
+                errorNode.textContent = '';
+                errorNode.classList.add('hidden');
+            }
+        };
+
+        const setAccountFieldError = (field, errorNode, message) => {
+            if (field) {
+                field.classList.add('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+                field.setAttribute('aria-invalid', 'true');
+            }
+
+            if (errorNode) {
+                errorNode.textContent = message || 'Invalid value.';
+                errorNode.classList.remove('hidden');
+            }
+        };
+
+        const validateAccountRole = () => {
+            const role = String(editRoleSelect?.value || '').trim();
+            if (!role) {
+                setAccountFieldError(editRoleSelect, editRoleError, 'Role is required.');
+                return false;
+            }
+
+            clearAccountFieldError(editRoleSelect, editRoleError);
+            return true;
+        };
+
+        const validateAccountPasswordPair = () => {
+            const password = String(editPasswordInput?.value || '');
+            const confirm = String(editPasswordConfirmInput?.value || '');
+            let isValid = true;
+
+            clearAccountFieldError(editPasswordInput, editPasswordFieldError);
+            clearAccountFieldError(editPasswordConfirmInput, editPasswordConfirmError);
+
+            if (password && password.length < 8) {
+                setAccountFieldError(editPasswordInput, editPasswordFieldError, 'Password must be at least 8 characters.');
+                isValid = false;
+            }
+
+            if (confirm && !password) {
+                setAccountFieldError(editPasswordInput, editPasswordFieldError, 'Enter New Password before confirming it.');
+                isValid = false;
+            }
+
+            if ((password || confirm) && password !== confirm) {
+                setAccountFieldError(editPasswordConfirmInput, editPasswordConfirmError, 'Password confirmation does not match.');
+                isValid = false;
+            }
+
+            return isValid;
+        };
+
+        const validateAccountForm = () => {
+            const roleValid = validateAccountRole();
+            const passwordValid = validateAccountPasswordPair();
+            return roleValid && passwordValid;
         };
 
         const buildUrlFromForm = () => {
@@ -701,6 +775,12 @@
             });
         });
 
+        editRoleSelect?.addEventListener('change', validateAccountRole);
+        editPasswordInput?.addEventListener('input', validateAccountPasswordPair);
+        editPasswordInput?.addEventListener('blur', validateAccountPasswordPair);
+        editPasswordConfirmInput?.addEventListener('input', validateAccountPasswordPair);
+        editPasswordConfirmInput?.addEventListener('blur', validateAccountPasswordPair);
+
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeRoleDropdown();
@@ -717,6 +797,11 @@
             const actionUrl = editForm.dataset.actionUrl;
             if (!actionUrl) {
                 showToast('Unable to update account: missing endpoint.', 'error');
+                return;
+            }
+
+            if (!validateAccountForm()) {
+                showToast('Please correct the highlighted fields before saving.', 'error');
                 return;
             }
 
@@ -766,12 +851,18 @@
                 if (!res.ok) {
                     const roleError = data?.errors?.role?.[0];
                     const passwordError = data?.errors?.password?.[0];
+                    const passwordConfirmError = data?.errors?.password_confirmation?.[0];
                     if (roleError && editRoleError) {
-                        editRoleError.textContent = roleError;
-                        editRoleError.classList.remove('hidden');
+                        setAccountFieldError(editRoleSelect, editRoleError, roleError);
                     }
-                    if (passwordError && editPasswordError) {
-                        editPasswordError.textContent = passwordError;
+                    if (passwordError) {
+                        setAccountFieldError(editPasswordInput, editPasswordFieldError, passwordError);
+                    }
+                    if (passwordConfirmError) {
+                        setAccountFieldError(editPasswordConfirmInput, editPasswordConfirmError, passwordConfirmError);
+                    }
+                    if ((passwordError || passwordConfirmError) && editPasswordError) {
+                        editPasswordError.textContent = passwordError || passwordConfirmError;
                         editPasswordError.classList.remove('hidden');
                     }
                     throw new Error(data?.message || `Account update failed (status ${res.status})`);

@@ -59,6 +59,31 @@
     @php
         $recordsPerPage = 18;
         $chunks = $employees->chunk($recordsPerPage);
+        $formatPhone = static function ($value) {
+            $raw = trim((string) ($value ?? ''));
+            if ($raw === '') {
+                return 'N/A';
+            }
+
+            $digits = preg_replace('/\D+/', '', $raw);
+            if ($digits === '') {
+                return $raw;
+            }
+
+            if (str_starts_with($digits, '63') && strlen($digits) === 12) {
+                return '+' . $digits;
+            }
+
+            if (str_starts_with($digits, '0') && strlen($digits) === 11) {
+                return '+63' . substr($digits, 1);
+            }
+
+            if (str_starts_with($digits, '9') && strlen($digits) === 10) {
+                return '+63' . $digits;
+            }
+
+            return str_starts_with($raw, '+63') ? $raw : '+' . $digits;
+        };
     @endphp
 
     @foreach($chunks as $chunkIndex => $chunk)
@@ -102,7 +127,7 @@
                         <td>{{ $employee->section?->section_name ?? 'N/A' }}</td>
                         <td>{{ $employee->section?->division?->division_name ?? 'N/A' }}</td>
                         <td>{{ $employee->email ?? 'N/A' }}</td>
-                        <td>{{ $employee->contact_no ?? 'N/A' }}</td>
+                        <td>{{ $formatPhone($employee->contact_no) }}</td>
                         <td>{{ ucfirst($employee->gender ?? 'N/A') }}</td>
                         <td>{{ $employee->account ? '✓ Linked' : '✗ None' }}</td>
                     </tr>

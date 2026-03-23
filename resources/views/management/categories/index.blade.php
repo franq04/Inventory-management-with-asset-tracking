@@ -147,6 +147,9 @@
         const idField = modal.querySelector('#categoryIdField');
         const nameField = modal.querySelector('#categoryNameField');
         const descriptionField = modal.querySelector('#categoryDescriptionField');
+        const idFieldError = modal.querySelector('#categoryIdFieldError');
+        const nameFieldError = modal.querySelector('#categoryNameFieldError');
+        const descriptionFieldError = modal.querySelector('#categoryDescriptionFieldError');
         const parentRegionSelector = '[data-parent-region]';
         const filtersForm = document.querySelector('[data-category-filters]');
         const resetLink = document.getElementById('categoriesResetFilters');
@@ -188,6 +191,86 @@
             region.classList.toggle('opacity-60', isLoading);
             region.classList.toggle('pointer-events-none', isLoading);
         };
+
+        const clearCategoryFieldError = (field, errorNode) => {
+            if (field) {
+                field.classList.remove('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+                field.setAttribute('aria-invalid', 'false');
+            }
+            if (errorNode) {
+                errorNode.textContent = '';
+                errorNode.classList.add('hidden');
+            }
+        };
+
+        const setCategoryFieldError = (field, errorNode, message) => {
+            if (field) {
+                field.classList.add('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+                field.setAttribute('aria-invalid', 'true');
+            }
+            if (errorNode) {
+                errorNode.textContent = message || 'Invalid value.';
+                errorNode.classList.remove('hidden');
+            }
+        };
+
+        const clearCategoryValidation = () => {
+            clearCategoryFieldError(idField, idFieldError);
+            clearCategoryFieldError(nameField, nameFieldError);
+            clearCategoryFieldError(descriptionField, descriptionFieldError);
+        };
+
+        const validateCategoryId = () => {
+            const value = String(idField?.value || '').trim();
+            if (!value) {
+                setCategoryFieldError(idField, idFieldError, 'Category ID is required.');
+                return false;
+            }
+            if (value.length > 50) {
+                setCategoryFieldError(idField, idFieldError, 'Category ID must not exceed 50 characters.');
+                return false;
+            }
+            clearCategoryFieldError(idField, idFieldError);
+            return true;
+        };
+
+        const validateCategoryName = () => {
+            const value = String(nameField?.value || '').trim();
+            if (!value) {
+                setCategoryFieldError(nameField, nameFieldError, 'Category Name is required.');
+                return false;
+            }
+            if (value.length > 255) {
+                setCategoryFieldError(nameField, nameFieldError, 'Category Name must not exceed 255 characters.');
+                return false;
+            }
+            clearCategoryFieldError(nameField, nameFieldError);
+            return true;
+        };
+
+        const validateCategoryDescription = () => {
+            const value = String(descriptionField?.value || '').trim();
+            if (value.length > 255) {
+                setCategoryFieldError(descriptionField, descriptionFieldError, 'Description must not exceed 255 characters.');
+                return false;
+            }
+            clearCategoryFieldError(descriptionField, descriptionFieldError);
+            return true;
+        };
+
+        const validateCategoryForm = () => {
+            const idOk = validateCategoryId();
+            const nameOk = validateCategoryName();
+            const descriptionOk = validateCategoryDescription();
+            return idOk && nameOk && descriptionOk;
+        };
+
+        idField?.addEventListener('input', validateCategoryId);
+        idField?.addEventListener('blur', validateCategoryId);
+        nameField?.addEventListener('input', validateCategoryName);
+        nameField?.addEventListener('blur', validateCategoryName);
+        descriptionField?.addEventListener('input', validateCategoryDescription);
+        descriptionField?.addEventListener('blur', validateCategoryDescription);
 
         const scheduleOverviewRefresh = (params) => {
             if (filterDebounceTimer) {
@@ -282,6 +365,7 @@
             modalTitle.textContent = config.title;
             modalSubtitle.textContent = config.subtitle;
             submitLabel.textContent = config.submitLabel;
+            clearCategoryValidation();
         }
 
         function closeModal() {
@@ -295,6 +379,7 @@
                 categoryForm.reset();
                 idField.disabled = false;
                 parentIndicator.classList.add('hidden');
+                clearCategoryValidation();
                 const existingMethodField = categoryForm.querySelector('input[name="_method"]');
                 if (existingMethodField) {
                     existingMethodField.remove();
@@ -558,6 +643,12 @@
 
         categoryForm.addEventListener('submit', function (event) {
             event.preventDefault();
+
+            if (!validateCategoryForm()) {
+                showToast('Please correct the highlighted fields before saving.', 'error');
+                return;
+            }
+
             submitButton.disabled = true;
             const formData = new FormData(categoryForm);
             fetch(categoryForm.action, {
@@ -580,6 +671,18 @@
                 .catch(async (errorResponse) => {
                     if (errorResponse.json) {
                         const data = await errorResponse.json();
+                        const errors = data?.errors || {};
+
+                        if (errors.cat_id?.[0]) {
+                            setCategoryFieldError(idField, idFieldError, errors.cat_id[0]);
+                        }
+                        if (errors.cat_name?.[0]) {
+                            setCategoryFieldError(nameField, nameFieldError, errors.cat_name[0]);
+                        }
+                        if (errors.description?.[0]) {
+                            setCategoryFieldError(descriptionField, descriptionFieldError, errors.description[0]);
+                        }
+
                         showToast(data.message || 'Failed to save category.', 'error');
                     } else {
                         showToast('Failed to save category.', 'error');

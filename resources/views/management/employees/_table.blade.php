@@ -1,3 +1,31 @@
+@php
+    $formatPhone = static function ($value) {
+        $raw = trim((string) ($value ?? ''));
+        if ($raw === '') {
+            return '—';
+        }
+
+        $digits = preg_replace('/\D+/', '', $raw);
+        if ($digits === '') {
+            return $raw;
+        }
+
+        if (str_starts_with($digits, '63') && strlen($digits) === 12) {
+            return '+' . $digits;
+        }
+
+        if (str_starts_with($digits, '0') && strlen($digits) === 11) {
+            return '+63' . substr($digits, 1);
+        }
+
+        if (str_starts_with($digits, '9') && strlen($digits) === 10) {
+            return '+63' . $digits;
+        }
+
+        return str_starts_with($raw, '+63') ? $raw : '+' . $digits;
+    };
+@endphp
+
 <table class="min-w-full divide-y divide-gray-100">
     <thead class="bg-[#f5f8f6] text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
         <tr>
@@ -20,7 +48,7 @@
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm">{{ $employee->email ?: 'N/A' }}</div>
-                    <div class="text-xs text-gray-500">{{ $employee->contact_no ?: '—' }}</div>
+                    <div class="text-xs text-gray-500">{{ $formatPhone($employee->contact_no) }}</div>
                 </td>
                 <td class="px-6 py-4">
                     <div class="font-medium">{{ optional($employee->section)->section_name ?: 'Unassigned' }}</div>
@@ -61,7 +89,7 @@
                             data-email-raw="{{ $employee->email ?? '' }}"
                             data-contact-raw="{{ $employee->contact_no ?? '' }}"
                             data-employee-email="{{ $employee->email ?: 'Not provided' }}"
-                            data-employee-contact="{{ $employee->contact_no ?: 'Not provided' }}"
+                            data-employee-contact="{{ $formatPhone($employee->contact_no) }}"
                             data-employee-position="{{ $employee->position?->position_title ?? 'Unassigned' }}"
                             data-employee-section="{{ optional($employee->section)->section_name ?: 'Unassigned' }}"
                             data-employee-division="{{ optional(optional($employee->section)->division)->division_name ?: '—' }}"

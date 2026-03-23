@@ -1,3 +1,31 @@
+@php
+    $formatPhone = static function ($value) {
+        $raw = trim((string) ($value ?? ''));
+        if ($raw === '') {
+            return '';
+        }
+
+        $digits = preg_replace('/\D+/', '', $raw);
+        if ($digits === '') {
+            return $raw;
+        }
+
+        if (str_starts_with($digits, '63') && strlen($digits) === 12) {
+            return '+' . $digits;
+        }
+
+        if (str_starts_with($digits, '0') && strlen($digits) === 11) {
+            return '+63' . substr($digits, 1);
+        }
+
+        if (str_starts_with($digits, '9') && strlen($digits) === 10) {
+            return '+63' . $digits;
+        }
+
+        return str_starts_with($raw, '+63') ? $raw : '+' . $digits;
+    };
+@endphp
+
 <table border="1">
     <thead>
         <tr style="background-color: #1a3a2d; color: white; font-weight: bold;">
@@ -29,7 +57,7 @@
                 <td>{{ $employee->section?->section_name ?? 'N/A' }}</td>
                 <td>{{ $employee->section?->division?->division_name ?? 'N/A' }}</td>
                 <td>{{ $employee->email ?? '' }}</td>
-                <td>{{ $employee->contact_no ?? '' }}</td>
+                <td>{{ $formatPhone($employee->contact_no) }}</td>
                 <td>{{ ucfirst($employee->gender ?? '') }}</td>
                 <td>{{ ucfirst($employee->marital_status ?? '') }}</td>
                 <td>{{ $employee->date_of_birth ? \Carbon\Carbon::parse($employee->date_of_birth)->format('M d, Y') : '' }}</td>

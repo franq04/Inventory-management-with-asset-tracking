@@ -80,17 +80,17 @@
                     <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
                             <label for="first_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">First Name</label>
-                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <input id="first_name" name="first_name" type="text" value="{{ old('first_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. Juan" autocomplete="given-name" />
                             @error('first_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
                             <label for="middle_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Middle Name</label>
-                            <input id="middle_name" name="middle_name" type="text" value="{{ old('middle_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <input id="middle_name" name="middle_name" type="text" value="{{ old('middle_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. Santos" autocomplete="additional-name" />
                             @error('middle_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                          <div>
                             <label for="last_name" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Last Name</label>
-                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <input id="last_name" name="last_name" type="text" value="{{ old('last_name') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. Dela Cruz" autocomplete="family-name" />
                             @error('last_name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -100,7 +100,7 @@
                         </div>
                          <div>
                             <label for="date_of_birth" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Date of Birth</label>
-                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <input id="date_of_birth" name="date_of_birth" type="date" value="{{ old('date_of_birth') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" max="{{ now()->toDateString() }}" autocomplete="bday" />
                             @error('date_of_birth')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -152,7 +152,11 @@
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label for="contact_no" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Contact Number</label>
-                        <input id="contact_no" name="contact_no" type="text" value="{{ old('contact_no') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="e.g. 09171234567" />
+                        <div class="relative mt-1">
+                            <span class="pointer-events-none absolute inset-y-0 left-4 inline-flex items-center text-sm font-semibold text-gray-500">+63</span>
+                            <input id="contact_no" name="contact_no" type="text" value="{{ old('contact_no') }}" class="h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] pl-14 pr-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="9XXXXXXXXX" inputmode="numeric" maxlength="10" autocomplete="tel-national" aria-describedby="contact_no_helper" />
+                        </div>
+                        <p id="contact_no_helper" class="mt-1 text-xs text-gray-500">Enter 10-digit PH mobile number (example: 9171234567).</p>
                         @error('contact_no')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -224,7 +228,7 @@
                         <div id="new_account_fields" class="mt-4 space-y-4 rounded-xl border border-emerald-100 bg-white p-4 hidden shadow-sm">
                         <div>
                             <label for="new_account_username" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Username</label>
-                            <input id="new_account_username" name="new_account_username" type="text" value="{{ old('new_account_username') }}" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" />
+                            <input id="new_account_username" name="new_account_username" type="text" value="{{ old('new_account_username') }}" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="letters, numbers, ., _, -" autocomplete="username" />
                             @error('new_account_username')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div>
@@ -238,7 +242,7 @@
                         </div>
                         <div>
                             <label for="new_account_password" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Password</label>
-                            <input id="new_account_password" name="new_account_password" type="password" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="Leave blank for default password" />
+                            <input id="new_account_password" name="new_account_password" type="password" class="mt-1 h-12 w-full rounded-xl border-gray-300 bg-white px-4 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15 shadow-sm" placeholder="At least 6 characters (optional)" autocomplete="new-password" />
                             <p class="mt-1 text-xs text-gray-500">Default is "password". The user will be prompted to change it on first login.</p>
                             @error('new_account_password')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                         </div>
@@ -310,6 +314,20 @@
                     showAccountFields();
                 } else {
                     hideAccountFields();
+                    ['new_account_username', 'new_account_role', 'new_account_password'].forEach((fieldId) => {
+                        const field = document.getElementById(fieldId);
+                        if (!field) {
+                            return;
+                        }
+                        field.classList.remove('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+                        field.classList.add('border-gray-300');
+                        field.removeAttribute('aria-invalid');
+                        const inlineError = document.querySelector(`[data-inline-error-for="${fieldId}"]`);
+                        if (inlineError) {
+                            inlineError.textContent = '';
+                            inlineError.classList.add('hidden');
+                        }
+                    });
                 }
             };
             createAccountChk.addEventListener('change', toggleFields);
@@ -351,21 +369,135 @@
             document.body.appendChild(toastStackEl);
         }
 
-        const stepRequiredFields = {
-            1: [
-                { id: 'first_name', label: 'First Name' },
-                { id: 'last_name', label: 'Last Name' },
-                { id: 'date_of_birth', label: 'Date of Birth' },
-                { id: 'gender', label: 'Gender' },
-                { id: 'marital_status', label: 'Marital Status' },
-            ],
-            2: [
-                { id: 'contact_no', label: 'Contact Number' },
-                { id: 'email', label: 'Email Address' },
-                { id: 'division_id', label: 'Division' },
-                { id: 'section_id', label: 'Section' },
-                { id: 'position_id', label: 'Position' },
-            ],
+        const sanitizePhoneLocal = (value = '') => {
+            let digits = String(value || '').replace(/\D/g, '');
+
+            if (digits.startsWith('63')) {
+                digits = digits.slice(2);
+            }
+
+            if (digits.startsWith('0')) {
+                digits = digits.slice(1);
+            }
+
+            return digits.slice(0, 10);
+        };
+
+        const fieldValidationRules = {
+            first_name: {
+                step: 1,
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return 'First Name is required.';
+                    if (!/^[A-Za-z .'-]+$/.test(v)) return 'First Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                    return '';
+                },
+            },
+            middle_name: {
+                step: 1,
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return '';
+                    if (!/^[A-Za-z .'-]+$/.test(v)) return 'Middle Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                    return '';
+                },
+            },
+            last_name: {
+                step: 1,
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return 'Last Name is required.';
+                    if (!/^[A-Za-z .'-]+$/.test(v)) return 'Last Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                    return '';
+                },
+            },
+            suffix: {
+                step: 1,
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return '';
+                    if (!/^[A-Za-z0-9.,\- ]+$/.test(v)) return 'Suffix may only contain letters, numbers, comma, period, spaces, and hyphen.';
+                    if (v.length > 10) return 'Suffix must not exceed 10 characters.';
+                    return '';
+                },
+            },
+            date_of_birth: {
+                step: 1,
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return 'Date of Birth is required.';
+                    const selected = new Date(v);
+                    if (Number.isNaN(selected.getTime())) return 'Please provide a valid Date of Birth.';
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selected > today) return 'Date of Birth cannot be in the future.';
+                    return '';
+                },
+            },
+            gender: {
+                step: 1,
+                validate: (value) => String(value || '').trim() ? '' : 'Gender is required.',
+            },
+            marital_status: {
+                step: 1,
+                validate: (value) => String(value || '').trim() ? '' : 'Marital Status is required.',
+            },
+            contact_no: {
+                step: 2,
+                validate: (value) => {
+                    const localDigits = sanitizePhoneLocal(value);
+                    if (!localDigits) return 'Contact Number is required.';
+                    if (!/^9\d{9}$/.test(localDigits)) return 'Enter a valid PH mobile number (example: +639171234567).';
+                    return '';
+                },
+            },
+            email: {
+                step: 2,
+                validate: (value, field) => {
+                    const v = String(value || '').trim();
+                    if (!v) return 'Email Address is required.';
+                    if (field && typeof field.checkValidity === 'function' && !field.checkValidity()) {
+                        return 'Enter a valid email address (example: name@example.com).';
+                    }
+                    return '';
+                },
+            },
+            division_id: {
+                step: 2,
+                validate: (value) => String(value || '').trim() ? '' : 'Division is required.',
+            },
+            section_id: {
+                step: 2,
+                validate: (value) => String(value || '').trim() ? '' : 'Section is required.',
+            },
+            position_id: {
+                step: 2,
+                validate: (value) => String(value || '').trim() ? '' : 'Position is required.',
+            },
+            new_account_username: {
+                step: 2,
+                when: () => Boolean(createAccountChk?.checked),
+                validate: (value) => {
+                    const v = String(value || '').trim();
+                    if (!v) return 'Username is required when account creation is enabled.';
+                    if (!/^[A-Za-z0-9._-]{3,255}$/.test(v)) return 'Username must be 3-255 characters and may only contain letters, numbers, dot, underscore, or hyphen.';
+                    return '';
+                },
+            },
+            new_account_role: {
+                step: 2,
+                when: () => Boolean(createAccountChk?.checked),
+                validate: (value) => String(value || '').trim() ? '' : 'Role is required when account creation is enabled.',
+            },
+            new_account_password: {
+                step: 2,
+                when: () => Boolean(createAccountChk?.checked),
+                validate: (value) => {
+                    const v = String(value || '');
+                    if (!v) return '';
+                    return v.length >= 6 ? '' : 'Password must be at least 6 characters.';
+                },
+            },
         };
 
         const getStepElement = (stepNumber) => document.querySelector(`.form-step[data-step="${stepNumber}"]`);
@@ -409,55 +541,124 @@
             }, 3200);
         };
 
-        const markFieldInvalid = (field) => {
-            field.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+        const getInlineErrorNode = (field) => {
+            let node = form.querySelector(`[data-inline-error-for="${field.id}"]`);
+            if (node) {
+                return node;
+            }
+
+            node = document.createElement('p');
+            node.dataset.inlineErrorFor = field.id;
+            node.className = 'mt-1 text-xs font-medium text-red-600 hidden';
+            node.setAttribute('aria-live', 'polite');
+
+            const parent = field.parentElement;
+            const host = parent && parent.classList.contains('relative')
+                ? parent.parentElement
+                : parent;
+
+            host?.appendChild(node);
+            return node;
+        };
+
+        const markFieldInvalid = (field, message) => {
+            const errorNode = getInlineErrorNode(field);
+            field.classList.add('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+            field.classList.remove('border-gray-200', 'border-gray-300');
             field.setAttribute('aria-invalid', 'true');
+            if (errorNode) {
+                errorNode.textContent = message;
+                errorNode.classList.remove('hidden');
+            }
         };
 
         const clearFieldInvalid = (field) => {
-            field.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            const errorNode = getInlineErrorNode(field);
+            const defaultBorderClass = field.dataset.defaultBorderClass || 'border-gray-200';
+            field.classList.remove('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
+            field.classList.remove('border-gray-200', 'border-gray-300');
+            field.classList.add(defaultBorderClass);
             field.removeAttribute('aria-invalid');
+            if (errorNode) {
+                errorNode.textContent = '';
+                errorNode.classList.add('hidden');
+            }
         };
 
-        const wireFieldCleanup = (field) => {
-            const clear = () => clearFieldInvalid(field);
-            field.addEventListener('input', clear);
-            field.addEventListener('change', clear);
-        };
+        const validateField = (fieldId) => {
+            const field = document.getElementById(fieldId);
+            const rule = fieldValidationRules[fieldId];
 
-        Object.values(stepRequiredFields)
-            .flat()
-            .forEach(({ id }) => {
-                const field = document.getElementById(id);
-                if (field) wireFieldCleanup(field);
-            });
-
-        const validateStep = (stepNumber) => {
-            const fields = [...(stepRequiredFields[stepNumber] || [])];
-
-            if (stepNumber === 2 && createAccountChk?.checked) {
-                fields.push(
-                    { id: 'new_account_username', label: 'Username' },
-                    { id: 'new_account_role', label: 'Role' },
-                );
+            if (!field || !rule) {
+                return true;
             }
 
-            for (const rule of fields) {
-                const field = document.getElementById(rule.id);
-                if (!field) {
-                    continue;
-                }
-
-                const value = String(field.value ?? '').trim();
-                if (value === '') {
-                    markFieldInvalid(field);
-                    field.focus();
-                    field.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    showFormToast(`${rule.label} is required before continuing.`, 'error');
-                    return false;
-                }
-
+            if (typeof rule.when === 'function' && !rule.when()) {
                 clearFieldInvalid(field);
+                return true;
+            }
+
+            const message = rule.validate(field.value, field);
+            if (message) {
+                markFieldInvalid(field, message);
+                return false;
+            }
+
+            clearFieldInvalid(field);
+            return true;
+        };
+
+        Object.keys(fieldValidationRules).forEach((fieldId) => {
+            const field = document.getElementById(fieldId);
+            if (!field) {
+                return;
+            }
+
+            field.dataset.defaultBorderClass = field.classList.contains('border-gray-300')
+                ? 'border-gray-300'
+                : 'border-gray-200';
+
+            const eventName = field.tagName === 'SELECT' || field.type === 'file' ? 'change' : 'input';
+            field.addEventListener(eventName, () => {
+                if (fieldId === 'contact_no') {
+                    const normalizedDigits = sanitizePhoneLocal(field.value);
+                    field.value = normalizedDigits;
+                }
+                validateField(fieldId);
+            });
+
+            field.addEventListener('blur', () => {
+                if (fieldId === 'contact_no') {
+                    const normalizedDigits = sanitizePhoneLocal(field.value);
+                    field.value = normalizedDigits;
+                }
+                validateField(fieldId);
+            });
+        });
+
+        const contactField = document.getElementById('contact_no');
+        if (contactField) {
+            contactField.value = sanitizePhoneLocal(contactField.value);
+        }
+
+        const validateStep = (stepNumber) => {
+            const fieldsForStep = Object.entries(fieldValidationRules)
+                .filter(([, rule]) => rule.step === stepNumber)
+                .map(([fieldId]) => fieldId);
+
+            let firstInvalidField = null;
+
+            fieldsForStep.forEach((fieldId) => {
+                if (!validateField(fieldId) && !firstInvalidField) {
+                    firstInvalidField = document.getElementById(fieldId);
+                }
+            });
+
+            if (firstInvalidField) {
+                firstInvalidField.focus();
+                firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showFormToast('Please correct the highlighted fields before continuing.', 'error');
+                return false;
             }
 
             return true;
@@ -522,9 +723,18 @@
         });
 
         form?.addEventListener('submit', (event) => {
+            const submitContactField = document.getElementById('contact_no');
+            if (submitContactField) {
+                const normalizedDigits = sanitizePhoneLocal(submitContactField.value);
+                submitContactField.value = normalizedDigits ? `+63${normalizedDigits}` : '';
+            }
+
             for (let step = 1; step <= steps.length; step++) {
                 if (!validateStep(step)) {
                     event.preventDefault();
+                    if (submitContactField) {
+                        submitContactField.value = sanitizePhoneLocal(submitContactField.value);
+                    }
                     goToStep(step);
                     return;
                 }

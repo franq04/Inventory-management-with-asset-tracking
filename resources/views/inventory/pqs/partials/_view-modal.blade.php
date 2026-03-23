@@ -113,13 +113,13 @@
     <div class="pqs-modal-overlay absolute inset-0 bg-slate-950/60 backdrop-blur-sm" data-close-modal></div>
 
     {{-- FIX: Outer wrapper now centers the modal and provides safe padding --}}
-    <div class="relative flex min-h-screen items-center justify-center p-4">
+    <div class="relative flex min-h-screen items-center justify-center p-3 sm:p-4">
 
         {{-- FIX: Main modal panel now uses flexbox and max-height to ensure it fits the screen --}}
-        <div class="pqs-modal-shell modal-panel relative flex w-full max-w-5xl flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-2rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+        <div class="pqs-modal-shell modal-panel relative flex h-[calc(100vh-1.5rem)] w-full max-w-[min(96vw,1700px)] flex-col rounded-2xl bg-white shadow-2xl max-h-[calc(100vh-1.5rem)] transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2 sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)]">
 
             {{-- Modal Header (Flex item, does not shrink) --}}
-            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-8 py-5 text-white">
+            <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] px-6 py-5 text-white sm:px-8 sm:py-6">
                 <div class="space-y-3">
                     <span class="text-xs font-semibold uppercase tracking-[0.35em] text-white/70">Property Custodial Record</span>
                     {{-- REMOVED: Redundant h2 element as requested --}}
@@ -147,8 +147,8 @@
             </div>
 
             {{-- Scrollable content area: includes print-ready template and on-screen summary --}}
-            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-6 py-7 sm:px-8">
-                <div class="mx-auto w-full max-w-5xl space-y-6 pqs-print-wrapper">
+            <div class="flex-1 overflow-y-auto bg-gray-50/50 px-4 py-6 sm:px-6 lg:px-8">
+                <div class="mx-auto w-full max-w-none space-y-6 pqs-print-wrapper">
                     <div id="pqsPrintArea" class="pqs-detail-section rounded-2xl border-2 border-gray-400 bg-white shadow-sm" style="min-height:auto;">
                         <div id="pqsParTemplate" class="hidden px-6 py-7 text-gray-900 pqs-template pqs-template-par">
                             <div class="relative mb-6 flex items-center justify-center">
@@ -594,7 +594,7 @@
             </div>
 
             {{-- FIX: Modal Footer (Flex item, does not shrink, always visible) --}}
-            <div class="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 border-t bg-gray-50 px-8 py-4">
+            <div class="flex-shrink-0 flex flex-wrap items-center justify-center gap-3 border-t bg-gray-50 px-6 py-4 sm:px-8">
                 <div class="flex flex-wrap items-center justify-center gap-2">
                     <button type="button" data-pqs-action-tab="details" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-[#285641]">
                         <i class="fas fa-eye"></i>

@@ -192,9 +192,9 @@
 
 <div id="employeesViewModal" class="fixed inset-0 z-[120] hidden opacity-0 transition-opacity duration-300" aria-labelledby="employeesViewTitle" role="dialog" aria-modal="true">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-employee-view-modal></div>
-    <div class="relative flex min-h-full items-center justify-center p-3 sm:p-5">
-        <div class="employee-view-panel relative w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
-            <div class="flex items-center justify-between rounded-t-2xl bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+    <div class="relative flex min-h-screen items-center justify-center p-3 sm:p-4">
+        <div class="employee-view-panel relative flex h-[calc(100vh-1.5rem)] w-full max-w-[min(96vw,1700px)] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2 sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)]">
+            <div class="flex-shrink-0 flex items-center justify-between rounded-t-2xl bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-6 py-5 text-white sm:px-8 sm:py-6">
                 <div>
                     <h3 id="employeesViewTitle" class="text-lg font-bold tracking-tight">Employee Details</h3>
                     <p class="text-xs text-white/80">Review profile, then edit or remove record.</p>
@@ -205,7 +205,7 @@
                 </button>
             </div>
 
-            <div class="max-h-[calc(100vh-10.5rem)] space-y-5 overflow-y-auto px-5 py-4 sm:px-6" id="employeeModalBody">
+            <div class="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8" id="employeeModalBody">
                 <div id="employeeModalDetailsSection" class="space-y-5 transition-all duration-200 opacity-100 translate-y-0">
                     <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
                         <div class="flex items-start gap-4">
@@ -305,7 +305,7 @@
                             </div>
                             <div>
                                 <label for="employeeEditDateOfBirth" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date of Birth</label>
-                                <input id="employeeEditDateOfBirth" name="date_of_birth" type="date" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditDateOfBirth" name="date_of_birth" type="date" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" max="{{ now()->toDateString() }}" autocomplete="bday" />
                             </div>
                             <div>
                                 <label for="employeeEditSuffix" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Suffix</label>
@@ -316,15 +316,15 @@
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label for="employeeEditFirstName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">First Name</label>
-                                <input id="employeeEditFirstName" name="first_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditFirstName" name="first_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Juan" autocomplete="given-name" />
                             </div>
                             <div>
                                 <label for="employeeEditMiddleName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Middle Name</label>
-                                <input id="employeeEditMiddleName" name="middle_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditMiddleName" name="middle_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Santos" autocomplete="additional-name" />
                             </div>
                             <div class="sm:col-span-2">
                                 <label for="employeeEditLastName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Last Name</label>
-                                <input id="employeeEditLastName" name="last_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                                <input id="employeeEditLastName" name="last_name" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Dela Cruz" autocomplete="family-name" />
                             </div>
                             <div>
                                 <label for="employeeEditEmail" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Email</label>
@@ -332,7 +332,11 @@
                             </div>
                             <div>
                                 <label for="employeeEditContact" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Contact</label>
-                                <input id="employeeEditContact" name="contact_no" type="text" maxlength="20" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="09XXXXXXXXX" />
+                                <div class="relative mt-1">
+                                    <span class="pointer-events-none absolute inset-y-0 left-3 inline-flex items-center text-xs font-semibold text-gray-500">+63</span>
+                                    <input id="employeeEditContact" name="contact_no" type="text" maxlength="10" inputmode="numeric" class="h-10 w-full rounded-xl border border-gray-200 bg-white pl-12 pr-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="9XXXXXXXXX" autocomplete="tel-national" />
+                                </div>
+                                <p class="mt-1 text-xs text-gray-500">Enter 10-digit PH mobile number (example: 9171234567).</p>
                             </div>
                             <div>
                                 <label for="employeeEditGender" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Gender</label>
@@ -391,7 +395,7 @@
                                 <div id="employeeModalCreateAccountFields" class="mt-3 hidden grid grid-cols-1 gap-3 sm:grid-cols-2">
                                     <div>
                                         <label for="employeeModalNewAccountUsername" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Username</label>
-                                        <input id="employeeModalNewAccountUsername" name="new_account_username" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="Enter username" />
+                                        <input id="employeeModalNewAccountUsername" name="new_account_username" type="text" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="letters, numbers, ., _, -" autocomplete="username" />
                                     </div>
                                     <div>
                                         <label for="employeeModalNewAccountRole" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Role</label>
@@ -405,7 +409,7 @@
                                     </div>
                                     <div class="sm:col-span-2">
                                         <label for="employeeModalNewAccountPassword" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Password (Optional)</label>
-                                        <input id="employeeModalNewAccountPassword" name="new_account_password" type="password" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="Leave blank to use default password" />
+                                        <input id="employeeModalNewAccountPassword" name="new_account_password" type="password" maxlength="255" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="At least 6 characters (optional)" autocomplete="new-password" />
                                         <p class="mt-1 text-xs text-emerald-900/70">If blank, default password is <span class="font-semibold">password</span>.</p>
                                     </div>
                                 </div>
@@ -422,8 +426,8 @@
                 </div>
             </div>
 
-            <div class="border-t border-gray-100 bg-gray-50/70 px-4 py-3">
-                <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+            <div class="flex-shrink-0 border-t border-gray-100 bg-gray-50/70 px-6 py-4 sm:px-8">
+                <div class="flex flex-wrap items-center justify-center gap-2">
                     <button type="button" id="employeeModalDetailsAction" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white shadow">
                         <i class="fas fa-eye text-xs"></i>
                         Details
@@ -620,6 +624,32 @@
             return legal || '—';
         };
 
+        const formatPhoneForView = (value) => {
+            const raw = String(value || '').trim();
+            if (!raw || raw === 'Not provided' || raw === '—') {
+                return '—';
+            }
+
+            const digits = raw.replace(/\D/g, '');
+            if (!digits) {
+                return raw;
+            }
+
+            if (digits.startsWith('63') && digits.length === 12) {
+                return `+${digits}`;
+            }
+
+            if (digits.startsWith('9') && digits.length === 10) {
+                return `+63${digits}`;
+            }
+
+            if (digits.startsWith('0') && digits.length === 11) {
+                return `+63${digits.slice(1)}`;
+            }
+
+            return raw.startsWith('+63') ? raw : `+63${digits.slice(-10)}`;
+        };
+
         if (!form || !tableWrapper) return;
 
         let debounceTimer = null;
@@ -758,6 +788,94 @@
             create_account: createAccountToggle,
         };
 
+        const sanitizePhoneLocal = (value = '') => {
+            let digits = String(value || '').replace(/\D/g, '');
+
+            if (digits.startsWith('63')) {
+                digits = digits.slice(2);
+            }
+
+            if (digits.startsWith('0')) {
+                digits = digits.slice(1);
+            }
+
+            return digits.slice(0, 10);
+        };
+
+        const clientValidationRules = {
+            first_name: (value) => {
+                const v = String(value || '').trim();
+                if (!v) return 'First Name is required.';
+                if (!/^[A-Za-z .'-]+$/.test(v)) return 'First Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                return '';
+            },
+            middle_name: (value) => {
+                const v = String(value || '').trim();
+                if (!v) return '';
+                if (!/^[A-Za-z .'-]+$/.test(v)) return 'Middle Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                return '';
+            },
+            last_name: (value) => {
+                const v = String(value || '').trim();
+                if (!v) return 'Last Name is required.';
+                if (!/^[A-Za-z .'-]+$/.test(v)) return 'Last Name may only contain letters, spaces, apostrophe, period, and hyphen.';
+                return '';
+            },
+            suffix: (value) => {
+                const v = String(value || '').trim();
+                if (!v) return '';
+                if (!/^[A-Za-z0-9.,\- ]+$/.test(v)) return 'Suffix may only contain letters, numbers, comma, period, spaces, and hyphen.';
+                if (v.length > 10) return 'Suffix must not exceed 10 characters.';
+                return '';
+            },
+            date_of_birth: (value) => {
+                const v = String(value || '').trim();
+                if (!v) return 'Date of Birth is required.';
+                const selected = new Date(v);
+                if (Number.isNaN(selected.getTime())) return 'Please provide a valid Date of Birth.';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (selected > today) return 'Date of Birth cannot be in the future.';
+                return '';
+            },
+            gender: (value) => String(value || '').trim() ? '' : 'Gender is required.',
+            marital_status: (value) => String(value || '').trim() ? '' : 'Marital Status is required.',
+            contact_no: (value) => {
+                const localDigits = sanitizePhoneLocal(value);
+                if (!localDigits) return 'Contact Number is required.';
+                if (!/^9\d{9}$/.test(localDigits)) return 'Enter a valid PH mobile number (example: +639171234567).';
+                return '';
+            },
+            email: (value, field) => {
+                const v = String(value || '').trim();
+                if (!v) return 'Email Address is required.';
+                if (field && typeof field.checkValidity === 'function' && !field.checkValidity()) {
+                    return 'Enter a valid email address (example: name@example.com).';
+                }
+                return '';
+            },
+            division_id: (value) => String(value || '').trim() ? '' : 'Division is required.',
+            section_id: (value) => String(value || '').trim() ? '' : 'Section is required.',
+            position_id: (value) => String(value || '').trim() ? '' : 'Position is required.',
+            new_account_username: (value) => {
+                if (!createAccountToggle?.checked) return '';
+                const v = String(value || '').trim();
+                if (!v) return 'Username is required when account creation is enabled.';
+                if (!/^[A-Za-z0-9._-]{3,255}$/.test(v)) return 'Username must be 3-255 characters and may only contain letters, numbers, dot, underscore, or hyphen.';
+                return '';
+            },
+            new_account_role: (value) => {
+                if (!createAccountToggle?.checked) return '';
+                return String(value || '').trim() ? '' : 'Role is required when account creation is enabled.';
+            },
+            new_account_password: (value) => {
+                if (!createAccountToggle?.checked) return '';
+                const v = String(value || '');
+                if (!v) return '';
+                return v.length >= 6 ? '' : 'Password must be at least 6 characters.';
+            },
+        };
+
         const resetCreateAccountFields = () => {
             if (createAccountToggle) createAccountToggle.checked = false;
             if (newAccountUsername) newAccountUsername.value = '';
@@ -780,7 +898,10 @@
 
         const clearFieldError = (element) => {
             if (!element) return;
-            element.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            const defaultBorderClass = element.dataset.defaultBorderClass || 'border-gray-200';
+            element.classList.remove('border-red-300', 'border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:border-red-500', 'focus:ring-red-100');
+            element.classList.remove('border-gray-200', 'border-gray-300');
+            element.classList.add(defaultBorderClass);
             element.removeAttribute('aria-invalid');
 
             const existing = element.parentElement?.querySelector('[data-modal-field-error]');
@@ -797,7 +918,7 @@
             if (!element) return;
 
             clearFieldError(element);
-            element.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            element.classList.add('border-red-400', 'ring-2', 'ring-red-100', 'focus:border-red-500', 'focus:ring-red-100');
             element.setAttribute('aria-invalid', 'true');
 
             if (message) {
@@ -830,12 +951,91 @@
             }
         };
 
+        const validateClientField = (fieldName) => {
+            const element = fieldElements[fieldName];
+            const rule = clientValidationRules[fieldName];
+
+            if (!element || typeof rule !== 'function') {
+                return true;
+            }
+
+            const message = rule(element.value, element);
+            if (message) {
+                setFieldError(element, message);
+                return false;
+            }
+
+            clearFieldError(element);
+            return true;
+        };
+
+        const validateClientForm = () => {
+            const fieldsToValidate = [
+                'first_name',
+                'middle_name',
+                'last_name',
+                'suffix',
+                'date_of_birth',
+                'gender',
+                'marital_status',
+                'contact_no',
+                'email',
+                'division_id',
+                'section_id',
+                'position_id',
+                'new_account_username',
+                'new_account_role',
+                'new_account_password',
+            ];
+
+            let firstInvalid = null;
+
+            fieldsToValidate.forEach((fieldName) => {
+                const valid = validateClientField(fieldName);
+                if (!valid && !firstInvalid) {
+                    firstInvalid = fieldElements[fieldName];
+                }
+            });
+
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+
+            return true;
+        };
+
         Object.values(fieldElements).forEach((element) => {
             if (!element) return;
-            const clear = () => clearFieldError(element);
-            element.addEventListener('input', clear);
-            element.addEventListener('change', clear);
+            element.dataset.defaultBorderClass = element.classList.contains('border-gray-300')
+                ? 'border-gray-300'
+                : 'border-gray-200';
+
+            const fieldName = element.name;
+            const eventName = element.tagName === 'SELECT' || element.type === 'file' || element.type === 'checkbox' ? 'change' : 'input';
+            element.addEventListener(eventName, () => {
+                if (fieldName === 'contact_no') {
+                    element.value = sanitizePhoneLocal(element.value);
+                }
+                if (fieldName in clientValidationRules) {
+                    validateClientField(fieldName);
+                }
+            });
+
+            element.addEventListener('blur', () => {
+                if (fieldName === 'contact_no') {
+                    element.value = sanitizePhoneLocal(element.value);
+                }
+                if (fieldName in clientValidationRules) {
+                    validateClientField(fieldName);
+                }
+            });
         });
+
+        if (editContact) {
+            editContact.value = sanitizePhoneLocal(editContact.value);
+        }
 
         const animateSectionSwitch = (showEdit) => {
             if (!detailsSection || !editSectionPanel) return;
@@ -919,7 +1119,7 @@
             if (viewGender) viewGender.textContent = button.dataset.gender || 'Not provided';
             if (viewMaritalStatus) viewMaritalStatus.textContent = button.dataset.maritalStatus || 'Not provided';
             viewEmail.textContent = button.dataset.employeeEmail || '—';
-            viewContact.textContent = button.dataset.employeeContact || '—';
+            viewContact.textContent = formatPhoneForView(button.dataset.employeeContact || '—');
             viewSection.textContent = button.dataset.employeeSection || '—';
             viewDivision.textContent = button.dataset.employeeDivision || '—';
             viewAccount.textContent = button.dataset.employeeAccount || 'None';
@@ -934,7 +1134,7 @@
             if (editLastName) editLastName.value = button.dataset.lastName || '';
             if (editSuffix) editSuffix.value = button.dataset.suffix || '';
             if (editEmail) editEmail.value = button.dataset.emailRaw || '';
-            if (editContact) editContact.value = button.dataset.contactRaw || '';
+            if (editContact) editContact.value = sanitizePhoneLocal(button.dataset.contactRaw || '');
             if (editGender) editGender.value = button.dataset.gender || '';
             if (editMaritalStatus) editMaritalStatus.value = button.dataset.maritalStatus || '';
             if (editDivision) editDivision.value = button.dataset.divisionId || '';
@@ -1147,6 +1347,13 @@
                 if (newAccountUsername) newAccountUsername.value = '';
                 if (newAccountRole) newAccountRole.value = 'employee';
                 if (newAccountPassword) newAccountPassword.value = '';
+                clearFieldError(newAccountUsername);
+                clearFieldError(newAccountRole);
+                clearFieldError(newAccountPassword);
+            } else {
+                validateClientField('new_account_username');
+                validateClientField('new_account_role');
+                validateClientField('new_account_password');
             }
         });
 
@@ -1175,7 +1382,14 @@
                 return;
             }
 
+            if (!validateClientForm()) {
+                showToast('Please correct the highlighted fields before saving.', 'error');
+                return;
+            }
+
             const formData = new FormData(editForm);
+            const normalizedContact = sanitizePhoneLocal(editContact?.value || '');
+            formData.set('contact_no', normalizedContact ? `+63${normalizedContact}` : '');
             editError?.classList.add('hidden');
             clearModalValidation();
             saveBtn?.setAttribute('disabled', 'disabled');
@@ -1206,7 +1420,7 @@
                 const updatedName = buildLegalName(updated.first_name, updated.middle_name, updated.last_name, updated.suffix);
                 viewName.textContent = updatedName || viewName.textContent;
                 viewEmail.textContent = updated.email || 'Not provided';
-                viewContact.textContent = updated.contact_no || 'Not provided';
+                viewContact.textContent = formatPhoneForView(updated.contact_no || 'Not provided');
                 viewPosition.textContent = activeModalButton?.dataset.employeePosition || 'Unassigned';
                 viewSection.textContent = activeModalButton?.dataset.employeeSection || 'Unassigned';
                 viewDivision.textContent = activeModalButton?.dataset.employeeDivision || '—';
@@ -1239,7 +1453,7 @@
                     activeModalButton.dataset.profileImg = updated.profile_img || activeModalButton.dataset.profileImg || '';
                     activeModalButton.dataset.employeeEmail = updated.email || 'Not provided';
                     activeModalButton.dataset.emailRaw = updated.email || '';
-                    activeModalButton.dataset.employeeContact = updated.contact_no || 'Not provided';
+                    activeModalButton.dataset.employeeContact = formatPhoneForView(updated.contact_no || 'Not provided');
                     activeModalButton.dataset.contactRaw = updated.contact_no || '';
 
                     if (deleteConfirmName) {

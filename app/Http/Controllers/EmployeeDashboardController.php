@@ -93,6 +93,41 @@ class EmployeeDashboardController extends Controller
                 ->count();
         }
 
+        // ✅ My monthly request trend (count + estimated value)
+        $myRequestMonths = collect();
+        $myRequestCounts = collect();
+        $myRequestValues = collect();
+        if (Schema::hasTable('purchase_requests') && Schema::hasTable('purchase_request_items') && $account) {
+            $monthlyRequests = DB::table('purchase_requests')
+                ->leftJoin('purchase_request_items', 'purchase_requests.pr_no', '=', 'purchase_request_items.pr_no')
+                ->where('purchase_requests.account_id', $account->account_id)
+                ->selectRaw('DATE_FORMAT(purchase_requests.created_at, "%Y-%m") as month_key')
+                ->selectRaw('DATE_FORMAT(purchase_requests.created_at, "%b %Y") as month_label')
+                ->selectRaw('COUNT(DISTINCT purchase_requests.pr_no) as request_count')
+                ->selectRaw('COALESCE(SUM(purchase_request_items.quantity * purchase_request_items.estimated_unit_cost), 0) as request_value')
+                ->groupBy('month_key', 'month_label')
+                ->orderBy('month_key')
+                ->take(12)
+                ->get();
+
+            $myRequestMonths = $monthlyRequests->pluck('month_label')->values();
+            $myRequestCounts = $monthlyRequests->pluck('request_count')->map(fn ($count) => (int) $count)->values();
+            $myRequestValues = $monthlyRequests->pluck('request_value')->map(fn ($value) => round((float) $value, 2))->values();
+        }
+
+        // ✅ My top requested items
+        $myTopItems = collect();
+        if (Schema::hasTable('purchase_requests') && Schema::hasTable('purchase_request_items') && $account) {
+            $myTopItems = DB::table('purchase_request_items')
+                ->join('purchase_requests', 'purchase_request_items.pr_no', '=', 'purchase_requests.pr_no')
+                ->where('purchase_requests.account_id', $account->account_id)
+                ->select('purchase_request_items.item_description', DB::raw('COUNT(*) as item_count'))
+                ->groupBy('purchase_request_items.item_description')
+                ->orderByDesc('item_count')
+                ->take(8)
+                ->get();
+        }
+
         // Ensure scalar defaults for numeric values
         $myRequests = (int) ($myRequests ?? 0);
         $myTotalItems = (int) ($myTotalItems ?? 0);
@@ -108,7 +143,11 @@ class EmployeeDashboardController extends Controller
             'myTotalValue',
             'unreadNotifications',
             'myRecentActivity',
-            'pendingActions'
+            'pendingActions',
+            'myRequestMonths',
+            'myRequestCounts',
+            'myRequestValues',
+            'myTopItems'
         ));
     }
 }

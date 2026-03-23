@@ -1,12 +1,68 @@
 import $ from "jquery";
 
 $(document).ready(function () {
-    const alertBox = $("#alertBox");
+    const loginForm = $("#loginForm");
+    const usernameInput = $("#login-username");
+    const passwordInput = $("#login-password");
+    const usernameError = $("#login-username-error");
+    const passwordError = $("#login-password-error");
+    const loginSubmitBtn = $("#loginSubmitBtn");
+    const defaultSubmitHtml = loginSubmitBtn.length ? loginSubmitBtn.html() : "Sign In";
     const toastId = "loginAjaxToast";
     let toastHideTimer = null;
 
+    const validationRules = {
+        username(value) {
+            const trimmed = (value || "").trim();
+            if (!trimmed) {
+                return "Username is required.";
+            }
+            if (!/^[A-Za-z0-9._-]+$/.test(trimmed)) {
+                return "Username can only contain letters, numbers, dot, underscore, or hyphen.";
+            }
+            if (trimmed.length < 3) {
+                return "Username must be at least 3 characters.";
+            }
+            if (trimmed.length > 50) {
+                return "Username must not exceed 50 characters.";
+            }
+            return "";
+        },
+        password(value) {
+            if (!value) {
+                return "Password is required.";
+            }
+            if (value.length < 6) {
+                return "Password must be at least 6 characters.";
+            }
+            if (value.length > 255) {
+                return "Password must not exceed 255 characters.";
+            }
+            return "";
+        },
+    };
+
+    function setSubmitLoading(isLoading) {
+        if (!loginSubmitBtn.length) {
+            return;
+        }
+
+        if (isLoading) {
+            loginSubmitBtn.prop("disabled", true);
+            loginSubmitBtn
+                .addClass("opacity-80 cursor-not-allowed pointer-events-none")
+                .html('<i class="fas fa-spinner fa-spin mr-2" aria-hidden="true"></i><span>Signing in...</span>');
+            return;
+        }
+
+        loginSubmitBtn.prop("disabled", false);
+        loginSubmitBtn
+            .removeClass("opacity-80 cursor-not-allowed pointer-events-none")
+            .html(defaultSubmitHtml);
+    }
+
     function ensureToast() {
-        let toast = document.getElementById(toastId);
+        let toast = document.getElementById("loginPageToast") || document.getElementById(toastId);
         if (toast) {
             return toast;
         }
@@ -70,15 +126,53 @@ $(document).ready(function () {
         return enterDuration + holdDuration;
     }
 
-    function showAlert(message, type) {
-        alertBox
-            .removeClass("hidden bg-red-100 text-red-700 bg-green-100 text-green-700")
-            .addClass(type === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700")
-            .text(message);
+    function showFieldError($input, $errorNode, message) {
+        const hasError = Boolean(message);
+        $errorNode.text(message || "");
+        $input.attr("aria-invalid", hasError ? "true" : "false");
+
+        if (hasError) {
+            $input.addClass("border-red-500");
+            return;
+        }
+
+        $input.removeClass("border-red-500");
     }
 
-    $("#loginForm").submit(function (e) {
+    function validateUsername() {
+        const message = validationRules.username(usernameInput.val());
+        showFieldError(usernameInput, usernameError, message);
+        return !message;
+    }
+
+    function validatePassword() {
+        const message = validationRules.password(passwordInput.val());
+        showFieldError(passwordInput, passwordError, message);
+        return !message;
+    }
+
+    function validateForm() {
+        const usernameOk = validateUsername();
+        const passwordOk = validatePassword();
+        return usernameOk && passwordOk;
+    }
+
+    usernameInput.on("input blur", function () {
+        validateUsername();
+    });
+
+    passwordInput.on("input blur", function () {
+        validatePassword();
+    });
+
+    loginForm.submit(function (e) {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
+        setSubmitLoading(true);
 
         $.ajax({
             url: "/login",
@@ -91,11 +185,13 @@ $(document).ready(function () {
                         window.location.href = response.redirect;
                     }, redirectDelay || 1100);
                 } else {
-                    showAlert(response.message, "error");
+                    showToast(response.message || "Invalid username or password.", "error");
+                    setSubmitLoading(false);
                 }
             },
             error: function () {
-                showAlert("Something went wrong. Please try again.", "error");
+                showToast("Something went wrong. Please try again.", "error");
+                setSubmitLoading(false);
             }
         });
     });
