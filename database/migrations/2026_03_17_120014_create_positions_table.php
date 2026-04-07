@@ -15,12 +15,14 @@ return new class extends Migration
             return;
         }
 
-        DB::statement('CREATE TABLE `positions` (
-  `position_id` int(11) NOT NULL,
-  `position_title` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
-        DB::statement('ALTER TABLE `positions`
-  ADD PRIMARY KEY (`position_id`);');
+          DB::statement('CREATE TABLE `positions` (
+      `position_id` int(11) NOT NULL,
+      `position_title` varchar(255) NOT NULL,
+      `section_id` int(11) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
+          DB::statement('ALTER TABLE `positions`
+      ADD PRIMARY KEY (`position_id`),
+      ADD KEY `idx_positions_section` (`section_id`);');
     }
 
     /**

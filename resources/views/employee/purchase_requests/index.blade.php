@@ -2,6 +2,9 @@
 
 @section('title', 'Purchase Requests')
 
+@push('styles')
+@endpush
+
 @section('content')
 {{-- Page Header --}}
 <div class="animate-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -191,6 +194,14 @@
                         $statusName = $request->status?->status_name ?? 'Unknown';
                         $statusSlug = \Illuminate\Support\Str::slug($statusName, '_');
                         $design = $resolveStatusDesign($statusName);
+                        $isPendingRequest = in_array((int) $request->status_id, [
+                            \App\Models\Status::PR_DRAFT,
+                            \App\Models\Status::PR_FOR_RECOMMENDATION,
+                        ], true);
+                        $hasNotBeenReviewedByRecommendingOfficer = is_null($request->recommended_by)
+                            && is_null($request->recommended_at)
+                            && is_null($request->recommendation_remarks);
+                        $canDeleteRequest = $isPendingRequest && $hasNotBeenReviewedByRecommendingOfficer;
                         $searchTokens = collect([
                             $request->pr_no,
                             $statusName,
@@ -222,10 +233,29 @@
                             {{ optional($request->created_at)->format('M d, Y h:i A') }}
                         </td>
                         <td class="px-5 py-4 align-top text-center">
-                            <button class="js-view-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md" data-show-url="{{ route('employee.purchase-requests.show', $request) }}">
+                            <div class="inline-flex items-center gap-2">
+                                <button class="js-view-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md" data-show-url="{{ route('employee.purchase-requests.show', $request) }}">
                                 <i class="fas fa-eye"></i>
                                 View
-                            </button>
+                                </button>
+                                @if($canDeleteRequest)
+                                    <button class="js-edit-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-100 hover:shadow-md"
+                                        data-pr-no="{{ $request->pr_no }}"
+                                        data-show-url="{{ route('employee.purchase-requests.show', $request) }}"
+                                        data-update-url="{{ route('employee.purchase-requests.update', $request) }}">
+                                        <i class="fas fa-pen-to-square"></i>
+                                        Edit
+                                    </button>
+                                @endif
+                                @if($canDeleteRequest)
+                                    <button class="js-delete-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700 transition-all hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-100 hover:shadow-md"
+                                        data-pr-no="{{ $request->pr_no }}"
+                                        data-delete-url="{{ route('employee.purchase-requests.destroy', $request) }}">
+                                        <i class="fas fa-trash"></i>
+                                        Delete
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -267,8 +297,8 @@
             {{-- Modal Header: Kept in place by flexbox, not sticky--}}
             <div class="flex-shrink-0 z-10 flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white shadow-md">
                 <div>
-                    <h3 class="text-2xl font-bold tracking-tight">New Purchase Request</h3>
-                    <p class="text-sm text-white/90 mt-1">Fill out the details of your procurement requirement</p>
+                    <h3 id="purchaseRequestModalTitle" class="text-2xl font-bold tracking-tight">New Purchase Request</h3>
+                    <p id="purchaseRequestModalSubtitle" class="text-sm text-white/90 mt-1">Fill out the details of your procurement requirement</p>
                 </div>
                 <button class="text-white/80 hover:text-white hover:bg-white/10 p-2 rounded-lg transition-all" data-close-modal>
                     <i class="fas fa-times text-xl"></i>
@@ -295,7 +325,7 @@
                 @endif
 
                 {{-- Scrollable Content Area --}}
-                <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+                <div class="flex-1 overflow-y-auto hide-scrollbar px-6 py-6 space-y-6">
 
                     @unless($canSubmit)
                         <div class="rounded-xl border-2 border-amber-400 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
@@ -369,7 +399,7 @@
                         </div>
 
                         <div class="border-b border-gray-400 px-4 py-6">
-                            <div class="overflow-x-auto">
+                            <div class="overflow-x-auto hide-scrollbar">
                                 <table class="w-full border border-gray-500 text-sm border-collapse" id="prItemsTable">
                                     <thead class="bg-gray-100 text-xs uppercase tracking-wide text-gray-700">
                                         <tr>
@@ -466,8 +496,8 @@
                     <button type="button" class="px-6 py-3 rounded-lg bg-white border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all shadow-sm" data-close-modal>
                         <i class="fas fa-times mr-2"></i>Cancel
                     </button>
-                    <button type="submit" data-loading-text="Submitting request..." class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all @unless($canSubmit) opacity-50 cursor-not-allowed @endunless" @unless($canSubmit) disabled @endunless>
-                        <i class="fas fa-paper-plane mr-2"></i>Submit Request
+                    <button id="purchaseRequestSubmitBtn" type="submit" data-loading-text="Submitting request..." class="px-6 py-3 rounded-lg bg-gradient-to-r from-[#1a3a2d] to-[#2d5a4a] text-white font-bold shadow-md hover:shadow-lg hover:scale-105 transition-all @unless($canSubmit) opacity-50 cursor-not-allowed @endunless" @unless($canSubmit) disabled @endunless>
+                        <i class="fas fa-paper-plane mr-2"></i><span id="purchaseRequestSubmitLabel">Submit Request</span>
                     </button>
                 </div>
             </form>
@@ -517,7 +547,9 @@
     // JavaScript configuration for the employee purchase request screens
     window.employeePrConfig = {
         storeUrl: '{{ route('employee.purchase-requests.store') }}',
+        updateUrlTemplate: '{{ route('employee.purchase-requests.update', ['purchase_request' => '__PR__']) }}',
         showUrlTemplate: '{{ route('employee.purchase-requests.show', ['purchase_request' => '__PR__']) }}',
+        destroyUrlTemplate: '{{ route('employee.purchase-requests.destroy', ['purchase_request' => '__PR__']) }}',
         decisionUrlTemplate: '{{ route('employee.purchase-requests.items.decision', ['purchase_request_item' => '__PRI__']) }}',
         canSubmit: {{ ($defaultDivision && $defaultSection) ? 'true' : 'false' }},
         statuses: {

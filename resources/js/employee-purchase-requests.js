@@ -177,7 +177,11 @@ const initEmployeePurchaseRequests = () => {
     const $waitNote = $('#employeeWaitNote');
     const $waitErrors = $('#employeeWaitErrors');
     const $waitContext = $('#employeeWaitContext');
+    const $modalTitle = $('#purchaseRequestModalTitle');
+    const $modalSubtitle = $('#purchaseRequestModalSubtitle');
+    const $submitLabel = $('#purchaseRequestSubmitLabel');
     let activeWaitContext = { priId: null, status: null };
+    let activeEditContext = { prNo: null, updateUrl: null };
     let rowIndex = 0;
 
     const updateRowTotal = ($row) => {
@@ -316,7 +320,7 @@ const initEmployeePurchaseRequests = () => {
         toggleModal($waitModal, true);
     };
 
-    const addItemRow = () => {
+    const addItemRow = (itemData = {}) => {
         const idx = rowIndex++;
         const row = `
             <tr class="align-top" data-index="${idx}">
@@ -359,8 +363,28 @@ const initEmployeePurchaseRequests = () => {
                 </td>
             </tr>
         `;
+
         const $row = $(row);
         $itemRows.append($row);
+
+        const unitOptions = ['pcs', 'box', 'pack', 'set', 'kg', 'l'];
+        const unitValue = String(itemData.unit || '').trim();
+        const isKnownUnit = unitValue && unitOptions.includes(unitValue.toLowerCase());
+
+        $row.find('[data-quantity]').val(Number(itemData.quantity || 1));
+        $row.find('[name$="[item_description]"]').val(itemData.item_description || '');
+        $row.find('[name$="[stock_number]"]').val(itemData.stock_number || '');
+        $row.find('[data-unit-cost]').val(Number(itemData.estimated_unit_cost || 0));
+
+        const $unitSelect = $row.find('[data-unit-select]');
+        const $unitCustom = $row.find('[data-unit-custom]');
+        if (unitValue && !isKnownUnit) {
+            $unitSelect.val('__other__').trigger('change');
+            $unitCustom.val(unitValue);
+        } else {
+            $unitSelect.val(unitValue || '');
+        }
+
         registerRowEvents($row);
         updateRowTotal($row);
         updateGrandTotal();
@@ -386,11 +410,62 @@ const initEmployeePurchaseRequests = () => {
         updateGrandTotal();
     };
 
+    const setCreateMode = () => {
+        activeEditContext = { prNo: null, updateUrl: null };
+        if ($modalTitle.length) {
+            $modalTitle.text('New Purchase Request');
+        }
+        if ($modalSubtitle.length) {
+            $modalSubtitle.text('Fill out the details of your procurement requirement');
+        }
+        if ($submitLabel.length) {
+            $submitLabel.text('Submit Request');
+        }
+    };
+
+    const setEditMode = (prNo, updateUrl) => {
+        activeEditContext = { prNo, updateUrl };
+        if ($modalTitle.length) {
+            $modalTitle.text(`Edit Purchase Request ${prNo}`);
+        }
+        if ($modalSubtitle.length) {
+            $modalSubtitle.text('Update your request details before recommending officer review.');
+        }
+        if ($submitLabel.length) {
+            $submitLabel.text('Update Request');
+        }
+    };
+
+    const populateFormForEdit = (data = {}) => {
+        resetCreateRequestForm();
+
+        $('#saiNo').val(data.sai_no || '');
+        $('#alobsNo').val(data.alobs_no || '');
+        $('#recommendingOfficer').val(data.recommending_officer_id || '');
+        $('#purpose').val(data.purpose || '');
+
+        const fundAllocationId = data.fund_allocation_id || '';
+        $('#fundAllocation').val(fundAllocationId).trigger('change');
+
+        $itemRows.empty();
+        rowIndex = 0;
+        const items = Array.isArray(data.items) ? data.items : [];
+
+        if (!items.length) {
+            ensureAtLeastOneRow();
+            return;
+        }
+
+        items.forEach((item) => addItemRow(item));
+        updateGrandTotal();
+    };
+
     $openBtn.on('click', () => {
         hideToast($toast);
         toggleModal($modal, true);
 
         requestAnimationFrame(() => {
+            setCreateMode();
             resetCreateRequestForm();
         });
     });
@@ -427,19 +502,27 @@ const initEmployeePurchaseRequests = () => {
             return;
         }
 
+        const isEdit = Boolean(activeEditContext.prNo);
+        if (isEdit && !activeEditContext.updateUrl) {
+            showToast($toast, 'Update endpoint is unavailable. Please refresh the page and try again.');
+            return;
+        }
+
         $errors.addClass('hidden').find('#formErrorsContent').empty();
         const submitBtn = $form.find('button[type="submit"]');
         const originalText = submitBtn.html();
-        submitBtn.prop('disabled', true).addClass('opacity-70 cursor-not-allowed').html('<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...');
+        submitBtn.prop('disabled', true).addClass('opacity-70 cursor-not-allowed').html(`<i class="fas fa-spinner fa-spin mr-2"></i>${isEdit ? 'Updating...' : 'Submitting...'}`);
+
+        const payload = isEdit ? `${$form.serialize()}&_method=PATCH` : $form.serialize();
 
         $.ajax({
             method: 'POST',
-            url: config.storeUrl,
-            data: $form.serialize(),
+            url: isEdit ? activeEditContext.updateUrl : config.storeUrl,
+            data: payload,
             headers: { 'X-CSRF-TOKEN': csrfToken() },
             success: (response) => {
                 toggleModal($modal, false);
-                showToast($toast, response.message ?? 'Purchase request submitted.');
+                showToast($toast, response.message ?? (isEdit ? 'Purchase request updated.' : 'Purchase request submitted.'));
                 setTimeout(() => softNavigate(window.location.href, { replace: true }), 1200);
             },
                           error: (xhr) => {
@@ -578,7 +661,7 @@ const initEmployeePurchaseRequests = () => {
                 </div>
 
                 <div class="border-b border-gray-400 px-4 py-6">
-                    <div class="overflow-x-auto">
+                        <div class="overflow-x-auto hide-scrollbar">
                         <table class="w-full border border-gray-500 text-sm border-collapse">
                             <thead class="bg-gray-100 text-xs uppercase tracking-wide text-gray-700">
                                 <tr>
@@ -709,6 +792,98 @@ const initEmployeePurchaseRequests = () => {
             },
         });
     });
+
+    $(document)
+        .off('click.employeeEditPr', '.js-edit-employee-pr')
+        .on('click.employeeEditPr', '.js-edit-employee-pr', function () {
+            const $button = $(this);
+            const showUrl = String($button.attr('data-show-url') || '');
+            const prNo = String($button.attr('data-pr-no') || '');
+            const updateUrl = String($button.attr('data-update-url') || '');
+
+            if (!showUrl || !prNo || !updateUrl) {
+                showToast($toast, 'Edit data is incomplete. Please refresh the page and try again.');
+                return;
+            }
+
+            $button.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+            toggleModal($modal, true);
+            setEditMode(prNo, updateUrl);
+            resetCreateRequestForm();
+
+            $.ajax({
+                method: 'GET',
+                url: showUrl,
+                headers: { Accept: 'application/json' },
+                success: (response) => {
+                    const data = response?.data || {};
+                    if (!data.can_edit) {
+                        toggleModal($modal, false);
+                        showToast($toast, 'This purchase request can no longer be edited.');
+                        return;
+                    }
+
+                    requestAnimationFrame(() => {
+                        setEditMode(prNo, updateUrl);
+                        populateFormForEdit(data);
+                    });
+                },
+                error: (xhr) => {
+                    toggleModal($modal, false);
+                    const message = xhr.responseJSON?.message || 'Unable to load purchase request for editing.';
+                    showToast($toast, message);
+                },
+                complete: () => {
+                    $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+                },
+            });
+        });
+
+    $(document)
+        .off('click.employeeDeletePr', '.js-delete-employee-pr')
+        .on('click.employeeDeletePr', '.js-delete-employee-pr', function () {
+            if (!hasEmployeeConfig) {
+                showToast($toast, 'Purchase request configuration is unavailable. Please refresh the page and try again.');
+                return;
+            }
+
+            const $button = $(this);
+            const prNo = String($button.attr('data-pr-no') || 'this request');
+            const directUrl = String($button.attr('data-delete-url') || '');
+            const template = String(config.destroyUrlTemplate || '');
+            const url = directUrl || (template ? template.replace('__PR__', prNo) : '');
+
+            if (!url) {
+                showToast($toast, 'Delete endpoint is unavailable. Please refresh the page and try again.');
+                return;
+            }
+
+            if (!window.confirm(`Delete ${prNo}? This action cannot be undone.`)) {
+                return;
+            }
+
+            $button.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+
+            $.ajax({
+                method: 'DELETE',
+                url,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken(),
+                    Accept: 'application/json',
+                },
+                success: (response) => {
+                    showToast($toast, response.message ?? 'Purchase request deleted successfully.');
+                    setTimeout(() => softNavigate(window.location.href, { replace: true }), 900);
+                },
+                error: (xhr) => {
+                    const message = xhr.responseJSON?.message || 'Unable to delete this purchase request right now.';
+                    showToast($toast, message);
+                },
+                complete: () => {
+                    $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+                },
+            });
+        });
 
     $detailsClose.on('click', () => toggleModal($detailsModal, false));
     $detailsModal.on('click', (event) => {

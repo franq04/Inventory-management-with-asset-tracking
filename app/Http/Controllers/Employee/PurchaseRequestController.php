@@ -250,11 +250,15 @@ class PurchaseRequestController extends Controller
                     'pr_no' => $purchaseRequest->pr_no,
                     'status' => $purchaseRequest->status?->status_name,
                     'status_id' => $purchaseRequest->status_id,
+                    'can_delete' => $this->canDeletePurchaseRequest($purchaseRequest),
+                    'can_edit' => $this->canDeletePurchaseRequest($purchaseRequest),
                     'latest_status_remarks' => $latestHistory?->remarks,
                     'latest_status_changed_at' => optional($latestHistory?->changed_at)->toDateTimeString(),
                     'purpose' => $purchaseRequest->purpose,
                     'sai_no' => $purchaseRequest->sai_no,
                     'alobs_no' => $purchaseRequest->alobs_no,
+                    'recommending_officer_id' => $purchaseRequest->recommending_officer_id,
+                    'fund_allocation_id' => $purchaseRequest->fund_allocation_id,
                     'division' => $purchaseRequest->division?->division_name,
                     'section' => $purchaseRequest->section?->section_name,
                     'requester_name' => $requesterName,
@@ -271,6 +275,196 @@ class PurchaseRequestController extends Controller
             'purchaseRequest' => $purchaseRequest,
             'latestHistory' => $latestHistory,
         ]);
+    }
+
+    public function update(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $account = Auth::user();
+
+        abort_unless((int) $purchaseRequest->account_id === (int) $account->account_id, 403);
+
+        if (! $this->canDeletePurchaseRequest($purchaseRequest)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This purchase request can no longer be edited because it has already been reviewed by the recommending approval officer.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'division_id' => 'required|exists:divisions,division_id',
+            'section_id' => 'required|exists:sections,section_id',
+            'purpose' => 'required|string|max:5000',
+            'sai_no' => 'nullable|string|max:100',
+            'alobs_no' => 'nullable|string|max:100',
+            'recommending_officer_id' => 'nullable|string|max:255',
+            'fund_allocation_id' => 'required|exists:fund_allocations,id',
+            'items' => 'required|array|min:1',
+            'items.*.item_description' => 'required|string|max:500',
+            'items.*.stock_number' => 'nullable|string|max:100',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit' => 'required|string|max:100',
+            'items.*.estimated_unit_cost' => 'required|numeric|min:0',
+        ]);
+
+        $section = Section::where('section_id', $validated['section_id'])
+            ->where('division_id', $validated['division_id'])
+            ->first();
+
+        if (! $section) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Selected section does not belong to the chosen division.',
+            ], 422);
+        }
+
+        $items = collect($validated['items']);
+        $newTotal = $items->sum(function ($item) {
+            return (int) $item['quantity'] * (float) $item['estimated_unit_cost'];
+        });
+
+        DB::transaction(function () use ($validated, $purchaseRequest, $items, $newTotal, $account) {
+            $fundService = new FundAllocationService();
+
+            $originalFundAllocationId = (int) $purchaseRequest->fund_allocation_id;
+            $targetFundAllocationId = (int) $validated['fund_allocation_id'];
+            $originalTotal = (float) $purchaseRequest->total_estimated_cost;
+
+            $targetFundAllocation = FundAllocation::findOrFail($targetFundAllocationId);
+
+            if ($targetFundAllocationId !== $originalFundAllocationId) {
+                if ($purchaseRequest->fundAllocation && $originalTotal > 0) {
+                    $fundService->release($purchaseRequest->fundAllocation, $originalTotal, $purchaseRequest->pr_no);
+                }
+
+                if (! $fundService->hasSufficientFunds($targetFundAllocation, $newTotal)) {
+                    $shortfall = $fundService->getShortfall($targetFundAllocation, $newTotal);
+
+                    throw ValidationException::withMessages([
+                        'fund_allocation_id' => [
+                            sprintf(
+                                'Selected fund cluster does not have sufficient balance. Available: ₱%s, Required: ₱%s, Shortfall: ₱%s',
+                                number_format($targetFundAllocation->remaining_amount, 2),
+                                number_format($newTotal, 2),
+                                number_format($shortfall, 2)
+                            ),
+                        ],
+                    ]);
+                }
+
+                if (! $fundService->reserve($targetFundAllocation, $newTotal, $purchaseRequest->pr_no)) {
+                    throw ValidationException::withMessages([
+                        'fund_allocation_id' => ['Failed to reserve funds on the selected fund allocation. Please try again.'],
+                    ]);
+                }
+            } else {
+                if (! $fundService->applyDelta($purchaseRequest, $newTotal)) {
+                    throw ValidationException::withMessages([
+                        'fund_allocation_id' => ['Unable to adjust reserved funds for this purchase request.'],
+                    ]);
+                }
+            }
+
+            $purchaseRequest->update([
+                'division_id' => $validated['division_id'],
+                'section_id' => $validated['section_id'],
+                'sai_no' => $validated['sai_no'] ?? null,
+                'alobs_no' => $validated['alobs_no'] ?? null,
+                'purpose' => $validated['purpose'],
+                'recommending_officer_id' => $validated['recommending_officer_id'] ?? null,
+                'fund_allocation_id' => $targetFundAllocationId,
+                'funds_available' => $targetFundAllocation->fresh()->remaining_amount,
+                'total_estimated_cost' => $newTotal,
+            ]);
+
+            PurchaseRequestItem::query()->where('pr_no', $purchaseRequest->pr_no)->delete();
+
+            $items->each(function ($item) use ($purchaseRequest) {
+                PurchaseRequestItem::create([
+                    'pr_no' => $purchaseRequest->pr_no,
+                    'item_description' => $item['item_description'],
+                    'item_type' => $item['item_type'] ?? 'consumable',
+                    'quantity' => $item['quantity'],
+                    'unit' => $item['unit'],
+                    'stock_number' => $item['stock_number'] ?? null,
+                    'estimated_unit_cost' => $item['estimated_unit_cost'],
+                    'remarks' => $item['remarks'] ?? null,
+                ]);
+            });
+
+            AuditLog::create([
+                'account_id' => $account->account_id,
+                'table_name' => 'purchase_requests',
+                'action' => 'UPDATE',
+                'description' => sprintf('Updated purchase request %s', $purchaseRequest->pr_no),
+            ]);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Purchase request updated successfully.',
+            'data' => [
+                'pr_no' => $purchaseRequest->pr_no,
+            ],
+        ]);
+    }
+
+    public function destroy(Request $request, PurchaseRequest $purchaseRequest)
+    {
+        $account = Auth::user();
+
+        abort_unless((int) $purchaseRequest->account_id === (int) $account->account_id, 403);
+
+        if (! $this->canDeletePurchaseRequest($purchaseRequest)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This purchase request can no longer be deleted because it has already been reviewed by the recommending approval officer.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($purchaseRequest, $account) {
+            $purchaseRequest->loadMissing('fundAllocation');
+
+            if ($purchaseRequest->fundAllocation && (float) $purchaseRequest->total_estimated_cost > 0) {
+                $fundService = new FundAllocationService();
+                $fundService->release(
+                    $purchaseRequest->fundAllocation,
+                    (float) $purchaseRequest->total_estimated_cost,
+                    $purchaseRequest->pr_no
+                );
+            }
+
+            PurchaseRequestItem::query()->where('pr_no', $purchaseRequest->pr_no)->delete();
+            StatusHistory::query()
+                ->where('table_name', 'purchase_requests')
+                ->where('record_id', $purchaseRequest->pr_no)
+                ->delete();
+            Notification::query()
+                ->where('table_name', 'purchase_requests')
+                ->where('record_id', $purchaseRequest->pr_no)
+                ->delete();
+
+            $deletedPrNo = $purchaseRequest->pr_no;
+            $purchaseRequest->delete();
+
+            AuditLog::create([
+                'account_id' => $account->account_id,
+                'table_name' => 'purchase_requests',
+                'action' => 'DELETE',
+                'description' => sprintf('Deleted purchase request %s', $deletedPrNo),
+                'log_time' => now(),
+            ]);
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Purchase request deleted successfully.',
+            ]);
+        }
+
+        return redirect()
+            ->route('employee.purchase-requests.index')
+            ->with('success', 'Purchase request deleted successfully.');
     }
 
     private function signatureDataUri($signature): ?string
@@ -495,6 +689,23 @@ class PurchaseRequestController extends Controller
         }
 
         return $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+    }
+
+    protected function canDeletePurchaseRequest(PurchaseRequest $purchaseRequest): bool
+    {
+        $statusId = (int) $purchaseRequest->status_id;
+
+        $isPending = in_array($statusId, [
+            Status::PR_DRAFT,
+            Status::PR_FOR_RECOMMENDATION,
+        ], true);
+
+        $hasBeenReviewedByRecommendingOfficer =
+            ! is_null($purchaseRequest->recommended_by)
+            || ! is_null($purchaseRequest->recommended_at)
+            || ! is_null($purchaseRequest->recommendation_remarks);
+
+        return $isPending && ! $hasBeenReviewedByRecommendingOfficer;
     }
 
     protected function notifyDivisionHeadsOfNewRequest(PurchaseRequest $purchaseRequest, $account): void

@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -89,6 +90,53 @@ class EmployeeController extends Controller
             ->groupBy('sections.division_id')
             ->pluck('total', 'division_id');
 
+        $sectionEmployeeCounts = Employee::query()
+            ->selectRaw('section_id, count(*) as total')
+            ->whereNotNull('section_id')
+            ->groupBy('section_id')
+            ->pluck('total', 'section_id');
+
+        $sectionPositionTitlesFromEmployees = Employee::query()
+            ->leftJoin('positions', 'employees.position_id', '=', 'positions.position_id')
+            ->whereNotNull('employees.section_id')
+            ->whereNotNull('employees.position_id')
+            ->whereNotNull('positions.position_title')
+            ->select('employees.section_id', 'positions.position_title')
+            ->distinct()
+            ->orderBy('positions.position_title')
+            ->get()
+            ->groupBy('section_id')
+            ->map(function ($rows) {
+                return $rows->pluck('position_title')->values();
+            });
+
+        $sectionPositionTitlesFromMapping = collect();
+        if (Schema::hasTable('section_positions')) {
+            $sectionPositionTitlesFromMapping = DB::table('section_positions')
+                ->join('positions', 'section_positions.position_id', '=', 'positions.position_id')
+                ->select('section_positions.section_id', 'positions.position_title')
+                ->whereNotNull('positions.position_title')
+                ->distinct()
+                ->orderBy('positions.position_title')
+                ->get()
+                ->groupBy('section_id')
+                ->map(function ($rows) {
+                    return $rows->pluck('position_title')->values();
+                });
+        }
+
+        $sectionPositionTitles = $sectionPositionTitlesFromEmployees;
+        foreach ($sectionPositionTitlesFromMapping as $sectionId => $titles) {
+            $merged = collect($sectionPositionTitles[$sectionId] ?? [])
+                ->merge($titles)
+                ->map(fn ($title) => trim((string) $title))
+                ->filter()
+                ->unique(fn ($title) => strtolower($title))
+                ->values();
+
+            $sectionPositionTitles[$sectionId] = $merged;
+        }
+
         $stats = [
             'total' => Employee::count(),
             'withAccount' => Employee::whereNotNull('account_id')->count(),
@@ -139,6 +187,8 @@ class EmployeeController extends Controller
             'assignmentFilter' => $assignmentFilter,
             'recentEmployees' => $recentEmployees,
             'divisionEmployeeCounts' => $divisionEmployeeCounts,
+            'sectionEmployeeCounts' => $sectionEmployeeCounts,
+            'sectionPositionTitles' => $sectionPositionTitles,
         ]);
     }
 
@@ -234,9 +284,13 @@ class EmployeeController extends Controller
             ->header('Content-Disposition', 'attachment; filename="Employees-' . date('Y-m-d') . '.xls"');
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('management.employees.create', $this->formViewData());
+        return view('management.employees.create', $this->formViewData(
+            null,
+            $this->toNullableInt($request->input('division_id')),
+            $this->toNullableInt($request->input('section_id'))
+        ));
     }
 
     public function store(Request $request)
@@ -459,6 +513,134 @@ class EmployeeController extends Controller
         ]);
     }
 
+    public function storeDivisionWithSections(Request $request)
+    {
+        $validated = $request->validate([
+            'division_name' => ['required', 'string', 'max:255', Rule::unique('divisions', 'division_name')],
+            'division_code' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string'],
+            'sections' => ['required', 'array', 'min:1'],
+            'sections.*' => ['required', 'string', 'max:255', 'distinct'],
+        ]);
+
+        $sectionNames = collect($validated['sections'])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique(fn ($value) => strtolower($value))
+            ->values();
+
+        if ($sectionNames->isEmpty()) {
+            throw ValidationException::withMessages([
+                'sections' => 'Please provide at least one initial section name.',
+            ]);
+        }
+
+        $result = DB::transaction(function () use ($validated, $sectionNames) {
+            $nextDivisionId = ((int) Division::query()->max('division_id')) + 1;
+
+            Division::query()->insert([
+                'division_id' => $nextDivisionId,
+                'division_name' => trim((string) $validated['division_name']),
+                'division_code' => isset($validated['division_code']) ? trim((string) $validated['division_code']) : null,
+                'description' => isset($validated['description']) ? trim((string) $validated['description']) : null,
+            ]);
+
+            $nextSectionId = ((int) Section::query()->max('section_id')) + 1;
+            $createdSections = 0;
+
+            foreach ($sectionNames as $sectionName) {
+                Section::query()->insert([
+                    'section_id' => $nextSectionId++,
+                    'section_name' => $sectionName,
+                    'section_code' => null,
+                    'division_id' => $nextDivisionId,
+                    'description' => null,
+                ]);
+
+                $createdSections++;
+            }
+
+            return [
+                'division_id' => $nextDivisionId,
+                'division_name' => trim((string) $validated['division_name']),
+                'sections_created' => $createdSections,
+                'sections_submitted' => $sectionNames->count(),
+            ];
+        });
+
+        return response()->json([
+            'message' => 'Division created successfully with initial sections.',
+            'data' => $result,
+        ]);
+    }
+
+    public function storeSectionPosition(Request $request, Section $section)
+    {
+        $validated = $request->validate([
+            'position_title' => ['required', 'string', 'max:255'],
+        ]);
+
+        $positionTitle = trim((string) $validated['position_title']);
+        if ($positionTitle === '') {
+            throw ValidationException::withMessages([
+                'position_title' => 'Position title is required.',
+            ]);
+        }
+
+        $result = DB::transaction(function () use ($section, $positionTitle) {
+            $normalized = strtolower($positionTitle);
+
+            $position = Position::query()
+                ->whereRaw('LOWER(position_title) = ?', [$normalized])
+                ->first();
+
+            if (! $position) {
+                $nextPositionId = ((int) Position::query()->max('position_id')) + 1;
+                Position::query()->insert([
+                    'position_id' => $nextPositionId,
+                    'position_title' => $positionTitle,
+                ]);
+
+                $position = Position::query()->findOrFail($nextPositionId);
+            }
+
+            if (! Schema::hasTable('section_positions')) {
+                throw ValidationException::withMessages([
+                    'position_title' => 'Section-position mapping table is missing. Please run migrations to enable this feature.',
+                ]);
+            }
+
+            $mappingExists = DB::table('section_positions')
+                ->where('section_id', (int) $section->section_id)
+                ->where('position_id', (int) $position->position_id)
+                ->exists();
+
+            if (! $mappingExists) {
+                $nextId = ((int) DB::table('section_positions')->max('id')) + 1;
+                DB::table('section_positions')->insert([
+                    'id' => $nextId,
+                    'section_id' => (int) $section->section_id,
+                    'position_id' => (int) $position->position_id,
+                ]);
+            }
+
+            return [
+                'section_id' => (int) $section->section_id,
+                'section_name' => $section->section_name,
+                'position_id' => (int) $position->position_id,
+                'position_title' => $position->position_title,
+                'already_mapped' => $mappingExists,
+            ];
+        });
+
+        return response()->json([
+            'message' => $result['already_mapped']
+                ? 'Position already exists for this section.'
+                : 'Position added to section successfully.',
+            'data' => $result,
+        ]);
+    }
+
     public function destroy(Employee $employee)
     {
         DB::transaction(function () use ($employee) {
@@ -476,7 +658,7 @@ class EmployeeController extends Controller
             ->with('status', 'Employee record removed.');
     }
 
-    private function formViewData(?Employee $employee = null): array
+    private function formViewData(?Employee $employee = null, ?int $presetDivisionId = null, ?int $presetSectionId = null): array
     {
         $divisions = Division::query()
             ->with(['sections:section_id,division_id,section_name'])
@@ -497,7 +679,8 @@ class EmployeeController extends Controller
             'accountRoles' => $this->resolveAccountRoleOptions(),
             'maritalStatuses' => self::MARITAL_STATUSES,
             'genders' => self::GENDERS,
-            'selectedDivision' => $employee?->section?->division_id,
+            'selectedDivision' => $employee?->section?->division_id ?? $presetDivisionId,
+            'selectedSection' => $employee?->section_id ?? $presetSectionId,
         ];
     }
 

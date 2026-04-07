@@ -139,7 +139,13 @@
         {{-- Side Column --}}
         <div class="space-y-6">
             <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-                <h3 class="text-lg font-semibold text-gray-800">Divisions Overview</h3>
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-lg font-semibold text-gray-800">Divisions Overview</h3>
+                    <button type="button" id="openCreateDivisionModal" class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                        <i class="fas fa-plus"></i>
+                        Add Division
+                    </button>
+                </div>
                 <div class="mt-4 space-y-4">
                     @php
                         $maxEmployees = (int) collect($divisionEmployeeCounts)->max();
@@ -149,14 +155,34 @@
                         @php
                             $divisionCount = $divisionEmployeeCounts[$division->division_id] ?? 0;
                             $percentage = ($maxEmployees > 0) ? ($divisionCount / $maxEmployees) * 100 : 0;
+                            $sectionsPayload = $division->sections->map(function ($section) use ($sectionEmployeeCounts) {
+                                return [
+                                    'id' => (int) $section->section_id,
+                                    'name' => $section->section_name,
+                                    'employees' => (int) ($sectionEmployeeCounts[$section->section_id] ?? 0),
+                                    'positions' => collect($sectionPositionTitles[$section->section_id] ?? [])->values()->all(),
+                                ];
+                            })->values();
                         @endphp
-                        <div>
+                        <div class="rounded-xl border border-gray-100 p-3">
                              <div class="flex justify-between mb-1 text-sm">
                                 <span class="font-medium text-gray-700">{{ $division->division_name }}</span>
                                 <span class="text-gray-500 font-semibold">{{ number_format($divisionCount) }}</span>
                             </div>
                             <div class="w-full bg-gray-200 rounded-full h-2">
                                 <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ $percentage }}%"></div>
+                            </div>
+                            <div class="mt-2 flex justify-end">
+                                <button
+                                    type="button"
+                                    class="js-division-overview-details inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                                    data-division-id="{{ $division->division_id }}"
+                                    data-division-name="{{ $division->division_name }}"
+                                    data-division-total="{{ (int) $divisionCount }}"
+                                    data-division-sections='@json($sectionsPayload)'>
+                                    <i class="fas fa-circle-info text-[11px]"></i>
+                                    See details
+                                </button>
                             </div>
                         </div>
                     @endforeach
@@ -186,6 +212,153 @@
                     @endforelse
                 </ul>
             </div>
+        </div>
+    </div>
+</div>
+
+<div id="createDivisionModal" class="fixed inset-0 z-[130] hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="createDivisionTitle">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-create-division-modal></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-emerald-950/10 bg-white shadow-2xl">
+            <div class="flex items-center justify-between bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+                <div>
+                    <h3 id="createDivisionTitle" class="text-lg font-bold tracking-tight">Add Division</h3>
+                    <p class="text-xs text-white/80">Create a division and define initial sections.</p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-create-division-modal>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="createDivisionForm" class="space-y-4 p-5">
+                <div>
+                    <label for="createDivisionName" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Division Name</label>
+                    <input id="createDivisionName" name="division_name" type="text" maxlength="255" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" required />
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="createDivisionCode" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Division Code (Optional)</label>
+                        <input id="createDivisionCode" name="division_code" type="text" maxlength="50" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                    </div>
+                    <div>
+                        <label for="createDivisionDescription" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Description (Optional)</label>
+                        <input id="createDivisionDescription" name="description" type="text" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" />
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between gap-2">
+                        <label class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Initial Sections</label>
+                        <button type="button" id="addInitialSectionRow" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-100">
+                            <i class="fas fa-plus"></i>
+                            Add Section
+                        </button>
+                    </div>
+
+                    <div id="initialSectionsRows" class="mt-2 space-y-2">
+                        <div class="flex items-center gap-2" data-section-row>
+                            <input type="text" name="sections[]" maxlength="255" class="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Procurement Section" required />
+                            <button type="button" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100" data-remove-section-row>
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <p id="createDivisionError" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"></p>
+
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
+                    <button type="button" class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-create-division-modal>
+                        Cancel
+                    </button>
+                    <button type="submit" id="createDivisionSubmitBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#204835]">
+                        <i class="fas fa-save"></i>
+                        Save Division
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="divisionOverviewDetailsModal" class="fixed inset-0 z-[125] hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="divisionOverviewDetailsTitle">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-division-overview-modal></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-2xl overflow-hidden rounded-2xl border border-emerald-950/10 bg-white shadow-2xl">
+            <div class="flex items-center justify-between bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+                <div>
+                    <h3 id="divisionOverviewDetailsTitle" class="text-lg font-bold tracking-tight">Division Details</h3>
+                    <p id="divisionOverviewDetailsMeta" class="text-xs text-white/80"></p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-division-overview-modal>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4 p-5">
+                <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700/80">Total Employees</p>
+                            <p id="divisionOverviewDetailsTotal" class="mt-1 text-xl font-bold text-[#1a3a2d]">0</p>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700/80">Total Sections</p>
+                            <p id="divisionOverviewDetailsSectionCount" class="mt-1 text-xl font-bold text-[#1a3a2d]">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-gray-500">Sections</p>
+                    <ul id="divisionOverviewDetailsSections" class="mt-2 space-y-2"></ul>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
+                <button type="button" class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-division-overview-modal>
+                    Close
+                </button>
+                <a id="divisionOverviewDetailsAddBtn" href="{{ route('employees.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#204835]">
+                    <i class="fas fa-user-plus"></i>
+                    Add Employee
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="sectionPositionModal" class="fixed inset-0 z-[135] hidden opacity-0 transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sectionPositionModalTitle">
+    <div class="absolute inset-0 bg-black/60" data-close-section-position-modal></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="w-full max-w-lg overflow-hidden rounded-2xl border border-emerald-950/10 bg-white shadow-2xl">
+            <div class="flex items-center justify-between bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+                <div>
+                    <h3 id="sectionPositionModalTitle" class="text-lg font-bold tracking-tight">Add Position</h3>
+                    <p class="text-xs text-white/80">Create a position for <span id="sectionPositionModalSectionName" class="font-semibold">this section</span>.</p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-section-position-modal>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="sectionPositionForm" class="space-y-4 p-5">
+                <div>
+                    <label for="sectionPositionTitleInput" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Position Title</label>
+                    <input id="sectionPositionTitleInput" name="position_title" type="text" maxlength="255" class="mt-1 h-11 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Administrative Officer" required />
+                </div>
+
+                <p id="sectionPositionError" class="hidden rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"></p>
+
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
+                    <button type="button" class="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100" data-close-section-position-modal>
+                        Cancel
+                    </button>
+                    <button type="submit" id="sectionPositionSubmitBtn" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#204835]">
+                        <i class="fas fa-save"></i>
+                        Save Position
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -571,7 +744,28 @@
         const deleteConfirmModal = document.getElementById('employeeDeleteConfirmModal');
         const deleteConfirmBtn = document.getElementById('employeeDeleteConfirmBtn');
         const deleteConfirmName = document.getElementById('employeeDeleteConfirmName');
+        const divisionOverviewModal = document.getElementById('divisionOverviewDetailsModal');
+        const divisionOverviewTitle = document.getElementById('divisionOverviewDetailsTitle');
+        const divisionOverviewMeta = document.getElementById('divisionOverviewDetailsMeta');
+        const divisionOverviewTotal = document.getElementById('divisionOverviewDetailsTotal');
+        const divisionOverviewSectionCount = document.getElementById('divisionOverviewDetailsSectionCount');
+        const divisionOverviewSections = document.getElementById('divisionOverviewDetailsSections');
+        const divisionOverviewAddBtn = document.getElementById('divisionOverviewDetailsAddBtn');
+        const sectionPositionModal = document.getElementById('sectionPositionModal');
+        const sectionPositionForm = document.getElementById('sectionPositionForm');
+        const sectionPositionInput = document.getElementById('sectionPositionTitleInput');
+        const sectionPositionError = document.getElementById('sectionPositionError');
+        const sectionPositionSubmitBtn = document.getElementById('sectionPositionSubmitBtn');
+        const sectionPositionSectionName = document.getElementById('sectionPositionModalSectionName');
+        const createDivisionModal = document.getElementById('createDivisionModal');
+        const openCreateDivisionModalBtn = document.getElementById('openCreateDivisionModal');
+        const createDivisionForm = document.getElementById('createDivisionForm');
+        const createDivisionError = document.getElementById('createDivisionError');
+        const createDivisionSubmitBtn = document.getElementById('createDivisionSubmitBtn');
+        const addInitialSectionRowBtn = document.getElementById('addInitialSectionRow');
+        const initialSectionsRows = document.getElementById('initialSectionsRows');
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const sectionPositionStoreUrlTemplate = `{{ route('sections.positions.store', ['section' => '__SECTION__']) }}`;
 
         const sectionsByDivision = @json($sectionsByDivisionData);
 
@@ -628,6 +822,10 @@
         let modalUpdateUrl = null;
         let activeModalButton = null;
         let pendingDelete = false;
+        let activeDivisionDetailsTrigger = null;
+        let activeDivisionSections = [];
+        let activeSectionIdForPositionCreate = null;
+        let activeSectionAddButton = null;
         const activeToastKeys = new Set();
 
         const showToast = (message, type = 'success') => {
@@ -736,6 +934,188 @@
             setTimeout(() => {
                 deleteConfirmModal.classList.add('hidden');
             }, 200);
+        };
+
+        const toggleDivisionOverviewModal = (show) => {
+            if (!divisionOverviewModal) return;
+
+            if (show) {
+                divisionOverviewModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    divisionOverviewModal.classList.remove('opacity-0');
+                    divisionOverviewModal.classList.add('opacity-100');
+                });
+                return;
+            }
+
+            divisionOverviewModal.classList.remove('opacity-100');
+            divisionOverviewModal.classList.add('opacity-0');
+            setTimeout(() => {
+                divisionOverviewModal.classList.add('hidden');
+            }, 220);
+        };
+
+        const toggleCreateDivisionModal = (show) => {
+            if (!createDivisionModal) return;
+
+            if (show) {
+                createDivisionModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    createDivisionModal.classList.remove('opacity-0');
+                    createDivisionModal.classList.add('opacity-100');
+                });
+                return;
+            }
+
+            createDivisionModal.classList.remove('opacity-100');
+            createDivisionModal.classList.add('opacity-0');
+            setTimeout(() => {
+                createDivisionModal.classList.add('hidden');
+            }, 220);
+        };
+
+        const toggleSectionPositionModal = (show) => {
+            if (!sectionPositionModal) return;
+
+            if (show) {
+                sectionPositionModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    sectionPositionModal.classList.remove('opacity-0');
+                    sectionPositionModal.classList.add('opacity-100');
+                });
+
+                setTimeout(() => {
+                    sectionPositionInput?.focus();
+                    sectionPositionInput?.select();
+                }, 120);
+                return;
+            }
+
+            sectionPositionModal.classList.remove('opacity-100');
+            sectionPositionModal.classList.add('opacity-0');
+            setTimeout(() => {
+                sectionPositionModal.classList.add('hidden');
+            }, 200);
+        };
+
+        const resetSectionPositionForm = () => {
+            sectionPositionForm?.reset();
+            sectionPositionError?.classList.add('hidden');
+            if (sectionPositionError) {
+                sectionPositionError.textContent = '';
+            }
+            sectionPositionInput?.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+        };
+
+        const addSectionInputRow = (value = '') => {
+            if (!initialSectionsRows) return;
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2';
+            row.setAttribute('data-section-row', '1');
+            row.innerHTML = `
+                <input type="text" name="sections[]" maxlength="255" class="h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40" placeholder="e.g. Procurement Section" required />
+                <button type="button" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100" data-remove-section-row>
+                    Remove
+                </button>
+            `;
+
+            const input = row.querySelector('input[name="sections[]"]');
+            if (input) {
+                input.value = value;
+            }
+
+            initialSectionsRows.appendChild(row);
+        };
+
+        const resetCreateDivisionForm = () => {
+            if (!createDivisionForm || !initialSectionsRows) return;
+
+            createDivisionForm.reset();
+            createDivisionError?.classList.add('hidden');
+            createDivisionError.textContent = '';
+
+            initialSectionsRows.innerHTML = '';
+            addSectionInputRow('');
+        };
+
+        const openDivisionOverviewDetails = (button) => {
+            if (!button || !divisionOverviewSections) return;
+
+            const divisionId = String(button.dataset.divisionId || '').trim();
+            const divisionName = String(button.dataset.divisionName || 'Division').trim();
+            const divisionTotal = Number(button.dataset.divisionTotal || 0);
+
+            let sections = [];
+            try {
+                sections = JSON.parse(button.dataset.divisionSections || '[]');
+            } catch (error) {
+                sections = [];
+            }
+
+            activeDivisionDetailsTrigger = button;
+            activeDivisionSections = Array.isArray(sections) ? sections : [];
+
+            if (divisionOverviewTitle) {
+                divisionOverviewTitle.textContent = `${divisionName} Details`;
+            }
+
+            if (divisionOverviewMeta) {
+                divisionOverviewMeta.textContent = 'Review section staffing and their positions, then add a new employee in this division.';
+            }
+
+            if (divisionOverviewTotal) {
+                divisionOverviewTotal.textContent = Number.isFinite(divisionTotal) ? divisionTotal.toLocaleString() : '0';
+            }
+
+            if (divisionOverviewSectionCount) {
+                divisionOverviewSectionCount.textContent = sections.length.toLocaleString();
+            }
+
+            if (divisionOverviewAddBtn) {
+                const baseUrl = `{{ route('employees.create') }}`;
+                divisionOverviewAddBtn.setAttribute('href', divisionId ? `${baseUrl}?division_id=${encodeURIComponent(divisionId)}` : baseUrl);
+            }
+
+            divisionOverviewSections.innerHTML = '';
+
+            if (!activeDivisionSections.length) {
+                const empty = document.createElement('li');
+                empty.className = 'rounded-xl border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-500';
+                empty.textContent = 'No sections found for this division.';
+                divisionOverviewSections.appendChild(empty);
+            } else {
+                activeDivisionSections.forEach((section) => {
+                    const li = document.createElement('li');
+                    li.className = 'rounded-xl border border-gray-100 bg-white px-3 py-2';
+
+                    const sectionName = String(section?.name || 'Unnamed section');
+                    const sectionEmployees = Number(section?.employees || 0);
+                    const sectionPositions = Array.isArray(section?.positions) ? section.positions.filter(Boolean) : [];
+                    const positionsHtml = sectionPositions.length
+                        ? `<p class="mt-1 text-xs text-gray-500">Positions: ${sectionPositions.join(', ')}</p>`
+                        : '<p class="mt-1 text-xs text-gray-400">Positions: No assigned positions yet</p>';
+                    const sectionId = Number(section?.id || 0);
+
+                    li.innerHTML = `
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-sm font-medium text-gray-800">${sectionName}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">${sectionEmployees.toLocaleString()} employee${sectionEmployees === 1 ? '' : 's'}</span>
+                                <button type="button" class="js-add-section-position inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 transition hover:bg-blue-100" data-section-id="${sectionId}">
+                                    <i class="fas fa-plus text-[10px]"></i>
+                                    Add Position
+                                </button>
+                            </div>
+                        </div>
+                        ${positionsHtml}
+                    `;
+
+                    divisionOverviewSections.appendChild(li);
+                });
+            }
+
+            toggleDivisionOverviewModal(true);
         };
 
         const fieldElements = {
@@ -1122,11 +1502,268 @@
             openViewModal(viewBtn);
         });
 
+        openCreateDivisionModalBtn?.addEventListener('click', () => {
+            resetCreateDivisionForm();
+            toggleCreateDivisionModal(true);
+        });
+
+        document.addEventListener('click', (event) => {
+            const detailsBtn = event.target instanceof Element ? event.target.closest('.js-division-overview-details') : null;
+            if (!detailsBtn) return;
+            event.preventDefault();
+            openDivisionOverviewDetails(detailsBtn);
+        });
+
+        divisionOverviewSections?.addEventListener('click', async (event) => {
+            const addBtn = event.target instanceof Element ? event.target.closest('.js-add-section-position') : null;
+            if (!addBtn) return;
+
+            event.preventDefault();
+
+            const sectionId = String(addBtn.getAttribute('data-section-id') || '').trim();
+            if (!sectionId) return;
+
+            const sectionEntry = activeDivisionSections.find((item) => String(item.id) === sectionId);
+            activeSectionIdForPositionCreate = sectionId;
+            activeSectionAddButton = addBtn;
+            resetSectionPositionForm();
+
+            if (sectionPositionSectionName) {
+                sectionPositionSectionName.textContent = String(sectionEntry?.name || 'this section');
+            }
+
+            toggleSectionPositionModal(true);
+        });
+
+        sectionPositionModal?.addEventListener('click', (event) => {
+            const closeEl = event.target instanceof Element ? event.target.closest('[data-close-section-position-modal]') : null;
+            if (!closeEl) return;
+            event.preventDefault();
+            toggleSectionPositionModal(false);
+        });
+
+        sectionPositionInput?.addEventListener('input', () => {
+            sectionPositionError?.classList.add('hidden');
+            sectionPositionInput.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+        });
+
+        sectionPositionForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const sectionId = String(activeSectionIdForPositionCreate || '').trim();
+            const positionTitle = String(sectionPositionInput?.value || '').trim();
+
+            if (!sectionId) {
+                showToast('Section context is missing. Please reopen the dialog.', 'error');
+                return;
+            }
+
+            if (!positionTitle) {
+                if (sectionPositionError) {
+                    sectionPositionError.textContent = 'Position title cannot be empty.';
+                    sectionPositionError.classList.remove('hidden');
+                }
+                sectionPositionInput?.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+                sectionPositionInput?.focus();
+                return;
+            }
+
+            if (!csrfToken) {
+                showToast('CSRF token is missing. Please refresh the page.', 'error');
+                return;
+            }
+
+            const addBtn = activeSectionAddButton;
+            const originalLabel = addBtn?.innerHTML || '';
+            const originalSubmitLabel = sectionPositionSubmitBtn?.innerHTML || '';
+
+            if (addBtn) {
+                addBtn.setAttribute('disabled', 'disabled');
+                addBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                addBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i> Saving';
+            }
+
+            if (sectionPositionSubmitBtn) {
+                sectionPositionSubmitBtn.setAttribute('disabled', 'disabled');
+                sectionPositionSubmitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+                sectionPositionSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            try {
+                const url = sectionPositionStoreUrlTemplate.replace('__SECTION__', encodeURIComponent(sectionId));
+                const formData = new FormData();
+                formData.append('position_title', positionTitle);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                const payload = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    if (response.status === 422 && payload?.errors) {
+                        const firstMessage = String(Object.values(payload.errors).flat()[0] || 'Unable to add position.');
+                        if (sectionPositionError) {
+                            sectionPositionError.textContent = firstMessage;
+                            sectionPositionError.classList.remove('hidden');
+                        }
+                        sectionPositionInput?.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+                        return;
+                    }
+
+                    const fallback = payload?.message || 'Unable to add position.';
+                    if (sectionPositionError) {
+                        sectionPositionError.textContent = fallback;
+                        sectionPositionError.classList.remove('hidden');
+                    }
+                    showToast(fallback, 'error');
+                    return;
+                }
+
+                const sectionEntry = activeDivisionSections.find((item) => String(item.id) === sectionId);
+                if (sectionEntry) {
+                    const currentPositions = Array.isArray(sectionEntry.positions) ? sectionEntry.positions : [];
+                    if (!currentPositions.includes(positionTitle)) {
+                        sectionEntry.positions = [...currentPositions, positionTitle].sort((a, b) => a.localeCompare(b));
+                    }
+                }
+
+                toggleSectionPositionModal(false);
+                showToast(payload?.message || 'Position added to section.', 'success');
+
+                if (activeDivisionDetailsTrigger) {
+                    activeDivisionDetailsTrigger.dataset.divisionSections = JSON.stringify(activeDivisionSections);
+                    openDivisionOverviewDetails(activeDivisionDetailsTrigger);
+                }
+            } catch (error) {
+                showToast('Unable to add position right now.', 'error');
+            } finally {
+                if (addBtn) {
+                    addBtn.removeAttribute('disabled');
+                    addBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    addBtn.innerHTML = originalLabel;
+                }
+
+                if (sectionPositionSubmitBtn) {
+                    sectionPositionSubmitBtn.removeAttribute('disabled');
+                    sectionPositionSubmitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                    sectionPositionSubmitBtn.innerHTML = originalSubmitLabel;
+                }
+            }
+        });
+
         viewModal?.addEventListener('click', (event) => {
             const closeEl = event.target instanceof Element ? event.target.closest('[data-close-employee-view-modal]') : null;
             if (!closeEl) return;
             event.preventDefault();
             toggleViewModal(false);
+        });
+
+        divisionOverviewModal?.addEventListener('click', (event) => {
+            const closeEl = event.target instanceof Element ? event.target.closest('[data-close-division-overview-modal]') : null;
+            if (!closeEl) return;
+            event.preventDefault();
+            toggleDivisionOverviewModal(false);
+        });
+
+        createDivisionModal?.addEventListener('click', (event) => {
+            const closeEl = event.target instanceof Element ? event.target.closest('[data-close-create-division-modal]') : null;
+            if (!closeEl) return;
+            event.preventDefault();
+            toggleCreateDivisionModal(false);
+        });
+
+        addInitialSectionRowBtn?.addEventListener('click', () => {
+            addSectionInputRow('');
+        });
+
+        initialSectionsRows?.addEventListener('click', (event) => {
+            const removeBtn = event.target instanceof Element ? event.target.closest('[data-remove-section-row]') : null;
+            if (!removeBtn) return;
+
+            const row = removeBtn.closest('[data-section-row]');
+            if (!row) return;
+
+            const rowCount = initialSectionsRows.querySelectorAll('[data-section-row]').length;
+            if (rowCount <= 1) {
+                const input = row.querySelector('input[name="sections[]"]');
+                if (input) {
+                    input.value = '';
+                    input.focus();
+                }
+                return;
+            }
+
+            row.remove();
+        });
+
+        createDivisionForm?.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!csrfToken) {
+                return;
+            }
+
+            if (!createDivisionSubmitBtn) {
+                return;
+            }
+
+            const formData = new FormData(createDivisionForm);
+            createDivisionError?.classList.add('hidden');
+            createDivisionError.textContent = '';
+
+            const originalBtnHtml = createDivisionSubmitBtn.innerHTML;
+            createDivisionSubmitBtn.disabled = true;
+            createDivisionSubmitBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            createDivisionSubmitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const response = await fetch(`{{ route('divisions.store') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
+
+                const payload = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 422 && payload?.errors) {
+                        const messages = Object.values(payload.errors).flat().filter(Boolean);
+                        const firstMessage = messages.length ? String(messages[0]) : 'Please fix the highlighted fields and try again.';
+                        if (createDivisionError) {
+                            createDivisionError.textContent = firstMessage;
+                            createDivisionError.classList.remove('hidden');
+                        }
+                    } else {
+                        throw new Error(payload?.message || 'Unable to create division right now.');
+                    }
+                    return;
+                }
+
+                showToast(payload?.message || 'Division created successfully.', 'success');
+                toggleCreateDivisionModal(false);
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
+            } catch (error) {
+                const fallback = error instanceof Error ? error.message : 'Unable to create division right now.';
+                if (createDivisionError) {
+                    createDivisionError.textContent = fallback;
+                    createDivisionError.classList.remove('hidden');
+                }
+            } finally {
+                createDivisionSubmitBtn.disabled = false;
+                createDivisionSubmitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                createDivisionSubmitBtn.innerHTML = originalBtnHtml;
+            }
         });
 
         detailsActionBtn?.addEventListener('click', () => setModalView('details'));
@@ -1292,6 +1929,11 @@
             if (event.key === 'Escape' && deleteConfirmModal && !deleteConfirmModal.classList.contains('hidden')) {
                 pendingDelete = false;
                 toggleDeleteConfirm(false);
+                return;
+            }
+
+            if (event.key === 'Escape' && sectionPositionModal && !sectionPositionModal.classList.contains('hidden')) {
+                toggleSectionPositionModal(false);
                 return;
             }
 
