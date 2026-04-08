@@ -181,6 +181,7 @@
             items: @json(route('custodian.inventory.items')),
             show: @json(route('custodian.inventory.show', ['inspection_report_item' => '__ID__'])),
             store: @json(route('custodian.inventory.store', ['inspection_report_item' => '__ID__'])),
+            addLocation: @json(route('custodian.inventory.locations.store')),
         },
         categories: @json($categoriesData),
         locations: @json($locations),

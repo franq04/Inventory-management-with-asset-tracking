@@ -120,9 +120,48 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Initial Location</label>
-                                    <select name="initial_location_id" id="inventoryInitialLocation" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400">
-                                        <option value="">No location selected</option>
-                                    </select>
+                                    <input type="hidden" name="initial_location_id" id="inventoryInitialLocationId">
+                                    <div class="relative">
+                                        <input type="text" id="inventoryInitialLocationInput" list="inventoryInitialLocationList" class="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2.5 pr-10 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500" placeholder="Search and select location...">
+                                        <button type="button" id="inventoryClearLocationBtn" class="absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md px-2 py-1 text-[11px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700">
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <datalist id="inventoryInitialLocationList"></datalist>
+                                    <div id="inventoryLocationSuggestions" class="hidden rounded-xl border border-emerald-900/10 bg-emerald-50/40 p-2.5">
+                                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/60">Matching Locations</div>
+                                        <div id="inventoryLocationSuggestionsList" class="flex flex-wrap gap-2"></div>
+                                    </div>
+                                    <button type="button" id="inventoryToggleNewLocationBtn" class="inline-flex w-fit items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                                        <i class="fas fa-plus text-[10px]"></i>
+                                        Add New Location
+                                    </button>
+                                    <div id="inventoryNewLocationForm" class="hidden rounded-lg border border-emerald-200 bg-emerald-50/40 p-3 space-y-2">
+                                        <div class="flex flex-col gap-1">
+                                            <label for="inventoryInitialLocationName" class="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">New Location Name</label>
+                                            <input type="text" name="initial_location_name" id="inventoryInitialLocationName" class="w-full border border-emerald-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" placeholder="e.g. Building 1 - 2nd Floor">
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <label for="inventoryInitialLocationType" class="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Location Type</label>
+                                            <select name="initial_location_type" id="inventoryInitialLocationType" class="w-full border border-emerald-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                                <option value="room">Room</option>
+                                                <option value="storage">Storage</option>
+                                                <option value="floor">Floor</option>
+                                                <option value="building">Building</option>
+                                                <option value="other" selected>Other</option>
+                                            </select>
+                                        </div>
+                                        <div class="flex flex-col gap-1">
+                                            <label for="inventoryInitialLocationParent" class="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Parent Location</label>
+                                            <select name="initial_location_parent_id" id="inventoryInitialLocationParent" class="w-full border border-emerald-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                                <option value="">No parent location</option>
+                                            </select>
+                                        </div>
+                                        <button type="button" id="inventoryAddLocationBtn" class="inline-flex w-fit items-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800">
+                                            <i class="fas fa-plus"></i>
+                                            Add Location
+                                        </button>
+                                    </div>
                                     <p class="text-xs text-gray-500">Auto-selected from the initial employee section/division when mapped; you may still override if needed.</p>
                                 </div>
                                 <div class="flex flex-col gap-1.5">

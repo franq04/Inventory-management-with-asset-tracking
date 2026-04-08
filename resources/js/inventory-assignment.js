@@ -47,7 +47,18 @@ $(() => {
     const $totalCostField = $('#inventoryTotalCost');
     const $dateAcquiredField = $('#inventoryDateAcquired');
     const $usefulLifeField = $('#inventoryUsefulLife');
-    const $initialLocationField = $('#inventoryInitialLocation');
+    const $initialLocationIdField = $('#inventoryInitialLocationId');
+    const $initialLocationInputField = $('#inventoryInitialLocationInput');
+    const $clearLocationBtn = $('#inventoryClearLocationBtn');
+    const $initialLocationList = $('#inventoryInitialLocationList');
+    const $locationSuggestions = $('#inventoryLocationSuggestions');
+    const $locationSuggestionsList = $('#inventoryLocationSuggestionsList');
+    const $toggleNewLocationBtn = $('#inventoryToggleNewLocationBtn');
+    const $newLocationForm = $('#inventoryNewLocationForm');
+    const $newLocationNameField = $('#inventoryInitialLocationName');
+    const $newLocationTypeField = $('#inventoryInitialLocationType');
+    const $newLocationParentField = $('#inventoryInitialLocationParent');
+    const $addLocationBtn = $('#inventoryAddLocationBtn');
     const $initialCustodianField = $('#inventoryInitialCustodian');
     const $serialsContainer = $('#inventorySerialsContainer');
 
@@ -87,6 +98,7 @@ $(() => {
     let currentStoreUrl = null;
     let appliedDateFrom = null;
     let appliedDateTo = null;
+    let currentLocationSearchTerm = '';
 
     const escapeHtml = (value = '') => String(value ?? '')
         .replace(/&/g, '&amp;')
@@ -97,13 +109,42 @@ $(() => {
 
     const escapeAttr = (value = '') => escapeHtml(value);
 
-    const renderLocationOptions = (selectedLocation = null) => {
-        if (!$initialLocationField.length) {
+    const normalizeLocationText = (value = '') => String(value || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+
+    const getLocationLabel = (location) => String(location?.label || location?.name || '').trim();
+
+    const getLocationById = (locationId) => {
+        const target = String(locationId || '').trim();
+        if (!target) {
+            return null;
+        }
+
+        return locations.find((location) => String(location.id || '') === target) || null;
+    };
+
+    const getLocationByInput = (inputValue) => {
+        const normalized = normalizeLocationText(inputValue);
+        if (!normalized) {
+            return null;
+        }
+
+        return locations.find((location) => {
+            const label = normalizeLocationText(getLocationLabel(location));
+            const name = normalizeLocationText(location?.name || '');
+            return normalized === label || normalized === name;
+        }) || null;
+    };
+
+    const renderParentLocationOptions = (selectedParentId = null) => {
+        if (!$newLocationParentField.length) {
             return;
         }
 
-        const selected = selectedLocation == null ? '' : String(selectedLocation);
-        const options = ['<option value="">No location selected</option>'];
+        const selected = selectedParentId == null ? '' : String(selectedParentId);
+        const options = ['<option value="">No parent location</option>'];
 
         locations.forEach((location) => {
             const value = String(location.id ?? '');
@@ -116,7 +157,121 @@ $(() => {
             options.push(`<option value="${escapeAttr(value)}"${selectedAttr}>${label}</option>`);
         });
 
-        $initialLocationField.html(options.join(''));
+        $newLocationParentField.html(options.join(''));
+    };
+
+    const renderLocationSuggestions = (entries = [], activeId = null) => {
+        if (!$locationSuggestions.length || !$locationSuggestionsList.length) {
+            return;
+        }
+
+        if (!entries.length) {
+            $locationSuggestionsList.empty();
+            $locationSuggestions.addClass('hidden');
+            return;
+        }
+
+        const active = activeId == null ? '' : String(activeId);
+        const html = entries.slice(0, 8).map((location) => {
+            const id = String(location.id ?? '');
+            const isActive = active !== '' && id === active;
+            const classes = isActive
+                ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                : 'border-emerald-900/15 bg-white text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100/60';
+
+            return `<button type="button" class="js-location-suggestion inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${classes}" data-location-id="${escapeAttr(id)}">${escapeHtml(getLocationLabel(location) || location.name || id)}</button>`;
+        }).join('');
+
+        $locationSuggestionsList.html(html);
+        $locationSuggestions.removeClass('hidden');
+    };
+
+    const syncLocationClearButton = () => {
+        if (!$clearLocationBtn.length) {
+            return;
+        }
+
+        const hasValue = String($initialLocationInputField.val() || '').trim() !== ''
+            || String($initialLocationIdField.val() || '').trim() !== '';
+        $clearLocationBtn.toggleClass('hidden', !hasValue);
+    };
+
+    const renderLocationOptions = (selectedLocation = null, searchTerm = '', syncInput = true) => {
+        if (!$initialLocationList.length || !$initialLocationInputField.length || !$initialLocationIdField.length) {
+            return;
+        }
+
+        const selected = selectedLocation == null ? '' : String(selectedLocation);
+        const options = [];
+        const normalizedSearch = normalizeLocationText(searchTerm);
+        let selectedLabel = '';
+        const matchedEntries = [];
+
+        locations.forEach((location) => {
+            const value = String(location.id ?? '');
+            if (!value) {
+                return;
+            }
+
+            const rawLabel = getLocationLabel(location);
+            const searchable = `${rawLabel} ${location.name || ''}`.toLowerCase();
+            if (normalizedSearch && !searchable.includes(normalizedSearch) && value !== selected) {
+                return;
+            }
+
+            matchedEntries.push(location);
+
+            const label = escapeHtml(rawLabel || value);
+            options.push(`<option value="${label}"></option>`);
+
+            if (selected !== '' && value === selected) {
+                selectedLabel = rawLabel;
+            }
+        });
+
+        $initialLocationList.html(options.join(''));
+        renderLocationSuggestions(matchedEntries, selected);
+
+        if (selected) {
+            $initialLocationIdField.val(selected);
+            if (syncInput) {
+                $initialLocationInputField.val(selectedLabel || $initialLocationInputField.val());
+            }
+        }
+
+        syncLocationClearButton();
+    };
+
+    const toggleNewLocationForm = (open) => {
+        if (!$newLocationForm.length) {
+            return;
+        }
+
+        $newLocationForm.toggleClass('hidden', !open);
+
+        if ($toggleNewLocationBtn.length) {
+            $toggleNewLocationBtn.html(open
+                ? '<i class="fas fa-times text-[10px]"></i> Cancel New Location'
+                : '<i class="fas fa-plus text-[10px]"></i> Add New Location');
+        }
+
+        if (open) {
+            $initialLocationIdField.val('');
+            $initialLocationInputField.val('');
+            renderParentLocationOptions(null);
+            renderLocationOptions(null, '', false);
+            $newLocationNameField.trigger('focus');
+        } else {
+            $newLocationNameField.val('');
+            if ($newLocationTypeField.length) {
+                $newLocationTypeField.val('other');
+            }
+            if ($newLocationParentField.length) {
+                $newLocationParentField.val('');
+            }
+
+            syncLocationClearButton();
+        }
     };
 
     const getCurrentPageFromUrl = () => {
@@ -175,6 +330,121 @@ $(() => {
         populateSubCategories($(this).val(), null);
     });
 
+    $initialLocationInputField.on('input', function () {
+        const typedValue = String($(this).val() || '');
+        currentLocationSearchTerm = typedValue;
+        const matched = getLocationByInput(typedValue);
+        $initialLocationIdField.val(matched ? String(matched.id) : '');
+        renderLocationOptions(matched ? matched.id : null, currentLocationSearchTerm, false);
+    });
+
+    $initialLocationInputField.on('blur', function () {
+        const matched = getLocationByInput($(this).val());
+        if (matched) {
+            $initialLocationIdField.val(String(matched.id));
+            $(this).val(getLocationLabel(matched));
+            renderLocationOptions(matched.id, '', true);
+            return;
+        }
+
+        if (!String($(this).val() || '').trim()) {
+            $initialLocationIdField.val('');
+            currentLocationSearchTerm = '';
+            renderLocationOptions(null, '', false);
+            return;
+        }
+
+        renderLocationOptions(null, $(this).val(), false);
+    });
+
+    $clearLocationBtn.on('click', function () {
+        $initialLocationIdField.val('');
+        $initialLocationInputField.val('');
+        currentLocationSearchTerm = '';
+        renderLocationOptions(null, '', false);
+        $initialLocationInputField.trigger('focus');
+    });
+
+    $locationSuggestionsList.on('click', '.js-location-suggestion', function () {
+        const locationId = String($(this).data('locationId') || '');
+        const location = getLocationById(locationId);
+        if (!location) {
+            return;
+        }
+
+        $initialLocationIdField.val(String(location.id));
+        $initialLocationInputField.val(getLocationLabel(location));
+        currentLocationSearchTerm = '';
+        renderLocationOptions(location.id, '', true);
+    });
+
+    $toggleNewLocationBtn.on('click', function () {
+        const isOpen = !$newLocationForm.hasClass('hidden');
+        toggleNewLocationForm(!isOpen);
+    });
+
+    $addLocationBtn.on('click', function () {
+        const locationName = String($newLocationNameField.val() || '').trim().replace(/\s+/g, ' ');
+        if (!locationName) {
+            $createErrors.text('Please enter a location name before adding.').removeClass('hidden');
+            $newLocationNameField.trigger('focus');
+            return;
+        }
+
+        if (!routes.addLocation) {
+            $createErrors.text('Add location endpoint is not configured.').removeClass('hidden');
+            return;
+        }
+
+        const payload = {
+            location_name: locationName,
+            location_type: String($newLocationTypeField.val() || 'other'),
+            parent_location_id: String($newLocationParentField.val() || '').trim(),
+        };
+
+        $createErrors.addClass('hidden').empty();
+        const $button = $(this);
+        const originalLabel = $button.html();
+        $button.prop('disabled', true).addClass('opacity-70 cursor-not-allowed').html('<i class="fas fa-spinner fa-spin"></i> Adding...');
+
+        $.ajax({
+            url: routes.addLocation,
+            method: 'POST',
+            data: payload,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken(),
+                Accept: 'application/json',
+            },
+            success: (response) => {
+                const location = response?.data?.location;
+                if (location && location.id) {
+                    const exists = locations.some((entry) => String(entry.id) === String(location.id));
+                    if (!exists) {
+                        locations.push(location);
+                    }
+
+                    $initialLocationIdField.val(String(location.id));
+                    $initialLocationInputField.val(getLocationLabel(location));
+                    currentLocationSearchTerm = '';
+                    renderLocationOptions(location.id, currentLocationSearchTerm, true);
+                    renderParentLocationOptions(null);
+                    toggleNewLocationForm(false);
+                }
+            },
+            error: (xhr) => {
+                if (xhr.status === 422 && xhr.responseJSON?.errors) {
+                    const messages = Object.values(xhr.responseJSON.errors).flat();
+                    $createErrors.html(messages.map((msg) => `<div>${msg}</div>`).join('')).removeClass('hidden');
+                } else {
+                    $createErrors.text(xhr.responseJSON?.message || 'Unable to add location right now.').removeClass('hidden');
+                }
+            },
+            complete: () => {
+                $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed').html(originalLabel);
+            },
+        });
+    });
+
     const toggleModal = ($modal, open) => {
         const $panel = $modal.find('.modal-panel').first();
 
@@ -211,7 +481,12 @@ $(() => {
                 currentStoreUrl = null;
                 populateSubCategories(null, null);
                 $categorySelect.empty();
-                renderLocationOptions(null);
+                currentLocationSearchTerm = '';
+                $initialLocationIdField.val('');
+                $initialLocationInputField.val('');
+                renderLocationOptions(null, currentLocationSearchTerm, false);
+                renderParentLocationOptions(null);
+                toggleNewLocationForm(false);
                 $totalCostField.val('0.00');
                 renderSerialInputs(1);
                 $itemAccountableOfficer.text('—');
@@ -706,7 +981,12 @@ $(() => {
         const preferredLocationId = item.property_record?.current_location_id
             || item.recommended_initial_location_id
             || null;
-        renderLocationOptions(preferredLocationId);
+        currentLocationSearchTerm = '';
+        $initialLocationIdField.val(preferredLocationId ? String(preferredLocationId) : '');
+        $initialLocationInputField.val('');
+        renderLocationOptions(preferredLocationId, currentLocationSearchTerm, true);
+        renderParentLocationOptions(null);
+        toggleNewLocationForm(false);
         renderSerialInputs(acceptedQuantity);
 
         $itemDescription.text(item.item_description ?? '—');
@@ -902,6 +1182,16 @@ $(() => {
         }
 
         $createErrors.addClass('hidden').empty();
+
+        if (!$newLocationForm.hasClass('hidden')) {
+            const newLocationName = String($newLocationNameField.val() || '').trim();
+            if (!newLocationName) {
+                $createErrors.text('Please enter a new location name or close the new location form.').removeClass('hidden');
+                $newLocationNameField.trigger('focus');
+                return;
+            }
+        }
+
         const $submitBtn = $createForm.find('button[type="submit"]');
         $submitBtn.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
 
@@ -918,6 +1208,18 @@ $(() => {
                 setTimeout(() => {
                     showSuccessModal(response.message || 'PQS record created successfully.');
                 }, 320);
+
+                const location = response?.data?.initial_location;
+                if (location && location.id) {
+                    const exists = locations.some((entry) => String(entry.id) === String(location.id));
+                    if (!exists) {
+                        locations.push(location);
+                    }
+                }
+
+                renderLocationOptions(location?.id ?? null, currentLocationSearchTerm, true);
+                renderParentLocationOptions(null);
+
                 fetchItems();
             },
             error: (xhr) => {
@@ -939,7 +1241,8 @@ $(() => {
 
     // Initialize state
     populateSubCategories(null, null);
-    renderLocationOptions(null);
+    renderLocationOptions(null, currentLocationSearchTerm, false);
+    renderParentLocationOptions(null);
     renderSerialInputs(1);
     fetchItems();
 

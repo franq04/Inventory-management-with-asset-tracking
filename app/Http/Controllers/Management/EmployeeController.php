@@ -12,7 +12,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -110,20 +109,17 @@ class EmployeeController extends Controller
                 return $rows->pluck('position_title')->values();
             });
 
-        $sectionPositionTitlesFromMapping = collect();
-        if (Schema::hasTable('section_positions')) {
-            $sectionPositionTitlesFromMapping = DB::table('section_positions')
-                ->join('positions', 'section_positions.position_id', '=', 'positions.position_id')
-                ->select('section_positions.section_id', 'positions.position_title')
-                ->whereNotNull('positions.position_title')
-                ->distinct()
-                ->orderBy('positions.position_title')
-                ->get()
-                ->groupBy('section_id')
-                ->map(function ($rows) {
-                    return $rows->pluck('position_title')->values();
-                });
-        }
+        $sectionPositionTitlesFromMapping = Position::query()
+            ->whereNotNull('section_id')
+            ->whereNotNull('position_title')
+            ->select('section_id', 'position_title')
+            ->distinct()
+            ->orderBy('position_title')
+            ->get()
+            ->groupBy('section_id')
+            ->map(function ($rows) {
+                return $rows->pluck('position_title')->values();
+            });
 
         $sectionPositionTitles = $sectionPositionTitlesFromEmployees;
         foreach ($sectionPositionTitlesFromMapping as $sectionId => $titles) {
@@ -580,7 +576,7 @@ class EmployeeController extends Controller
             'position_title' => ['required', 'string', 'max:255'],
         ]);
 
-        $positionTitle = trim((string) $validated['position_title']);
+        $positionTitle = preg_replace('/\s+/', ' ', trim((string) $validated['position_title']));
         if ($positionTitle === '') {
             throw ValidationException::withMessages([
                 'position_title' => 'Position title is required.',
@@ -588,55 +584,38 @@ class EmployeeController extends Controller
         }
 
         $result = DB::transaction(function () use ($section, $positionTitle) {
-            $normalized = strtolower($positionTitle);
+            $normalized = mb_strtolower($positionTitle, 'UTF-8');
 
-            $position = Position::query()
-                ->whereRaw('LOWER(position_title) = ?', [$normalized])
+            $existingPosition = Position::query()
+                ->where('section_id', (int) $section->section_id)
+                ->whereRaw('LOWER(TRIM(position_title)) = ?', [$normalized])
                 ->first();
 
-            if (! $position) {
-                $nextPositionId = ((int) Position::query()->max('position_id')) + 1;
-                Position::query()->insert([
-                    'position_id' => $nextPositionId,
-                    'position_title' => $positionTitle,
-                ]);
-
-                $position = Position::query()->findOrFail($nextPositionId);
-            }
-
-            if (! Schema::hasTable('section_positions')) {
+            if ($existingPosition) {
                 throw ValidationException::withMessages([
-                    'position_title' => 'Section-position mapping table is missing. Please run migrations to enable this feature.',
+                    'position_title' => 'Position already exists in this section (case-insensitive match).',
                 ]);
             }
 
-            $mappingExists = DB::table('section_positions')
-                ->where('section_id', (int) $section->section_id)
-                ->where('position_id', (int) $position->position_id)
-                ->exists();
+            $nextPositionId = ((int) Position::query()->max('position_id')) + 1;
+            Position::query()->insert([
+                'position_id' => $nextPositionId,
+                'position_title' => $positionTitle,
+                'section_id' => (int) $section->section_id,
+            ]);
 
-            if (! $mappingExists) {
-                $nextId = ((int) DB::table('section_positions')->max('id')) + 1;
-                DB::table('section_positions')->insert([
-                    'id' => $nextId,
-                    'section_id' => (int) $section->section_id,
-                    'position_id' => (int) $position->position_id,
-                ]);
-            }
+            $position = Position::query()->findOrFail($nextPositionId);
 
             return [
                 'section_id' => (int) $section->section_id,
                 'section_name' => $section->section_name,
                 'position_id' => (int) $position->position_id,
                 'position_title' => $position->position_title,
-                'already_mapped' => $mappingExists,
             ];
         });
 
         return response()->json([
-            'message' => $result['already_mapped']
-                ? 'Position already exists for this section.'
-                : 'Position added to section successfully.',
+            'message' => 'Position added to section successfully.',
             'data' => $result,
         ]);
     }
