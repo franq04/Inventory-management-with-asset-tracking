@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Custodian;
 
 use App\Http\Controllers\Controller;
-use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\InspectionReport;
 use App\Models\InspectionReportItem;
@@ -13,7 +12,6 @@ use App\Models\Status;
 use App\Support\PurchaseRequestStatusSynchronizer;
 use App\Models\StatusHistory;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -176,10 +174,19 @@ class InspectionController extends Controller
         $items = $purchaseOrder->items->map(function (PurchaseOrderItem $item) use ($activeReport, $latestInspectionItems) {
             $batchInspection = $activeReport?->items->firstWhere('po_item_id', $item->poi_id);
             $latestInspection = $latestInspectionItems->get($item->poi_id);
-            $fallbackInspection = $batchInspection ?? $latestInspection;
 
-            $delivered = $batchInspection?->quantity_delivered
-                ?? $fallbackInspection?->quantity_delivered
+            $batchLooksLikeDefaultPending = $batchInspection
+                && (int) ($batchInspection->inspection_status_id ?? 0) === Status::ITEM_PENDING_INSPECTION
+                && (int) ($batchInspection->quantity_accepted ?? 0) === 0
+                && (int) ($batchInspection->quantity_rejected ?? 0) === 0
+                && blank($batchInspection->inspection_remarks)
+                && blank($batchInspection->warranty_expiration);
+
+            $preferredInspection = ($batchInspection && ! $batchLooksLikeDefaultPending)
+                ? $batchInspection
+                : ($latestInspection ?? $batchInspection);
+
+            $delivered = $preferredInspection?->quantity_delivered
                 ?? $item->quantity;
 
             return [
@@ -187,11 +194,11 @@ class InspectionController extends Controller
                 'item_description' => $item->item_description,
                 'quantity' => $delivered,
                 'unit' => $item->unit,
-                'status_id' => $fallbackInspection?->inspection_status_id,
-                'quantity_accepted' => $batchInspection?->quantity_accepted ?? $fallbackInspection?->quantity_accepted ?? 0,
-                'quantity_rejected' => $batchInspection?->quantity_rejected ?? $fallbackInspection?->quantity_rejected ?? 0,
-                'remarks' => $batchInspection?->inspection_remarks ?? $fallbackInspection?->inspection_remarks,
-                'warranty_expiration' => optional($batchInspection?->warranty_expiration ?? $fallbackInspection?->warranty_expiration)->toDateString(),
+                'status_id' => $preferredInspection?->inspection_status_id,
+                'quantity_accepted' => $preferredInspection?->quantity_accepted ?? 0,
+                'quantity_rejected' => $preferredInspection?->quantity_rejected ?? 0,
+                'remarks' => $preferredInspection?->inspection_remarks,
+                'warranty_expiration' => optional($preferredInspection?->warranty_expiration)->toDateString(),
             ];
         })->values();
 

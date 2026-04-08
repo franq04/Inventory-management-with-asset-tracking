@@ -520,7 +520,6 @@ const initInspectionModal = () => {
     };
 
     const statusesRequiringRemarks = new Set(['IT-03', 'IT-04', 'IT-05']);
-    const quantityLockedStatuses = new Set(['IT-06']);
 
     const syncStatuses = (statuses = []) => {
         state.statuses = [...statuses].sort((a, b) => {
@@ -691,12 +690,18 @@ const initInspectionModal = () => {
         accepted = Math.max(0, accepted);
         rejected = Math.max(0, rejected);
 
-        if (accepted + rejected > delivered) {
-            if (changedField === 'accepted') {
-                accepted = Math.max(0, delivered - rejected);
-            } else {
-                rejected = Math.max(0, delivered - accepted);
+        if (changedField === 'rejected') {
+            if (rejected > delivered) {
+                rejected = delivered;
             }
+            accepted = Math.max(0, delivered - rejected);
+        } else if (changedField === 'accepted') {
+            if (accepted > delivered) {
+                accepted = delivered;
+            }
+            rejected = Math.max(0, delivered - accepted);
+        } else if (accepted + rejected > delivered) {
+            accepted = Math.max(0, delivered - rejected);
         }
 
         if (accepted > delivered) {
@@ -725,11 +730,10 @@ const initInspectionModal = () => {
             $rejected.val(0);
         }
 
-        const lockQuantities = quantityLockedStatuses.has(statusCode);
-        $accepted.prop('readonly', lockQuantities).toggleClass('bg-gray-100', lockQuantities);
-        $rejected.prop('readonly', lockQuantities).toggleClass('bg-gray-100', lockQuantities);
+        $accepted.prop('readonly', false).removeClass('bg-gray-100');
+        $rejected.prop('readonly', false).removeClass('bg-gray-100');
 
-        clampQuantities($row, lockQuantities ? 'accepted' : undefined);
+        clampQuantities($row);
 
         if (statusCode && statusesRequiringRemarks.has(statusCode)) {
             $remarks.attr('placeholder', 'Provide inspection notes for this status')
