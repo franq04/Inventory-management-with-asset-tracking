@@ -202,23 +202,26 @@
                             </div>
 
                             <div class="mt-5 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
-                                <div class="space-y-3">
+                                <div class="space-y-1.5">
                                     <p class="font-semibold uppercase">Received by:</p>
-                                    <span id="pqsParReceivedBy" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Signature over Printed Name</span>
-                                    <span id="pqsParReceivedByPosition" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Position/Office</span>
-                                    <span id="pqsParReceivedByDate" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Date</span>
+                                    <div class="w-[78%] mx-auto relative">
+                                        <img id="pqsParReceivedBySignature" src="" alt="Received by signature" class="hidden absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 h-8 w-auto max-w-[220px] object-contain">
+                                        <span id="pqsParReceivedBy" class="block border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    </div>
+                                    <span class="block text-[11px] text-gray-600 text-center">Signature over Printed Name</span>
+                                    <span id="pqsParReceivedByPosition" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Position/Office</span>
+                                    <span id="pqsParReceivedByDate" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Date</span>
                                 </div>
-                                <div class="space-y-3">
+                                <div class="space-y-1.5">
                                     <p class="font-semibold uppercase">Received from:</p>
-                                    <span id="pqsParReceivedFrom" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Signature over Printed Name</span>
-                                    <span id="pqsParReceivedFromPosition" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Position/Office</span>
-                                    <span id="pqsParReceivedFromDate" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Date</span>
+                                    <span id="pqsParReceivedFrom" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Signature over Printed Name</span>
+                                    <span id="pqsParReceivedFromPosition" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Position/Office</span>
+                                    <span id="pqsParReceivedFromDate" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Date</span>
                                 </div>
                             </div>
                         </div>
@@ -277,23 +280,26 @@
                             </div>
 
                             <div class="mt-5 grid grid-cols-1 gap-8 text-xs md:grid-cols-2">
-                                <div class="space-y-3">
+                                <div class="space-y-1.5">
                                     <p class="font-semibold uppercase">Received from:</p>
-                                    <span id="pqsIcsReceivedFrom" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Signature over Printed Name</span>
-                                    <span id="pqsIcsReceivedFromPosition" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Position/Office</span>
-                                    <span id="pqsIcsReceivedFromDate" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Date</span>
+                                    <span id="pqsIcsReceivedFrom" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Signature over Printed Name</span>
+                                    <span id="pqsIcsReceivedFromPosition" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Position/Office</span>
+                                    <span id="pqsIcsReceivedFromDate" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Date</span>
                                 </div>
-                                <div class="space-y-3">
+                                <div class="space-y-1.5">
                                     <p class="font-semibold uppercase">Received by:</p>
-                                    <span id="pqsIcsReceivedBy" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Signature over Printed Name</span>
-                                    <span id="pqsIcsReceivedByPosition" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Position/Office</span>
-                                    <span id="pqsIcsReceivedByDate" class="block border-b border-gray-500 pb-0.5 text-sm">____________________</span>
-                                    <span class="block text-[11px] text-gray-600">Date</span>
+                                    <div class="w-[78%] mx-auto relative">
+                                        <img id="pqsIcsReceivedBySignature" src="" alt="Received by signature" class="hidden absolute left-1/2 -translate-x-1/2 bottom-full mb-0.5 h-8 w-auto max-w-[220px] object-contain">
+                                        <span id="pqsIcsReceivedBy" class="block border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    </div>
+                                    <span class="block text-[11px] text-gray-600 text-center">Signature over Printed Name</span>
+                                    <span id="pqsIcsReceivedByPosition" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Position/Office</span>
+                                    <span id="pqsIcsReceivedByDate" class="block w-[78%] mx-auto border-b border-gray-500 pb-0.5 text-sm text-center">____________________</span>
+                                    <span class="block text-[11px] text-gray-600 text-center">Date</span>
                                 </div>
                             </div>
                         </div>
