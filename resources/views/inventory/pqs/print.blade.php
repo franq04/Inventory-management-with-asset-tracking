@@ -6,10 +6,17 @@
     <title>Property, Plant & Equipment Ledger</title>
     @vite('resources/css/app.css')
     <style>
+        :root {
+            --ink: #0f172a;
+            --muted: #475569;
+            --line: #1f2937;
+            --surface: #f8fafc;
+        }
+
         @media print {
             @page {
                 size: landscape;
-                margin: 0.5in;
+                margin: 0.4in;
             }
             body {
                 -webkit-print-color-adjust: exact;
@@ -37,24 +44,67 @@
                 display: table-footer-group;
             }
         }
-        .border-black {
-            border-color: #000 !important;
-        }
+
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--ink);
+        }
+
+        .report-shell {
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .report-header {
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        }
+
+        .report-table th,
+        .report-table td {
+            border: 1px solid #1e293b;
+        }
+
+        .report-table th {
+            background: #e2e8f0;
+            color: #0f172a;
+            letter-spacing: 0.02em;
+        }
+
+        .summary-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            background: var(--surface);
+        }
+
+        .prepared-by-block {
+            min-width: 260px;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .prepared-by-line {
+            border-bottom: 1px solid var(--line);
+            min-width: 230px;
+            height: 0;
+            margin-top: 2px;
+            margin-left: auto;
+            margin-right: auto;
         }
     </style>
 </head>
 <body class="bg-white">
+    <div class="report-shell">
     <!-- Header Section with Logos -->
-    <div class="mb-6 border-b-2 border-black pb-4">
-        <div class="flex items-center justify-between">
+    <div class="report-header px-4 py-4">
+        <div class="flex items-center justify-between gap-4">
             <img src="{{ asset('images/bpi-logo.png') }}" alt="Department of Agriculture" class="h-16 w-16 object-contain">
             <div class="flex-1 text-center">
-                <h1 class="text-2xl font-bold uppercase">Property, Plant & Equipment Ledger Card</h1>
-                <p class="text-sm mt-1">Comprehensive Inventory Report</p>
+                <h1 class="text-4xl font-black uppercase tracking-[0.04em]">Property, Plant & Equipment Ledger Card</h1>
+                <p class="text-sm mt-1 text-slate-700">Comprehensive Inventory Report</p>
                 @if($search || $categoryFilter || $assignmentFilter)
-                <p class="text-xs text-gray-600 mt-2">
+                <p class="text-xs text-slate-600 mt-2">
                     Filters Applied:
                     @if($search) Search: "{{ $search }}" @endif
                     @if($categoryFilter) | Category: {{ $categoryFilter }} @endif
@@ -77,16 +127,16 @@
         @if($chunkIndex > 0)
             <div class="page-break"></div>
             <!-- Repeat header on new page -->
-            <div class="mb-4 text-center border-b border-black pb-2">
+            <div class="mb-4 text-center border-b border-slate-800 pb-2 pt-2">
                 <h2 class="text-lg font-bold">PQS Registry (continued)</h2>
                 <p class="text-xs text-gray-600">Page {{ $chunkIndex + 1 }} of {{ $chunks->count() }}</p>
             </div>
         @endif
 
         <!-- Table -->
-        <table class="w-full border-collapse text-xs">
+        <table class="report-table w-full border-collapse text-xs">
             <thead>
-                <tr class="bg-gray-100 border-black">
+                <tr>
                     <th class="border border-black px-2 py-2 text-left font-semibold w-24">Property No.</th>
                     <th class="border border-black px-2 py-2 text-left font-semibold w-32">Article</th>
                     <th class="border border-black px-2 py-2 text-left font-semibold w-40">Description</th>
@@ -100,7 +150,7 @@
             </thead>
             <tbody>
                 @forelse($chunk as $record)
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-slate-50/60">
                     <td class="border border-black px-2 py-1.5 text-xs">{{ $record->property_no }}</td>
                     <td class="border border-black px-2 py-1.5 text-xs">{{ $record->article }}</td>
                     <td class="border border-black px-2 py-1.5 text-xs">
@@ -118,7 +168,7 @@
                     <td class="border border-black px-2 py-1.5 text-right text-xs font-semibold">
                         ₱{{ number_format($record->total_value, 2) }}
                     </td>
-                    <td class="border border-black px-2 py-1.5 text-xs">
+                    <td class="border border-black px-2 py-1.5 text-xs text-slate-800">
                         {{ $record->accountableOfficer ? $record->accountableOfficer->full_name : 'Unassigned' }}
                     </td>
                     <td class="border border-black px-2 py-1.5 text-center text-xs">
@@ -145,23 +195,25 @@
 
         @if($chunkIndex === $chunks->count() - 1)
         <!-- Summary on last page -->
-        <div class="mt-6 border-t-2 border-black pt-4">
+        <div class="mt-6 border-t-2 border-slate-900 pt-4 px-2 pb-4">
             <div class="flex justify-between items-center">
-                <div>
+                <div class="summary-card px-4 py-3">
                     <p class="text-sm font-semibold">Total Records: {{ number_format($totalRecords) }}</p>
                     <p class="text-sm font-semibold mt-1">Total Inventory Value: ₱{{ number_format($totalValue, 2) }}</p>
                 </div>
-                <div class="text-right">
-                    <p class="text-xs text-gray-600">Prepared by:</p>
-                    <div class="border-t border-black mt-8 pt-1 px-4">
-                        <p class="text-xs font-semibold">{{ Auth::user()->full_name ?? 'System Administrator' }}</p>
-                        <p class="text-xs text-gray-600">{{ Auth::user()->position->position_name ?? 'Administrator' }}</p>
+                <div class="prepared-by-block">
+                    <p class="text-xs text-slate-600 font-semibold uppercase tracking-wide text-left">Prepared by:</p>
+                    <div class="mt-3 text-center">
+                        <p class="text-sm font-bold">{{ $preparedByName }}</p>
+                        <div class="prepared-by-line"></div>
+                        <p class="text-xs text-slate-600 mt-1">{{ $preparedByRole }}</p>
                     </div>
                 </div>
             </div>
         </div>
         @endif
     @endforeach
+    </div>
         <!-- Print Controls (screen only) -->
         <div class="fixed bottom-4 right-4 no-print flex gap-2">
             <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 flex items-center gap-2">

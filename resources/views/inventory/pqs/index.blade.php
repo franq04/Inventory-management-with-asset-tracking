@@ -600,6 +600,7 @@
         propertyNo: document.getElementById('pqsParPropertyNo'),
         dateAcquired: document.getElementById('pqsParDateAcquired'),
         amount: document.getElementById('pqsParAmount'),
+        receivedBySignature: document.getElementById('pqsParReceivedBySignature'),
         receivedBy: document.getElementById('pqsParReceivedBy'),
         receivedByPosition: document.getElementById('pqsParReceivedByPosition'),
         receivedByDate: document.getElementById('pqsParReceivedByDate'),
@@ -621,6 +622,7 @@
         receivedFrom: document.getElementById('pqsIcsReceivedFrom'),
         receivedFromPosition: document.getElementById('pqsIcsReceivedFromPosition'),
         receivedFromDate: document.getElementById('pqsIcsReceivedFromDate'),
+        receivedBySignature: document.getElementById('pqsIcsReceivedBySignature'),
         receivedBy: document.getElementById('pqsIcsReceivedBy'),
         receivedByPosition: document.getElementById('pqsIcsReceivedByPosition'),
         receivedByDate: document.getElementById('pqsIcsReceivedByDate'),
@@ -660,6 +662,102 @@
         const rawValue = value ?? '';
         const stringValue = typeof rawValue === 'number' ? rawValue.toString() : String(rawValue);
         element.textContent = stringValue.trim() !== '' ? stringValue : '____________________';
+    };
+
+    const trimSignatureDataUri = (dataUri) => new Promise((resolve) => {
+        const source = String(dataUri || '').trim();
+        if (!source || !source.startsWith('data:image/')) {
+            resolve(source);
+            return;
+        }
+
+        const image = new Image();
+        image.onload = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                const context = canvas.getContext('2d');
+                if (!context) {
+                    resolve(source);
+                    return;
+                }
+
+                context.drawImage(image, 0, 0);
+                const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+
+                let minX = width;
+                let minY = height;
+                let maxX = -1;
+                let maxY = -1;
+
+                for (let y = 0; y < height; y += 1) {
+                    for (let x = 0; x < width; x += 1) {
+                        const alpha = data[(y * width + x) * 4 + 3];
+                        if (alpha > 0) {
+                            if (x < minX) minX = x;
+                            if (y < minY) minY = y;
+                            if (x > maxX) maxX = x;
+                            if (y > maxY) maxY = y;
+                        }
+                    }
+                }
+
+                if (maxX < minX || maxY < minY) {
+                    resolve(source);
+                    return;
+                }
+
+                const padding = 4;
+                const cropX = Math.max(0, minX - padding);
+                const cropY = Math.max(0, minY - padding);
+                const cropWidth = Math.min(width - cropX, maxX - minX + 1 + padding * 2);
+                const cropHeight = Math.min(height - cropY, maxY - minY + 1 + padding * 2);
+
+                const output = document.createElement('canvas');
+                output.width = cropWidth;
+                output.height = cropHeight;
+                const outputContext = output.getContext('2d');
+                if (!outputContext) {
+                    resolve(source);
+                    return;
+                }
+
+                outputContext.drawImage(canvas, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+                resolve(output.toDataURL('image/png'));
+            } catch (error) {
+                resolve(source);
+            }
+        };
+
+        image.onerror = () => resolve(source);
+        image.src = source;
+    });
+
+    const setSignatureField = (element, signatureDataUri, nameLineElement = null) => {
+        if (!element) {
+            return;
+        }
+
+        const value = String(signatureDataUri || '').trim();
+        if (!value) {
+            element.setAttribute('src', '');
+            element.style.left = '';
+            element.classList.add('hidden');
+            return;
+        }
+
+        trimSignatureDataUri(value).then((trimmed) => {
+            const finalValue = String(trimmed || value).trim();
+            element.setAttribute('src', finalValue);
+            element.classList.toggle('hidden', finalValue === '');
+
+            if (finalValue !== '' && nameLineElement) {
+                // Keep signature anchored to the exact center of the printed-name wrapper.
+                element.style.left = '50%';
+                element.style.transform = 'translateX(-50%)';
+            }
+        });
     };
 
     const setTransferError = (message = '') => {
@@ -1110,6 +1208,7 @@
                     el.scrollTop = 0;
                 });
             }
+
         }, 300);
 
         document.body.classList.add('overflow-hidden');
@@ -1154,12 +1253,13 @@
         setText(parFields.propertyNo, '—');
         setText(parFields.dateAcquired, '—');
         setText(parFields.amount, '—');
+        setSignatureField(parFields.receivedBySignature, '', parFields.receivedBy);
         setLineField(parFields.receivedBy, '');
         setLineField(parFields.receivedByPosition, '');
-        setLineField(parFields.receivedByDate, formatDate(acquiredDateText));
+        setLineField(parFields.receivedByDate, '');
         setLineField(parFields.receivedFrom, '');
         setLineField(parFields.receivedFromPosition, '');
-        setLineField(parFields.receivedFromDate, formatDate(acquiredDateText));
+        setLineField(parFields.receivedFromDate, '');
 
         setLineField(icsFields.entity, defaultEntityName);
         setLineField(icsFields.fundCluster, defaultFundCluster);
@@ -1171,6 +1271,7 @@
         setText(icsFields.description, '—');
         setText(icsFields.inventoryNo, '—');
         setText(icsFields.usefulLife, '—');
+        setSignatureField(icsFields.receivedBySignature, '', icsFields.receivedBy);
         setLineField(icsFields.receivedFrom, '');
         setLineField(icsFields.receivedFromPosition, '');
         setLineField(icsFields.receivedFromDate, '');
@@ -1241,10 +1342,12 @@
         const amountPlain = formatCurrencyPlain(amountValue);
         setText(parFields.amount, amountPlain || '—');
 
-        const officerName = baseRecord.accountable_officer?.name || '';
-        const officerPosition = baseRecord.accountable_officer?.position || '';
-        setLineField(parFields.receivedBy, officerName);
-        setLineField(parFields.receivedByPosition, officerPosition);
+        const receiver = baseRecord.received_by || baseRecord.current_custodian || baseRecord.accountable_officer || null;
+        const receiverName = receiver?.name || '';
+        const receiverOffice = receiver?.office || receiver?.position || '';
+        setSignatureField(parFields.receivedBySignature, receiver?.signature || '', parFields.receivedBy);
+        setLineField(parFields.receivedBy, receiverName);
+        setLineField(parFields.receivedByPosition, receiverOffice);
         setLineField(parFields.receivedByDate, '');
 
         setLineField(parFields.receivedFrom, '');
@@ -1279,13 +1382,15 @@
         setText(icsFields.usefulLife, icsRecord?.estimated_useful_life || '—');
         const acquiredDateText = icsRecord?.date_acquired || baseRecord.date_acquired;
 
-        const officerName = baseRecord.accountable_officer?.name || '';
-        const officerPosition = baseRecord.accountable_officer?.position || '';
-    setLineField(icsFields.receivedFrom, '');
-    setLineField(icsFields.receivedFromPosition, '');
-        setLineField(icsFields.receivedFromDate, formatDate(acquiredDateText));
-        setLineField(icsFields.receivedBy, officerName);
-        setLineField(icsFields.receivedByPosition, officerPosition);
+        const receiver = baseRecord.received_by || baseRecord.current_custodian || baseRecord.accountable_officer || null;
+        const receiverName = receiver?.name || '';
+        const receiverOffice = receiver?.office || receiver?.position || '';
+        setLineField(icsFields.receivedFrom, '');
+        setLineField(icsFields.receivedFromPosition, '');
+        setLineField(icsFields.receivedFromDate, '');
+        setSignatureField(icsFields.receivedBySignature, receiver?.signature || '', icsFields.receivedBy);
+        setLineField(icsFields.receivedBy, receiverName);
+        setLineField(icsFields.receivedByPosition, receiverOffice);
         setLineField(icsFields.receivedByDate, formatDate(acquiredDateText));
     };
 
@@ -1519,6 +1624,12 @@
             throw new Error(`Unable to fetch PQS record (status ${response.status}): ${text}`);
         }
 
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (!contentType.includes('application/json')) {
+            const text = await response.text().catch(() => '<no response body>');
+            throw new Error(`Expected JSON but received ${contentType || 'unknown content type'}: ${text.slice(0, 180)}`);
+        }
+
         const payload = await response.json();
         if (!payload?.data) {
             throw new Error('Incomplete response received from server.');
@@ -1534,17 +1645,23 @@
             return;
         }
 
-        const url = trigger.getAttribute('data-show-url');
-        if (!url) {
+        const propertyNo = String(trigger.getAttribute('data-property-no') || '').trim();
+        const prebuiltDetailUrl = String(trigger.getAttribute('data-detail-url') || '').trim();
+        const fallbackUrl = trigger.getAttribute('data-show-url');
+        if (!propertyNo && !fallbackUrl && !prebuiltDetailUrl) {
             return;
         }
+
+        const detailUrl = prebuiltDetailUrl
+            || (propertyNo ? `{{ route('pqs.show.by-property') }}?property_no=${encodeURIComponent(propertyNo)}` : '')
+            || fallbackUrl;
 
         event.preventDefault();
 
         try {
             toggleLoadingState(trigger, true);
-            currentShowUrl = url;
-            await fetchAndPopulateRecord(url);
+            currentShowUrl = detailUrl;
+            await fetchAndPopulateRecord(detailUrl);
             openModal();
         } catch (error) {
             console.error(error);

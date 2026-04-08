@@ -359,6 +359,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::get('asset-movements/export/pdf', [AssetMovementController::class, 'printPdf'])->name('pqs.movements.print.pdf');
         Route::get('asset-movements/export/excel', [AssetMovementController::class, 'exportExcel'])->name('pqs.movements.export.excel');
         Route::get('asset-movements/export/csv', [AssetMovementController::class, 'exportCsv'])->name('pqs.movements.export.csv');
+        Route::get('pqs/details', [PqsController::class, 'showByProperty'])->name('pqs.show.by-property');
         Route::get('pqs/{pqsRecord}', [PqsController::class, 'show'])->name('pqs.show');
         Route::get('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'timeline'])->name('pqs.movements.timeline');
         Route::post('pqs/turnover', [AssetMovementController::class, 'processTurnover'])->name('pqs.movements.turnover');

@@ -59,6 +59,8 @@
                             <div class="flex items-center justify-end">
                                 <button type="button"
                                         class="js-pqs-view inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/30 focus:ring-offset-2"
+                                        data-property-no="{{ $record->property_no }}"
+                                        data-detail-url="{{ route('pqs.show.by-property', ['property_no' => $record->property_no]) }}"
                                         data-show-url="{{ route('pqs.show', $record) }}">
                                     <i class="fas fa-eye"></i>
                                     View & Manage

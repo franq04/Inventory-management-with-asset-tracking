@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class PqsController extends Controller
@@ -142,11 +143,29 @@ class PqsController extends Controller
 
     public function show(PqsRecord $pqsRecord): JsonResponse
     {
+        return $this->jsonRecord($pqsRecord);
+    }
+
+    public function showByProperty(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'property_no' => ['required', 'string'],
+        ]);
+
+        $record = PqsRecord::query()->findOrFail($validated['property_no']);
+
+        return $this->jsonRecord($record);
+    }
+
+    protected function jsonRecord(PqsRecord $pqsRecord): JsonResponse
+    {
         $pqsRecord->loadMissing([
             'category.parent',
-            'accountableOfficer',
+            'accountableOfficer.position',
+            'accountableOfficer.section.division',
             'currentLocation',
-            'currentCustodian',
+            'currentCustodian.position',
+            'currentCustodian.section.division',
             'assignedDivision',
             'assignedSection',
             'icsRecord',
@@ -168,12 +187,29 @@ class PqsController extends Controller
         $parentCategory = $category?->parent;
         $accountableOfficer = $record->accountableOfficer;
         $currentCustodian = $record->currentCustodian;
+        $receivedBy = $currentCustodian ?: $accountableOfficer;
         $icsRecord = $record->icsRecord;
         $parRecord = $record->parRecord;
         $recentMovements = $record->movements
             ->sortByDesc('effective_at')
             ->take(10)
             ->values();
+
+        $formatOffice = static function ($employee): ?string {
+            if (! $employee) {
+                return null;
+            }
+
+            $parts = [
+                $employee->position?->position_title,
+                $employee->section?->section_name,
+                $employee->section?->division?->division_name,
+            ];
+
+            $parts = array_values(array_filter(array_map(static fn ($value) => trim((string) $value), $parts)));
+
+            return $parts ? implode(' / ', $parts) : null;
+        };
 
         $serialNumbers = collect(preg_split('/[\r\n;,]+/', (string) $record->serial_number))
             ->map(static fn ($value) => trim($value))
@@ -197,6 +233,15 @@ class PqsController extends Controller
             'accountable_officer' => $accountableOfficer ? [
                 'id' => $accountableOfficer->employee_id,
                 'name' => $accountableOfficer->full_name,
+                'position' => $accountableOfficer->position?->position_title,
+                'office' => $formatOffice($accountableOfficer),
+            ] : null,
+            'received_by' => $receivedBy ? [
+                'id' => $receivedBy->employee_id,
+                'name' => $receivedBy->full_name,
+                'position' => $receivedBy->position?->position_title,
+                'office' => $formatOffice($receivedBy),
+                'signature' => $this->signatureDataUri($receivedBy->signature),
             ] : null,
             'current_location' => $record->currentLocation ? [
                 'id' => $record->currentLocation->location_id,
@@ -207,6 +252,8 @@ class PqsController extends Controller
             'current_custodian' => $currentCustodian ? [
                 'id' => $currentCustodian->employee_id,
                 'name' => $currentCustodian->full_name,
+                'position' => $currentCustodian->position?->position_title,
+                'office' => $formatOffice($currentCustodian),
             ] : null,
             'current_location_id' => $record->current_location_id,
             'current_custodian_employee_id' => $record->current_custodian_employee_id,
@@ -247,6 +294,23 @@ class PqsController extends Controller
         ];
     }
 
+    protected function signatureDataUri($signature): ?string
+    {
+        if ($signature === null || $signature === '') {
+            return null;
+        }
+
+        if (is_resource($signature)) {
+            $signature = stream_get_contents($signature);
+        }
+
+        if (! is_string($signature) || $signature === '') {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode($signature);
+    }
+
     public function printPdf(Request $request): View
     {
         $search = trim((string) $request->input('search'));
@@ -285,11 +349,21 @@ class PqsController extends Controller
             ->orderByDesc('property_no')
             ->get();
 
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
         return view('inventory.pqs.print', [
             'records' => $records,
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'assignmentFilter' => $assignmentFilter,
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
         ]);
     }
 
