@@ -339,6 +339,8 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::resource('employees', EmployeeController::class)
             ->except(['show'])
             ->names('employees');
+        Route::post('divisions', [EmployeeController::class, 'storeDivisionWithSections'])->name('divisions.store');
+        Route::post('sections/{section}/positions', [EmployeeController::class, 'storeSectionPosition'])->name('sections.positions.store');
         Route::put('employees/{employee}/modal-update', [EmployeeController::class, 'updateModal'])->name('employees.update.modal');
         Route::get('employees-export/pdf', [EmployeeController::class, 'printPdf'])->name('employees.print.pdf');
         Route::get('employees-export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
@@ -446,8 +448,14 @@ Route::middleware(['auth.session', 'role:employee,custodian'])->group(function (
         Route::post('purchase-requests', [EmployeePurchaseRequestController::class, 'store'])
             ->name('purchase-requests.store');
 
+        Route::patch('purchase-requests/{purchase_request}', [EmployeePurchaseRequestController::class, 'update'])
+            ->name('purchase-requests.update');
+
         Route::get('purchase-requests/{purchase_request}', [EmployeePurchaseRequestController::class, 'show'])
             ->name('purchase-requests.show');
+
+        Route::delete('purchase-requests/{purchase_request}', [EmployeePurchaseRequestController::class, 'destroy'])
+            ->name('purchase-requests.destroy');
 
         Route::post('purchase-requests/items/{purchase_request_item}/decision', [EmployeePurchaseRequestController::class, 'respondToItem'])
             ->name('purchase-requests.items.decision');

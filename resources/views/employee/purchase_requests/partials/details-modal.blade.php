@@ -15,7 +15,7 @@
             </div>
 
             {{-- Scrollable Body with Annex G-6 Format --}}
-            <div class="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div class="flex-1 overflow-y-auto hide-scrollbar p-6 bg-gray-50">
                 <div class="bg-white rounded-2xl border-2 border-gray-300 overflow-hidden" id="employeePrAnnexContent">
                     {{-- Annex G-6 content will be populated by JavaScript --}}
                 </div>

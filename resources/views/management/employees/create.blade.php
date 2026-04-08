@@ -179,7 +179,7 @@
                     </div>
                      <div>
                         <label for="section_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Section</label>
-                        <select id="section_id" name="section_id" data-selected="{{ old('section_id') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
+                        <select id="section_id" name="section_id" data-selected="{{ old('section_id', $selectedSection ?? '') }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                             <option value="">Unassigned</option>
                         </select>
                         @error('section_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
