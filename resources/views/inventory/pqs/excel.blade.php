@@ -27,7 +27,7 @@
 </head>
 <body>
     <h1>Property, Plant & Equipment Ledger Card (PQS Registry)</h1>
-    <p>Generated on: {{ date('F d, Y h:i A') }}</p>
+    <p>Generated on: {{ $generatedOnLabel ?? now()->format('F d, Y') }}</p>
     
     <table>
         <thead>

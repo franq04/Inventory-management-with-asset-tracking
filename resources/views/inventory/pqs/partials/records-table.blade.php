@@ -3,11 +3,9 @@
         <table class="min-w-full divide-y divide-gray-100">
             <thead class="bg-[#f5f8f6] text-left text-[11px] font-semibold text-gray-500 uppercase tracking-[0.18em]">
                 <tr>
-                    <th class="px-6 py-3">Property</th>
+                    <th class="px-6 py-3">Property Number</th>
+                    <th class="px-6 py-3">Property Description</th>
                     <th class="px-6 py-3">Accountable Employee</th>
-                    <th class="px-6 py-3">Current Location</th>
-                    <th class="px-6 py-3">Status</th>
-                    <th class="px-6 py-3 text-right">Value</th>
                     <th class="px-6 py-3 text-center">Actions</th>
                 </tr>
             </thead>
@@ -22,9 +20,10 @@
                     @endphp
                     <tr class="hover:bg-gray-50/70 transition-colors">
                         <td class="px-6 py-4">
-                            <div class="font-semibold text-gray-900">{{ $record->article }}</div>
-                            <div class="text-xs text-gray-500 font-mono">P/N: {{ $record->property_no }}</div>
-                            <div class="text-xs text-gray-500">Category: {{ optional($record->category)->cat_name ?: '—' }}</div>
+                            <div class="font-semibold text-gray-900 font-mono">{{ $record->property_no }}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-800">{{ $record->description ?: $record->article }}</div>
                         </td>
                         <td class="px-6 py-4">
                             @if($isAssigned)
@@ -34,27 +33,6 @@
                                 <span class="text-gray-400 italic">Unassigned</span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 text-gray-700">
-                            @if($record->currentLocation)
-                                <div class="font-medium text-gray-800">{{ $record->currentLocation->location_name }}</div>
-                                <div class="text-xs text-gray-500">{{ $record->currentLocation->location_code ?: 'No code' }}</div>
-                            @else
-                                <span class="text-gray-400 italic">Unassigned</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4">
-                            @if($isAssigned)
-                                <div class="flex gap-2">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide {{ $hasIcs ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500' }}">ICS</span>
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold tracking-wide {{ $hasPar ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-500' }}">PAR</span>
-                                </div>
-                            @else
-                                 <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold capitalize bg-amber-100 text-amber-700">
-                                    <i class="fas fa-hourglass-half"></i> Awaiting Assignment
-                                 </span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 text-right font-semibold text-gray-800">₱{{ number_format((float) $record->total_value, 2) }}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-end">
                                 <button type="button"
@@ -70,7 +48,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-16 text-center text-sm text-gray-500">
+                        <td colspan="4" class="px-6 py-16 text-center text-sm text-gray-500">
                             <i class="fas fa-box-open text-4xl text-gray-300"></i>
                             <p class="mt-3 font-medium">No PQS records matched your filters.</p>
                         </td>

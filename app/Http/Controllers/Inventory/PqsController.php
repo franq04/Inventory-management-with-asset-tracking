@@ -9,6 +9,7 @@ use App\Models\Employee;
 use App\Models\PhysicalLocation;
 use App\Models\PqsRecord;
 use App\Models\Section;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -23,33 +24,9 @@ class PqsController extends Controller
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
 
-        $query = PqsRecord::query()->with(['category', 'accountableOfficer', 'currentLocation', 'currentCustodian', 'icsRecord', 'parRecord']);
-
-        if ($search !== '') {
-            $query->where(function ($builder) use ($search) {
-                $builder->where('property_no', 'like', "%{$search}%")
-                    ->orWhere('article', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('accountableOfficer', function ($officerQuery) use ($search) {
-                        $officerQuery->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('employee_id', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        if ($categoryFilter) {
-            $query->where('cat_id', $categoryFilter);
-        }
-
-        if ($assignmentFilter === 'ics') {
-            $query->whereHas('icsRecord');
-        } elseif ($assignmentFilter === 'par') {
-            $query->whereHas('parRecord');
-        } elseif ($assignmentFilter === 'unassigned') {
-            $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
-        }
+        $query = $this->buildFilteredPqsQuery($request);
 
         $pqsRecords = $query
             ->orderByDesc('date_acquired')
@@ -130,6 +107,8 @@ class PqsController extends Controller
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'assignmentFilter' => $assignmentFilter,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
             'categories' => $categories,
             'recentAssets' => $recentAssets,
             'transferLocations' => $transferLocations,
@@ -316,33 +295,10 @@ class PqsController extends Controller
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+        $generatedOnLabel = $this->buildGeneratedOnLabel($dateFrom, $dateTo);
 
-        $query = PqsRecord::query()->with(['category', 'accountableOfficer', 'currentLocation', 'currentCustodian', 'icsRecord', 'parRecord']);
-
-        if ($search !== '') {
-            $query->where(function ($builder) use ($search) {
-                $builder->where('property_no', 'like', "%{$search}%")
-                    ->orWhere('article', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('accountableOfficer', function ($officerQuery) use ($search) {
-                        $officerQuery->where('first_name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('employee_id', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        if ($categoryFilter) {
-            $query->where('cat_id', $categoryFilter);
-        }
-
-        if ($assignmentFilter === 'ics') {
-            $query->whereHas('icsRecord');
-        } elseif ($assignmentFilter === 'par') {
-            $query->whereHas('parRecord');
-        } elseif ($assignmentFilter === 'unassigned') {
-            $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
-        }
+        $query = $this->buildFilteredPqsQuery($request);
 
         $records = $query
             ->orderByDesc('date_acquired')
@@ -362,6 +318,7 @@ class PqsController extends Controller
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'assignmentFilter' => $assignmentFilter,
+            'generatedOnLabel' => $generatedOnLabel,
             'preparedByName' => $preparedByName,
             'preparedByRole' => $preparedByRole,
         ]);
@@ -369,21 +326,82 @@ class PqsController extends Controller
 
     public function exportExcel(Request $request): Response
     {
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
+        $query = $this->buildFilteredPqsQuery($request);
+
+        $records = $query
+            ->orderByDesc('date_acquired')
+            ->orderByDesc('property_no')
+            ->get();
+
+        $html = view('inventory.pqs.excel', [
+            'records' => $records,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="PQS-Registry-' . date('Y-m-d') . '.xls"');
+    }
+
+    private function buildFilteredPqsQuery(Request $request)
+    {
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
 
-        $query = PqsRecord::query()->with(['category', 'accountableOfficer', 'currentLocation', 'currentCustodian', 'icsRecord', 'parRecord']);
+        $query = PqsRecord::query()->with(['category.parent', 'accountableOfficer.section', 'accountableOfficer.position', 'currentLocation', 'currentCustodian.section', 'currentCustodian.position', 'icsRecord', 'parRecord']);
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {
                 $builder->where('property_no', 'like', "%{$search}%")
                     ->orWhere('article', 'like', "%{$search}%")
                     ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('serial_number', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%")
+                    ->orWhere('unit', 'like', "%{$search}%")
+                    ->orWhere('asset_status', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($categoryQuery) use ($search) {
+                        $categoryQuery->where('cat_name', 'like', "%{$search}%")
+                            ->orWhereHas('parent', function ($parentQuery) use ($search) {
+                                $parentQuery->where('cat_name', 'like', "%{$search}%");
+                            });
+                    })
                     ->orWhereHas('accountableOfficer', function ($officerQuery) use ($search) {
                         $officerQuery->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('middle_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('employee_id', 'like', "%{$search}%");
+                            ->orWhere('employee_id', 'like', "%{$search}%")
+                            ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                                $sectionQuery->where('section_name', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('position', function ($positionQuery) use ($search) {
+                                $positionQuery->where('position_title', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('currentCustodian', function ($custodianQuery) use ($search) {
+                        $custodianQuery->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('middle_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%")
+                            ->orWhere('employee_id', 'like', "%{$search}%")
+                            ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                                $sectionQuery->where('section_name', 'like', "%{$search}%");
+                            })
+                            ->orWhereHas('position', function ($positionQuery) use ($search) {
+                                $positionQuery->where('position_title', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereHas('currentLocation', function ($locationQuery) use ($search) {
+                        $locationQuery->where('location_name', 'like', "%{$search}%")
+                            ->orWhere('location_code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('icsRecord', function ($icsQuery) use ($search) {
+                        $icsQuery->where('ics_no', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('parRecord', function ($parQuery) use ($search) {
+                        $parQuery->where('par_no', 'like', "%{$search}%");
                     });
             });
         }
@@ -400,15 +418,50 @@ class PqsController extends Controller
             $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
         }
 
-        $records = $query
-            ->orderByDesc('date_acquired')
-            ->orderByDesc('property_no')
-            ->get();
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('date_acquired', [$dateFrom, $dateTo]);
+        }
 
-        $html = view('inventory.pqs.excel', ['records' => $records])->render();
+        return $query;
+    }
 
-        return response($html)
-            ->header('Content-Type', 'application/vnd.ms-excel')
-            ->header('Content-Disposition', 'attachment; filename="PQS-Registry-' . date('Y-m-d') . '.xls"');
+    private function resolveDateRange(Request $request): array
+    {
+        $dateFromRaw = trim((string) $request->input('date_from', ''));
+        $dateToRaw = trim((string) $request->input('date_to', ''));
+
+        if ($dateFromRaw !== '' && $dateToRaw === '') {
+            $dateToRaw = $dateFromRaw;
+        }
+
+        if ($dateToRaw !== '' && $dateFromRaw === '') {
+            $dateFromRaw = $dateToRaw;
+        }
+
+        if ($dateFromRaw === '' || $dateToRaw === '') {
+            return [null, null];
+        }
+
+        try {
+            $dateFrom = Carbon::parse($dateFromRaw)->toDateString();
+            $dateTo = Carbon::parse($dateToRaw)->toDateString();
+        } catch (\Throwable $exception) {
+            return [null, null];
+        }
+
+        if ($dateFrom > $dateTo) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        return [$dateFrom, $dateTo];
+    }
+
+    private function buildGeneratedOnLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return Carbon::parse($dateFrom)->format('F d, Y').' - '.Carbon::parse($dateTo)->format('F d, Y');
+        }
+
+        return now()->format('F d, Y');
     }
 }

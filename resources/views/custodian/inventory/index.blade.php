@@ -74,7 +74,7 @@
             <div class="flex flex-1 flex-col gap-4 md:flex-row md:items-center">
                 <div class="relative w-full flex-grow md:max-w-sm">
                     <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                    <input id="inventorySearch" type="search" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search item, IA number, or PO number..." aria-label="Search properties">
+                    <input id="inventorySearch" type="search" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search property no, item, IA/PO/PR, category, officer, supplier..." aria-label="Search properties">
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-sm">
                     <input id="date_from" type="date" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-2.5 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Start Date" value="{{ request('date_from') }}">
@@ -118,13 +118,13 @@
                 <table class="min-w-full text-sm">
                     <thead class="bg-[#f5f8f6] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                         <tr>
+                            <th class="whitespace-nowrap px-5 py-3 text-left">Property No.</th>
                             <th class="whitespace-nowrap px-5 py-3 text-left">Item Description</th>
                             <th class="whitespace-nowrap px-5 py-3 text-left">Category</th>
                             <th class="whitespace-nowrap px-5 py-3 text-left">Sub-category</th>
                             <th class="whitespace-nowrap px-5 py-3 text-right">Qty</th>
                             <th class="whitespace-nowrap px-5 py-3 text-right">Unit Cost</th>
                             <th class="whitespace-nowrap px-5 py-3 text-right">Total Cost</th>
-                            <th class="whitespace-nowrap px-5 py-3 text-left">Source</th>
                             <th class="whitespace-nowrap px-5 py-3 text-center">Actions</th>
                         </tr>
                     </thead>

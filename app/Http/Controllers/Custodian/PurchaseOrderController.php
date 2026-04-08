@@ -16,6 +16,9 @@ use App\Models\Status;
 use App\Models\Supplier;
 use App\Models\StatusHistory;
 use App\Support\PurchaseRequestStatusSynchronizer;
+use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -100,7 +103,9 @@ class PurchaseOrderController extends Controller
 
     public function index(Request $request)
     {
-        $searchTerm = $request->string('search')->trim();
+        $searchTerm = $request->string('search')->trim()->toString();
+        $registerStage = trim((string) $request->query('stage', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
 
         $approvedRequests = PurchaseRequest::query()
             ->select([
@@ -123,7 +128,7 @@ class PurchaseOrderController extends Controller
             ->paginate(3, ['*'], 'approved_page')
             ->withQueryString();
 
-        $purchaseOrderQuery = $this->purchaseOrderIndexQuery($searchTerm->toString());
+        $purchaseOrderQuery = $this->purchaseOrderIndexQuery($searchTerm, $registerStage, $dateFrom, $dateTo);
 
         $ordersForPipeline = (clone $purchaseOrderQuery)->get();
         $ordersForPipeline->each(function (PurchaseOrder $order) {
@@ -141,13 +146,16 @@ class PurchaseOrderController extends Controller
             'pipelineStages' => $pipelineStages,
             'purchaseOrders' => $purchaseOrders,
             'registerSummaries' => $registerSummaries,
-            'search' => $searchTerm->toString(),
+            'search' => $searchTerm,
+            'registerStage' => $registerStage,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ];
 
         return view('custodian.purchase_orders.pipeline', array_merge($viewData, $this->purchaseRequestUiContext()));
     }
 
-    protected function purchaseOrderIndexQuery(?string $searchTerm = null): Builder
+    protected function purchaseOrderIndexQuery(?string $searchTerm = null, ?string $stage = null, ?string $dateFrom = null, ?string $dateTo = null): Builder
     {
         $query = PurchaseOrder::query()
             ->select([
@@ -203,7 +211,122 @@ class PurchaseOrderController extends Controller
             });
         }
 
+        $stage = trim((string) $stage);
+        if ($stage !== '') {
+            $query->where(function ($stageQuery) use ($stage) {
+                if ($stage === 'awaiting_delivery') {
+                    $stageQuery->whereIn('status_id', [Status::PO_CREATED, Status::PO_SENT_TO_SUPPLIER]);
+                } elseif ($stage === 'receiving') {
+                    $stageQuery->where('status_id', Status::PO_PARTIALLY_DELIVERED);
+                } elseif ($stage === 'inspection') {
+                    $stageQuery->where('status_id', Status::PO_DELIVERED_PENDING_INSPECTION);
+                } elseif ($stage === 'issues') {
+                    $stageQuery->where('status_id', Status::PO_CANCELLED);
+                } elseif ($stage === 'completed') {
+                    $stageQuery->where('status_id', Status::PO_CLOSED);
+                }
+            });
+        }
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('order_date', [$dateFrom, $dateTo]);
+        }
+
         return $query;
+    }
+
+    public function printPdf(Request $request): View
+    {
+        $searchTerm = trim((string) $request->query('search', ''));
+        $registerStage = trim((string) $request->query('stage', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
+        $purchaseOrders = $this->purchaseOrderIndexQuery($searchTerm, $registerStage, $dateFrom, $dateTo)
+            ->get();
+
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
+        return view('custodian.purchase_orders.print', [
+            'purchaseOrders' => $purchaseOrders,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
+        ]);
+    }
+
+    public function exportExcel(Request $request): Response
+    {
+        $searchTerm = trim((string) $request->query('search', ''));
+        $registerStage = trim((string) $request->query('stage', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
+        $purchaseOrders = $this->purchaseOrderIndexQuery($searchTerm, $registerStage, $dateFrom, $dateTo)
+            ->get();
+
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
+        $html = view('custodian.purchase_orders.excel', [
+            'purchaseOrders' => $purchaseOrders,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Purchase-Order-Register-'.date('Y-m-d').'.xls"');
+    }
+
+    protected function resolveDateRange(Request $request): array
+    {
+        $dateFromRaw = trim((string) $request->query('date_from', ''));
+        $dateToRaw = trim((string) $request->query('date_to', ''));
+
+        if ($dateFromRaw !== '' && $dateToRaw === '') {
+            $dateToRaw = $dateFromRaw;
+        }
+
+        if ($dateToRaw !== '' && $dateFromRaw === '') {
+            $dateFromRaw = $dateToRaw;
+        }
+
+        if ($dateFromRaw === '' || $dateToRaw === '') {
+            return [null, null];
+        }
+
+        try {
+            $dateFrom = Carbon::parse($dateFromRaw)->toDateString();
+            $dateTo = Carbon::parse($dateToRaw)->toDateString();
+        } catch (\Throwable $exception) {
+            return [null, null];
+        }
+
+        if ($dateFrom > $dateTo) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        return [$dateFrom, $dateTo];
+    }
+
+    protected function buildGeneratedOnLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return Carbon::parse($dateFrom)->format('F d, Y').' - '.Carbon::parse($dateTo)->format('F d, Y');
+        }
+
+        return now()->format('F d, Y');
     }
 
     public function create(Request $request)

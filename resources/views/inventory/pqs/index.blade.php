@@ -44,11 +44,11 @@
             {{-- Enhanced Filters & Actions --}}
             <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
                 <form id="pqsFiltersForm" method="GET" class="space-y-4" action="{{ route('pqs.index') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-                        <div class="relative lg:col-span-1">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                        <div class="relative lg:col-span-2">
                             <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
                             <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Property no., article, officer..." class="w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] py-[9px] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search property no, description, employee, category, location..." class="w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] py-[9px] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
                         </div>
                         <div id="categoryDropdown" class="relative z-20">
                             <label for="category" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
@@ -100,6 +100,14 @@
                                 <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
                                 <option value="unassigned" @selected($assignmentFilter === 'unassigned')>Unassigned</option>
                             </select>
+                        </div>
+                        <div>
+                            <label for="date_from" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
+                            <input id="date_from" name="date_from" type="date" value="{{ $dateFrom ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
+                        </div>
+                        <div>
+                            <label for="date_to" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
+                            <input id="date_to" name="date_to" type="date" value="{{ $dateTo ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
                         </div>
                     </div>
                      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
@@ -228,6 +236,8 @@
     const searchInput = document.getElementById('search');
     const categorySelect = document.getElementById('category');
     const assignmentSelect = document.getElementById('assignment');
+    const dateFromInput = document.getElementById('date_from');
+    const dateToInput = document.getElementById('date_to');
     const categoryDropdown = document.getElementById('categoryDropdown');
     const categoryToggle = document.getElementById('categoryDropdownToggle');
     const categoryMenu = document.getElementById('categoryDropdownMenu');
@@ -264,6 +274,15 @@
         const assignmentValue = assignmentSelect?.value;
         if (assignmentValue) {
             params.set('assignment', assignmentValue);
+        }
+
+        const dateFromValue = dateFromInput?.value;
+        const dateToValue = dateToInput?.value;
+        if (dateFromValue) {
+            params.set('date_from', dateFromValue);
+        }
+        if (dateToValue) {
+            params.set('date_to', dateToValue);
         }
 
         if (extra.page) {
@@ -437,6 +456,8 @@
     });
 
     searchInput?.addEventListener('input', debouncedFetch);
+    dateFromInput?.addEventListener('change', () => fetchRecords());
+    dateToInput?.addEventListener('change', () => fetchRecords());
 
     selects.forEach((select) => {
         select.addEventListener('change', () => fetchRecords());
@@ -455,6 +476,12 @@
         selects.forEach((select) => {
             select.value = '';
         });
+        if (dateFromInput) {
+            dateFromInput.value = '';
+        }
+        if (dateToInput) {
+            dateToInput.value = '';
+        }
 
         if (categoryLabel) {
             categoryLabel.textContent = 'All Categories';
@@ -1965,11 +1992,15 @@
             const search = document.getElementById('search')?.value || '';
             const category = document.getElementById('category')?.value || '';
             const assignment = document.getElementById('assignment')?.value || '';
+            const dateFrom = document.getElementById('date_from')?.value || '';
+            const dateTo = document.getElementById('date_to')?.value || '';
 
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (category) params.append('category', category);
             if (assignment) params.append('assignment', assignment);
+            if (dateFrom) params.append('date_from', dateFrom);
+            if (dateTo) params.append('date_to', dateTo);
 
             const url = '{{ route("pqs.print.pdf") }}' + (params.toString() ? '?' + params.toString() : '');
             window.open(url, '_blank');
@@ -1981,11 +2012,15 @@
             const search = document.getElementById('search')?.value || '';
             const category = document.getElementById('category')?.value || '';
             const assignment = document.getElementById('assignment')?.value || '';
+            const dateFrom = document.getElementById('date_from')?.value || '';
+            const dateTo = document.getElementById('date_to')?.value || '';
 
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (category) params.append('category', category);
             if (assignment) params.append('assignment', assignment);
+            if (dateFrom) params.append('date_from', dateFrom);
+            if (dateTo) params.append('date_to', dateTo);
 
             const url = '{{ route("pqs.export.excel") }}' + (params.toString() ? '?' + params.toString() : '');
             window.location.href = url;

@@ -630,8 +630,15 @@ const initCustodianPurchaseRequestUtilities = () => {
     const getNoResultsRow = () => $('#purchaseRequestsNoResults');
     const getFilterableRows = () => getTable().find('tbody tr').not('#purchaseRequestsNoResults').filter((_, row) => !row.dataset.staticRow);
 
+    const getDateRangeFilters = () => {
+        const from = String($('#purchaseRequestDateFrom').val() || '').trim();
+        const to = String($('#purchaseRequestDateTo').val() || '').trim();
+        return { from, to };
+    };
+
     const applyFilter = (term) => {
         const filterValue = normalize(term);
+        const { from, to } = getDateRangeFilters();
         const $rows = getFilterableRows();
         const totalRows = $rows.length;
         let visibleCount = 0;
@@ -640,7 +647,23 @@ const initCustodianPurchaseRequestUtilities = () => {
             const $row = $(row);
             const rowSearch = normalize($row.data('search') || $row.text());
             const matchesSearch = !filterValue || rowSearch.includes(filterValue);
-            const isMatch = matchesSearch;
+            const rowDate = String($row.data('createdAt') || '').trim();
+
+            let matchesDate = true;
+            if (from || to) {
+                if (!rowDate) {
+                    matchesDate = false;
+                } else {
+                    if (from && rowDate < from) {
+                        matchesDate = false;
+                    }
+                    if (to && rowDate > to) {
+                        matchesDate = false;
+                    }
+                }
+            }
+
+            const isMatch = matchesSearch && matchesDate;
 
             $row.toggleClass('hidden', !isMatch);
             if (isMatch) {
@@ -768,7 +791,49 @@ const initCustodianPurchaseRequestUtilities = () => {
 
         targetUrl.searchParams.set('tab', String(activeTab));
 
+        const searchTerm = String($('#purchaseRequestSearch').val() || '').trim();
+        const { from, to } = getDateRangeFilters();
+        if (searchTerm) {
+            targetUrl.searchParams.set('search', searchTerm);
+        }
+        if (from) {
+            targetUrl.searchParams.set('date_from', from);
+        }
+        if (to) {
+            targetUrl.searchParams.set('date_to', to);
+        }
+
         return targetUrl.toString();
+    };
+
+    const appendQueueFiltersToUrl = (url) => {
+        if (!url) {
+            return url;
+        }
+
+        const nextUrl = new URL(url, window.location.origin);
+        const searchTerm = String($('#purchaseRequestSearch').val() || '').trim();
+        const { from, to } = getDateRangeFilters();
+
+        if (searchTerm) {
+            nextUrl.searchParams.set('search', searchTerm);
+        } else {
+            nextUrl.searchParams.delete('search');
+        }
+
+        if (from) {
+            nextUrl.searchParams.set('date_from', from);
+        } else {
+            nextUrl.searchParams.delete('date_from');
+        }
+
+        if (to) {
+            nextUrl.searchParams.set('date_to', to);
+        } else {
+            nextUrl.searchParams.delete('date_to');
+        }
+
+        return nextUrl.toString();
     };
 
     const handlePrintPdf = () => {
@@ -802,7 +867,8 @@ const initCustodianPurchaseRequestUtilities = () => {
         .on('click.custodianQueueStatus', '#custodianQueuePage [data-status-btn]', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            const url = this.getAttribute('data-tab-url') || this.getAttribute('href');
+            const rawUrl = this.getAttribute('data-tab-url') || this.getAttribute('href');
+            const url = appendQueueFiltersToUrl(rawUrl);
             if (!url || isQueueRequestInFlight) {
                 return;
             }
@@ -816,7 +882,7 @@ const initCustodianPurchaseRequestUtilities = () => {
         .on('click.custodianQueuePageLinks', '#custodianQueuePage nav[aria-label="Pagination Navigation"] a', function (event) {
             event.preventDefault();
             event.stopPropagation();
-            const url = this.getAttribute('href');
+            const url = appendQueueFiltersToUrl(this.getAttribute('href'));
             if (!url || isQueueRequestInFlight) {
                 return;
             }
@@ -837,6 +903,13 @@ const initCustodianPurchaseRequestUtilities = () => {
         .on('click.custodianQueueExcel', '#purchaseRequestExportExcel', function (event) {
             event.preventDefault();
             handleExportExcel();
+        });
+
+    $(document)
+        .off('change.custodianQueueDate', '#purchaseRequestDateFrom, #purchaseRequestDateTo')
+        .on('change.custodianQueueDate', '#purchaseRequestDateFrom, #purchaseRequestDateTo', function () {
+            const searchTerm = String($('#purchaseRequestSearch').val() || '');
+            applyFilter(searchTerm);
         });
 
     if (!window.__custodianQueuePopstateBound) {

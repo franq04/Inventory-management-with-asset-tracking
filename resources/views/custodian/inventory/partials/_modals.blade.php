@@ -251,6 +251,28 @@
                     </div>
                 </section>
 
+                <section>
+                    <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Reference Details</h4>
+                    <div class="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">PO No.</p>
+                            <p class="mt-2 text-base font-semibold text-gray-900" id="inventoryViewPoNo">—</p>
+                        </div>
+                        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">IA No.</p>
+                            <p class="mt-2 text-base font-semibold text-gray-900" id="inventoryViewIaNo">—</p>
+                        </div>
+                        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">PR No.</p>
+                            <p class="mt-2 text-base font-semibold text-gray-900" id="inventoryViewPrNo">—</p>
+                        </div>
+                        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Supplier</p>
+                            <p class="mt-2 text-base font-semibold text-gray-900" id="inventoryViewSupplier">—</p>
+                        </div>
+                    </div>
+                </section>
+
                 <section class="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                         <h4 class="text-xs font-semibold uppercase tracking-wider text-gray-500">Custodial Document</h4>

@@ -95,10 +95,14 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div class="relative w-full xl:max-w-sm">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div class="grid w-full grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_170px_170px] xl:max-w-3xl">
+                <div class="relative">
                 <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                <input type="search" id="purchaseRequestSearch" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search requests..." aria-label="Search purchase requests">
+                    <input type="search" id="purchaseRequestSearch" value="{{ $search ?? '' }}" class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" placeholder="Search PR no, requester, division, section, status..." aria-label="Search purchase requests">
+                </div>
+                <input type="date" id="purchaseRequestDateFrom" value="{{ $dateFrom ?? '' }}" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Date from">
+                <input type="date" id="purchaseRequestDateTo" value="{{ $dateTo ?? '' }}" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Date to">
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <button type="button" id="purchaseRequestPrintPdf" data-print-url="{{ route('custodian.requests.print.pdf') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
@@ -137,7 +141,7 @@
                                 optional($request->created_at)->format('M d, Y h:i A'),
                             ])->filter()->implode(' ');
                         @endphp
-                        <tr data-row data-status-id="{{ $request->status_id }}" data-search="{{ e(strtolower($searchTokens)) }}" class="border-b border-gray-100/90 last:border-0 hover:bg-[#f6fbf8] transition-colors duration-200">
+                        <tr data-row data-status-id="{{ $request->status_id }}" data-created-at="{{ optional($request->created_at)->format('Y-m-d') }}" data-search="{{ e(strtolower($searchTokens)) }}" class="border-b border-gray-100/90 last:border-0 hover:bg-[#f6fbf8] transition-colors duration-200">
                             <td class="px-4 py-4 align-top">
                                 <span class="block font-semibold text-[#1a3a2d]">{{ $request->pr_no }}</span>
                                 <span class="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500">PR Record</span>

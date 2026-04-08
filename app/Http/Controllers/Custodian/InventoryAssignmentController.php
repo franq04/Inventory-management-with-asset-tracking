@@ -118,6 +118,7 @@ class InventoryAssignmentController extends Controller
         $state = strtolower((string) $request->input('state', 'all'));
         $categoryId = $request->input('category_id');
         $subCategoryId = $request->input('sub_category_id');
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request, fromQuery: false);
 
         $query = InspectionReportItem::with([
             'purchaseOrderItem.purchaseOrder.purchaseRequest',
@@ -136,16 +137,9 @@ class InventoryAssignmentController extends Controller
             $query->whereNotNull('property_no');
         }
 
-        if ($search !== '') {
-            $query->where(function ($inner) use ($search) {
-                $inner->whereHas('purchaseOrderItem', function ($poQuery) use ($search) {
-                    $poQuery->where('item_description', 'like', "%{$search}%");
-                })->orWhereHas('report', function ($reportQuery) use ($search) {
-                    $reportQuery->where('ia_no', 'like', "%{$search}%")
-                        ->orWhere('po_no', 'like', "%{$search}%");
-                });
-            });
-        }
+        $this->applyInventorySearchFilter($query, $search);
+
+        $this->applyReportDateFilter($query, $dateFrom, $dateTo);
 
         if ($categoryId) {
             $query->whereHas('propertyRecord.category', function ($catQuery) use ($categoryId) {
@@ -174,17 +168,37 @@ class InventoryAssignmentController extends Controller
     public function printPdf(Request $request): View
     {
         $state = strtolower((string) $request->query('state', 'all'));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request, fromQuery: true);
+        $generatedDateLabel = $this->buildGeneratedDateLabel($dateFrom, $dateTo);
+        [$preparedByName, $preparedByRole] = $this->resolvePreparedBy();
 
         return view('custodian.inventory.print', [
             'items' => $this->inventoryExportItems($request),
             'state' => $state,
+            'search' => trim((string) $request->query('search', '')),
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'generatedDateLabel' => $generatedDateLabel,
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
         ]);
     }
 
     public function exportExcel(Request $request): Response
     {
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request, fromQuery: true);
+        $generatedDateLabel = $this->buildGeneratedDateLabel($dateFrom, $dateTo);
+        [$preparedByName, $preparedByRole] = $this->resolvePreparedBy();
+
         $html = view('custodian.inventory.excel', [
             'items' => $this->inventoryExportItems($request),
+            'state' => strtolower((string) $request->query('state', 'all')),
+            'search' => trim((string) $request->query('search', '')),
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
+            'generatedDateLabel' => $generatedDateLabel,
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
         ])->render();
 
         return response($html)
@@ -196,6 +210,7 @@ class InventoryAssignmentController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $state = strtolower((string) $request->query('state', 'all'));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request, fromQuery: true);
 
         $query = InspectionReportItem::with([
             'purchaseOrderItem.purchaseOrder.purchaseRequest',
@@ -214,20 +229,144 @@ class InventoryAssignmentController extends Controller
             $query->whereNotNull('property_no');
         }
 
-        if ($search !== '') {
-            $query->where(function ($inner) use ($search) {
-                $inner->whereHas('purchaseOrderItem', function ($poQuery) use ($search) {
-                    $poQuery->where('item_description', 'like', "%{$search}%");
-                })->orWhereHas('report', function ($reportQuery) use ($search) {
-                    $reportQuery->where('ia_no', 'like', "%{$search}%")
-                        ->orWhere('po_no', 'like', "%{$search}%");
-                });
-            });
-        }
+        $this->applyInventorySearchFilter($query, $search);
+
+        $this->applyReportDateFilter($query, $dateFrom, $dateTo);
 
         return $query->orderByDesc('ia_item_id')
             ->get()
             ->map(fn (InspectionReportItem $item) => $this->transformItem($item));
+    }
+
+    private function resolveDateRange(Request $request, bool $fromQuery = false): array
+    {
+        $dateFromRaw = trim((string) ($fromQuery ? $request->query('date_from', '') : $request->input('date_from', '')));
+        $dateToRaw = trim((string) ($fromQuery ? $request->query('date_to', '') : $request->input('date_to', '')));
+
+        if ($dateFromRaw !== '' && $dateToRaw === '') {
+            $dateToRaw = $dateFromRaw;
+        }
+
+        if ($dateToRaw !== '' && $dateFromRaw === '') {
+            $dateFromRaw = $dateToRaw;
+        }
+
+        if ($dateFromRaw === '' || $dateToRaw === '') {
+            return [null, null];
+        }
+
+        try {
+            $dateFrom = Carbon::parse($dateFromRaw)->toDateString();
+            $dateTo = Carbon::parse($dateToRaw)->toDateString();
+        } catch (\Throwable $exception) {
+            return [null, null];
+        }
+
+        if ($dateFrom > $dateTo) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        return [$dateFrom, $dateTo];
+    }
+
+    private function applyReportDateFilter($query, ?string $dateFrom, ?string $dateTo): void
+    {
+        if (! $dateFrom || ! $dateTo) {
+            return;
+        }
+
+        $query->whereHas('report', function ($reportQuery) use ($dateFrom, $dateTo) {
+            $reportQuery->where(function ($dateQuery) use ($dateFrom, $dateTo) {
+                $dateQuery->whereBetween('accepted_date', [$dateFrom, $dateTo])
+                    ->orWhere(function ($fallbackQuery) use ($dateFrom, $dateTo) {
+                        $fallbackQuery->whereNull('accepted_date')
+                            ->whereBetween('inspection_date', [$dateFrom, $dateTo]);
+                    });
+            });
+        });
+    }
+
+    private function buildGeneratedDateLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return Carbon::parse($dateFrom)->format('F d, Y').' - '.Carbon::parse($dateTo)->format('F d, Y');
+        }
+
+        return now()->format('F d, Y');
+    }
+
+    private function resolvePreparedBy(): array
+    {
+        $account = Auth::user();
+
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
+        return [$preparedByName, $preparedByRole];
+    }
+
+    private function applyInventorySearchFilter($query, string $search): void
+    {
+        if ($search === '') {
+            return;
+        }
+
+        $query->where(function ($inner) use ($search) {
+            $inner->where('property_no', 'like', "%{$search}%")
+                ->orWhereHas('purchaseOrderItem', function ($poQuery) use ($search) {
+                    $poQuery->where('item_description', 'like', "%{$search}%")
+                        ->orWhere('unit', 'like', "%{$search}%");
+                })->orWhereHas('report', function ($reportQuery) use ($search) {
+                    $reportQuery->where('ia_no', 'like', "%{$search}%")
+                        ->orWhere('po_no', 'like', "%{$search}%")
+                        ->orWhere('invoice_no', 'like', "%{$search}%")
+                        ->orWhere('remarks', 'like', "%{$search}%");
+                })->orWhereHas('propertyRecord', function ($propertyQuery) use ($search) {
+                    $propertyQuery->where('property_no', 'like', "%{$search}%")
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('serial_number', 'like', "%{$search}%")
+                        ->orWhere('article', 'like', "%{$search}%")
+                        ->orWhereHas('category', function ($catQuery) use ($search) {
+                            $catQuery->where('cat_name', 'like', "%{$search}%")
+                                ->orWhereHas('parent', function ($parentQuery) use ($search) {
+                                    $parentQuery->where('cat_name', 'like', "%{$search}%");
+                                });
+                        })
+                        ->orWhereHas('accountableOfficer', function ($officerQuery) use ($search) {
+                            $officerQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('employee_id', 'like', "%{$search}%")
+                                ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                                    $sectionQuery->where('section_name', 'like', "%{$search}%");
+                                })
+                                ->orWhereHas('position', function ($positionQuery) use ($search) {
+                                    $positionQuery->where('position_title', 'like', "%{$search}%");
+                                });
+                        });
+                })->orWhereHas('purchaseOrderItem.purchaseOrder.supplier', function ($supplierQuery) use ($search) {
+                    $supplierQuery->where('supplier_name', 'like', "%{$search}%");
+                })->orWhereHas('purchaseOrderItem.purchaseOrder.purchaseRequest', function ($prQuery) use ($search) {
+                    $prQuery->where('pr_no', 'like', "%{$search}%")
+                        ->orWhereHas('requester.employee', function ($employeeQuery) use ($search) {
+                            $employeeQuery->where('first_name', 'like', "%{$search}%")
+                                ->orWhere('middle_name', 'like', "%{$search}%")
+                                ->orWhere('last_name', 'like', "%{$search}%")
+                                ->orWhere('employee_id', 'like', "%{$search}%")
+                                ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                                    $sectionQuery->where('section_name', 'like', "%{$search}%");
+                                })
+                                ->orWhereHas('position', function ($positionQuery) use ($search) {
+                                    $positionQuery->where('position_title', 'like', "%{$search}%");
+                                });
+                        });
+                });
+        });
     }
 
     public function show(InspectionReportItem $inspectionReportItem): JsonResponse

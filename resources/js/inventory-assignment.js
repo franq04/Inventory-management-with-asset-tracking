@@ -93,6 +93,10 @@ $(() => {
     const $viewDocumentBadge = $('#inventoryViewDocumentBadge');
     const $viewDocumentMeta = $('#inventoryViewDocumentMeta');
     const $viewDocumentExtra = $('#inventoryViewDocumentExtra');
+    const $viewPoNo = $('#inventoryViewPoNo');
+    const $viewIaNo = $('#inventoryViewIaNo');
+    const $viewPrNo = $('#inventoryViewPrNo');
+    const $viewSupplier = $('#inventoryViewSupplier');
 
     let fetchTimeout = null;
     let currentStoreUrl = null;
@@ -743,53 +747,32 @@ $(() => {
 
         const paginatedItems = items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
         const rows = paginatedItems.map((item, index) => {
-            const description = escapeHtml(item.item_description ?? '—');
+            const rawDescription = String(item.item_description ?? '').trim();
+            const compactDescription = rawDescription.length > 58
+                ? `${rawDescription.slice(0, 58).trimEnd()}...`
+                : rawDescription;
+            const description = escapeHtml(compactDescription || '—');
+            const propertyNo = escapeHtml(item.property_no || '—');
             const category = escapeHtml(item.category ?? '—');
             const subCategory = escapeHtml(item.sub_category ?? '—');
             const unit = item.unit ? ` ${escapeHtml(item.unit)}` : '';
             const quantityValue = item.quantity != null ? escapeHtml(String(item.quantity)) : null;
             const quantityDisplay = quantityValue ? `${quantityValue}${unit}` : '—';
-            const sourceSegments = [];
-            if (item.po_no) sourceSegments.push(`PO ${item.po_no}`);
-            if (item.ia_no) sourceSegments.push(`IA ${item.ia_no}`);
-            if (item.supplier_name) sourceSegments.push(item.supplier_name);
-            const sourceText = sourceSegments.length ? escapeHtml(sourceSegments.join(' • ')) : '—';
-
-            const statusName = item.status_name ?? '';
-            const statusLower = statusName.toLowerCase();
-            let badgeClasses = 'bg-slate-100 text-slate-600';
-            let badgeIcon = 'fa-tag';
-            if (statusLower.includes('record')) {
-                badgeClasses = 'bg-emerald-100 text-emerald-700';
-                badgeIcon = 'fa-clipboard-check';
-            } else if (statusLower.includes('accept') || statusLower.includes('pending')) {
-                badgeClasses = 'bg-amber-100 text-amber-700';
-                badgeIcon = 'fa-hourglass-half';
-            }
-            const statusBadge = statusName
-                ? `<span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${badgeClasses}"><i class="fas ${badgeIcon} text-[10px]"></i>${escapeHtml(statusName)}</span>`
-                : '';
-
-            const propertyInfo = item.property_no
-                ? `<div class="mt-2 text-xs font-semibold text-[#1a3a2d]">Property No: ${escapeHtml(item.property_no)}</div>`
-                : '';
 
             const delay = Math.min(index * 35, 280);
 
             return `
                 <tr class="border-b last:border-0 hover:bg-gray-50 js-reveal-animated" style="opacity: 0; transform: translateY(6px); transition: opacity 220ms ease ${delay}ms, transform 260ms ease ${delay}ms;">
+                    <td class="px-5 py-4 align-top text-sm font-semibold text-gray-900">${propertyNo}</td>
                     <td class="px-5 py-4 align-top">
                         <div class="font-semibold text-gray-800">${description}</div>
-                        <div class="text-xs text-gray-500">IA: ${escapeHtml(item.ia_no ?? '—')} • PO: ${escapeHtml(item.po_no ?? '—')}</div>
-                        <div class="mt-1">${statusBadge}</div>
-                        ${propertyInfo}
+                        <div class="text-xs text-gray-500 mt-1">${escapeHtml(item.status_name || 'View Record for details')}</div>
                     </td>
                     <td class="px-5 py-4 align-top text-gray-700">${category}</td>
                     <td class="px-5 py-4 align-top text-gray-700">${subCategory}</td>
                     <td class="px-5 py-4 align-top text-right font-semibold text-gray-800">${quantityDisplay}</td>
                     <td class="px-5 py-4 align-top text-right text-gray-700">${formatCurrency(item.unit_cost)}</td>
                     <td class="px-5 py-4 align-top text-right text-gray-800 font-semibold">${formatCurrency(item.total_cost)}</td>
-                    <td class="px-5 py-4 align-top text-gray-600">${sourceText}</td>
                     <td class="px-5 py-4 align-top text-right">${buildActionButtons(item)}</td>
                 </tr>
             `;
@@ -1073,6 +1056,10 @@ $(() => {
                 $viewCategory.text(data.category || '—');
                 $viewSubCategory.text(data.sub_category || '—');
                 $viewQuantity.text(quantityDisplay || '—');
+                $viewPoNo.text(data.po_no || '—');
+                $viewIaNo.text(data.ia_no || '—');
+                $viewPrNo.text(data.pr_no || '—');
+                $viewSupplier.text(data.supplier_name || '—');
 
                 const unitCostValue = propertyRecord.unit_value ?? data.unit_cost ?? null;
                 const totalCostValue = propertyRecord.total_value ?? data.total_cost ?? (quantityRaw != null && unitCostValue != null
@@ -1238,6 +1225,14 @@ $(() => {
             },
         });
     });
+
+    // Initialize applied date filter from URL/initial inputs when both values are present.
+    const initialDateFrom = String($dateFrom.val() || '').trim();
+    const initialDateTo = String($dateTo.val() || '').trim();
+    if (initialDateFrom && initialDateTo) {
+        appliedDateFrom = initialDateFrom;
+        appliedDateTo = initialDateTo;
+    }
 
     // Initialize state
     populateSubCategories(null, null);

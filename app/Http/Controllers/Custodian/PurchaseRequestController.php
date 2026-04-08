@@ -233,6 +233,9 @@ class PurchaseRequestController extends Controller
             $activeTab = $defaultTab;
         }
 
+        $search = trim((string) $request->query('search', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
         $trackedStatusIds = collect($tabs)
             ->pluck('statuses')
             ->filter(fn ($statuses) => is_array($statuses))
@@ -251,6 +254,28 @@ class PurchaseRequestController extends Controller
             $query->whereIn('status_id', $selectedStatuses);
         } elseif (! empty($trackedStatusIds)) {
             $query->whereIn('status_id', $trackedStatusIds);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('pr_no', 'like', "%{$search}%")
+                    ->orWhereHas('requester', function ($requesterQuery) use ($search) {
+                        $requesterQuery->where('username', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('division', function ($divisionQuery) use ($search) {
+                        $divisionQuery->where('division_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                        $sectionQuery->where('section_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('status', function ($statusQuery) use ($search) {
+                        $statusQuery->where('status_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
         }
 
         $purchaseRequests = $query->paginate(5)->withQueryString();
@@ -344,6 +369,9 @@ class PurchaseRequestController extends Controller
             'routeParam' => 'purchase_request',
             'pageTitle' => $context['page_title'] ?? 'Purchase Requests Queue',
             'pageDescription' => $context['page_description'] ?? 'Review employee submissions and manage their status lifecycle.',
+            'search' => $search,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
             'canEditFunds' => $context['can_edit_fund_fields'] ?? false,
             'workflowRole' => $context['role'],
             'workflowConfig' => $workflowConfig,
@@ -447,7 +475,6 @@ class PurchaseRequestController extends Controller
         $rules = [
             'status_id' => [
                 'required',
-                Rule::exists('statuses', 'status_id')->where(fn ($query) => $query->where('status_scope', Status::SCOPE_PURCHASE_REQUEST)),
             ],
             'remarks' => 'nullable|string|max:1000',
         ];
@@ -933,6 +960,9 @@ class PurchaseRequestController extends Controller
             $activeTab = $defaultTab;
         }
 
+        $search = trim((string) $request->query('search', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
         $trackedStatusIds = collect($tabs)
             ->pluck('statuses')
             ->filter(fn ($statuses) => is_array($statuses))
@@ -952,12 +982,45 @@ class PurchaseRequestController extends Controller
             $query->whereIn('status_id', $trackedStatusIds);
         }
 
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('pr_no', 'like', "%{$search}%")
+                    ->orWhereHas('requester', function ($requesterQuery) use ($search) {
+                        $requesterQuery->where('username', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('division', function ($divisionQuery) use ($search) {
+                        $divisionQuery->where('division_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                        $sectionQuery->where('section_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('status', function ($statusQuery) use ($search) {
+                        $statusQuery->where('status_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
+        }
+
         $purchaseRequests = $query->get();
+
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
 
         return view('custodian.purchase_requests.print', [
             'purchaseRequests' => $purchaseRequests,
             'activeTab' => $activeTab,
             'pageTitle' => $context['page_title'] ?? 'Purchase Requests Queue',
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
         ]);
     }
 
@@ -977,6 +1040,9 @@ class PurchaseRequestController extends Controller
             $activeTab = $defaultTab;
         }
 
+        $search = trim((string) $request->query('search', ''));
+        [$dateFrom, $dateTo] = $this->resolveDateRange($request);
+
         $trackedStatusIds = collect($tabs)
             ->pluck('statuses')
             ->filter(fn ($statuses) => is_array($statuses))
@@ -996,12 +1062,87 @@ class PurchaseRequestController extends Controller
             $query->whereIn('status_id', $trackedStatusIds);
         }
 
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('pr_no', 'like', "%{$search}%")
+                    ->orWhereHas('requester', function ($requesterQuery) use ($search) {
+                        $requesterQuery->where('username', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('division', function ($divisionQuery) use ($search) {
+                        $divisionQuery->where('division_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('section', function ($sectionQuery) use ($search) {
+                        $sectionQuery->where('section_name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('status', function ($statusQuery) use ($search) {
+                        $statusQuery->where('status_name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        if ($dateFrom && $dateTo) {
+            $query->whereBetween('created_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59']);
+        }
+
         $purchaseRequests = $query->get();
 
-        $html = view('custodian.purchase_requests.excel', ['purchaseRequests' => $purchaseRequests])->render();
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
+        $html = view('custodian.purchase_requests.excel', [
+            'purchaseRequests' => $purchaseRequests,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
+        ])->render();
 
         return response($html)
             ->header('Content-Type', 'application/vnd.ms-excel')
             ->header('Content-Disposition', 'attachment; filename="Purchase-Requests-' . date('Y-m-d') . '.xls"');
+    }
+
+    private function resolveDateRange(Request $request): array
+    {
+        $dateFromRaw = trim((string) $request->query('date_from', ''));
+        $dateToRaw = trim((string) $request->query('date_to', ''));
+
+        if ($dateFromRaw !== '' && $dateToRaw === '') {
+            $dateToRaw = $dateFromRaw;
+        }
+
+        if ($dateToRaw !== '' && $dateFromRaw === '') {
+            $dateFromRaw = $dateToRaw;
+        }
+
+        if ($dateFromRaw === '' || $dateToRaw === '') {
+            return [null, null];
+        }
+
+        try {
+            $dateFrom = Carbon::parse($dateFromRaw)->toDateString();
+            $dateTo = Carbon::parse($dateToRaw)->toDateString();
+        } catch (\Throwable $exception) {
+            return [null, null];
+        }
+
+        if ($dateFrom > $dateTo) {
+            [$dateFrom, $dateTo] = [$dateTo, $dateFrom];
+        }
+
+        return [$dateFrom, $dateTo];
+    }
+
+    private function buildGeneratedOnLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return Carbon::parse($dateFrom)->format('F d, Y').' - '.Carbon::parse($dateTo)->format('F d, Y');
+        }
+
+        return now()->format('F d, Y');
     }
 }

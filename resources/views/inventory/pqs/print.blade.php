@@ -79,14 +79,14 @@
         }
 
         .prepared-by-block {
-            min-width: 260px;
+            width: 240px;
             margin-left: auto;
             text-align: right;
         }
 
         .prepared-by-line {
             border-bottom: 1px solid var(--line);
-            min-width: 230px;
+            width: 190px;
             height: 0;
             margin-top: 2px;
             margin-left: auto;
@@ -103,14 +103,7 @@
             <div class="flex-1 text-center">
                 <h1 class="text-4xl font-black uppercase tracking-[0.04em]">Property, Plant & Equipment Ledger Card</h1>
                 <p class="text-sm mt-1 text-slate-700">Comprehensive Inventory Report</p>
-                @if($search || $categoryFilter || $assignmentFilter)
-                <p class="text-xs text-slate-600 mt-2">
-                    Filters Applied:
-                    @if($search) Search: "{{ $search }}" @endif
-                    @if($categoryFilter) | Category: {{ $categoryFilter }} @endif
-                    @if($assignmentFilter) | Assignment: {{ ucfirst($assignmentFilter) }} @endif
-                </p>
-                @endif
+                <p class="text-xs text-slate-600 mt-2">Generated on: {{ $generatedOnLabel ?? now()->format('F d, Y') }}</p>
             </div>
             <img src="{{ asset('images/pqslogo.png') }}" alt="Plant Quarantine Service" class="h-16 w-16 object-contain">
         </div>

@@ -241,6 +241,16 @@ Route::middleware('role:custodian')->group(function () {
             'retainOriginal',
         ])->name('orders.items.retain');
 
+        Route::get('purchase-orders/export/pdf', [
+            PurchaseOrderController::class,
+            'printPdf',
+        ])->name('orders.print.pdf');
+
+        Route::get('purchase-orders/export/excel', [
+            PurchaseOrderController::class,
+            'exportExcel',
+        ])->name('orders.export.excel');
+
         Route::get('purchase-orders/{purchase_order}', [
             PurchaseOrderController::class,
             'show',

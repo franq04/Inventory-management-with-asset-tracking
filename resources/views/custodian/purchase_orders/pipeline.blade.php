@@ -578,20 +578,42 @@
             </div>
         </div>
 
-        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <form method="GET" class="relative w-full xl:max-w-sm">
-                <input type="hidden" name="po_tab" value="register">
-                <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                <input type="search" name="search" value="{{ $search }}" placeholder="Search PO number, PR number or supplier..." class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" aria-label="Search purchase orders">
-            </form>
-            <div class="flex flex-wrap items-center gap-2">
-                @if ($search)
-                    <a href="{{ route('custodian.orders.index') }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
+        <form method="GET" class="space-y-4">
+            <input type="hidden" name="po_tab" value="register">
+            <div class="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_200px_170px_170px_auto] xl:items-end">
+                <div class="relative">
+                    <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                    <input type="search" name="search" value="{{ $search }}" placeholder="Search PO number, PR number or supplier..." class="w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-4 py-3 text-sm text-gray-700 shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10 transition" aria-label="Search purchase orders">
+                </div>
+                <select name="stage" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
+                    <option value="" @selected(!$registerStage)>All Stages</option>
+                    <option value="awaiting_delivery" @selected($registerStage === 'awaiting_delivery')>Awaiting Delivery</option>
+                    <option value="receiving" @selected($registerStage === 'receiving')>Receiving</option>
+                    <option value="inspection" @selected($registerStage === 'inspection')>Inspection</option>
+                    <option value="issues" @selected($registerStage === 'issues')>Issues</option>
+                    <option value="completed" @selected($registerStage === 'completed')>Completed</option>
+                </select>
+                <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Date from">
+                <input type="date" name="date_to" value="{{ $dateTo ?? '' }}" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" title="Date to">
+                <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1a3a2d] px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-[#224a39]">
+                    <i class="fas fa-filter"></i> Apply
+                </button>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="text-sm text-gray-500">{{ number_format($purchaseOrders->total()) }} records found</div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <a href="{{ route('custodian.orders.index', ['po_tab' => 'register']) }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 bg-white hover:border-[#1a3a2d]/20 hover:text-[#1a3a2d] hover:bg-[#f7faf8] transition-all">
                         <i class="fas fa-rotate-right text-sm"></i> Reset
                     </a>
-                @endif
+                    <a href="{{ route('custodian.orders.print.pdf', ['po_tab' => 'register', 'search' => $search, 'stage' => $registerStage, 'date_from' => $dateFrom, 'date_to' => $dateTo]) }}" target="_blank" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                        <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
+                    </a>
+                    <a href="{{ route('custodian.orders.export.excel', ['po_tab' => 'register', 'search' => $search, 'stage' => $registerStage, 'date_from' => $dateFrom, 'date_to' => $dateTo]) }}" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                        <i class="fas fa-file-excel text-emerald-600"></i> Export Excel
+                    </a>
+                </div>
             </div>
-        </div>
+        </form>
         <div class="overflow-hidden rounded-[24px] border border-emerald-950/8 bg-white">
             <div class="overflow-x-auto">
                 <table class="min-w-full text-sm">
