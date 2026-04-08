@@ -68,16 +68,29 @@ class AuthController extends Controller
                 default => route('dashboard'),
             };
 
-            return response()->json([
-                'status' => 'success',
-                'redirect' => $redirectUrl,
-            ]);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'redirect' => $redirectUrl,
+                ]);
+            }
+
+            return redirect()->to($redirectUrl);
         }
 
-        return response()->json([
-            'status' => 'error',
-            'message' => 'Invalid username or password.'
-        ]);
+        $errorBag = [
+            'username' => 'Invalid username or password.',
+        ];
+
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid username or password.',
+                'errors' => $errorBag,
+            ], 422);
+        }
+
+        return back()->withErrors($errorBag)->withInput($request->only('username'));
     }
 
 

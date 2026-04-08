@@ -168,6 +168,9 @@ $(document).ready(function () {
     loginForm.submit(function (e) {
         e.preventDefault();
 
+        showFieldError(usernameInput, usernameError, "");
+        showFieldError(passwordInput, passwordError, "");
+
         if (!validateForm()) {
             return;
         }
@@ -184,12 +187,31 @@ $(document).ready(function () {
                     window.setTimeout(() => {
                         window.location.href = response.redirect;
                     }, redirectDelay || 1100);
-                } else {
-                    showToast(response.message || "Invalid username or password.", "error");
-                    setSubmitLoading(false);
+                    return;
                 }
+
+                showToast(response.message || "Invalid username or password.", "error");
+                setSubmitLoading(false);
             },
-            error: function () {
+            error: function (xhr) {
+                if (xhr?.status === 422 && xhr.responseJSON?.errors) {
+                    const errors = xhr.responseJSON.errors;
+                    const usernameMessage = Array.isArray(errors.username) ? errors.username[0] : errors.username;
+                    const passwordMessage = Array.isArray(errors.password) ? errors.password[0] : errors.password;
+
+                    if (usernameMessage) {
+                        showFieldError(usernameInput, usernameError, String(usernameMessage));
+                    }
+
+                    if (passwordMessage) {
+                        showFieldError(passwordInput, passwordError, String(passwordMessage));
+                    }
+
+                    showToast(xhr.responseJSON?.message || "Please correct the highlighted fields.", "error");
+                    setSubmitLoading(false);
+                    return;
+                }
+
                 showToast("Something went wrong. Please try again.", "error");
                 setSubmitLoading(false);
             }

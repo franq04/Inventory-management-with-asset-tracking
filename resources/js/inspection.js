@@ -159,30 +159,6 @@ const initInspectionTabs = () => {
     activateInspectionTab(getActiveInspectionTabFromUrl(), { syncUrl: true, replaceState: true });
 };
 
-const prunePendingAccepted = () => {
-    const $panel = $(`${inspectionRootSelector} [data-inspection-panel="pending"]`);
-    if (!$panel.length) {
-        return;
-    }
-
-    $panel.find('tbody tr').each(function () {
-        const $tr = $(this);
-        const $cells = $tr.find('td');
-        if ($cells.length < 6) {
-            return;
-        }
-
-        const deliveredText = $cells.eq(4).text().trim();
-        const acceptedText = $cells.eq(5).text().trim();
-        const delivered = Number(deliveredText.replace(/[^0-9.-]+/g, '')) || 0;
-        const accepted = Number(acceptedText.replace(/[^0-9.-]+/g, '')) || 0;
-
-        if (accepted > 0 && accepted >= delivered) {
-            $tr.remove();
-        }
-    });
-};
-
 const initInspectionFilters = () => {
     const $root = $(inspectionRootSelector);
     if (!$root.length) {
@@ -326,7 +302,6 @@ const bindInspectionPagination = () => {
 
     const hydrate = () => {
         initInspectionTabs();
-        prunePendingAccepted();
         initInspectionFilters();
     };
 
@@ -877,8 +852,7 @@ const initInspectionModal = () => {
 $(() => {
     initInspectionTabs();
     initInspectionModal();
-    // prune pending panel of already accepted/recorded rows and initialize filters
-    prunePendingAccepted();
+    // initialize client-side filters for rendered rows
     initInspectionFilters();
     bindInspectionPagination();
     setupInspectionAutoRefresh();

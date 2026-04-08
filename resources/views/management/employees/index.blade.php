@@ -1037,6 +1037,62 @@
             sectionPositionInput?.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
         };
 
+        const normalizePositionTitle = (value) => String(value || '')
+            .trim()
+            .replace(/\s+/g, ' ')
+            .toLowerCase();
+
+        const getActiveSectionPositionTitles = () => {
+            const sectionId = String(activeSectionIdForPositionCreate || '').trim();
+            if (!sectionId) {
+                return [];
+            }
+
+            const sectionEntry = activeDivisionSections.find((item) => String(item.id) === sectionId);
+            return Array.isArray(sectionEntry?.positions) ? sectionEntry.positions : [];
+        };
+
+        const validateSectionPositionInput = (showErrorMessage = true) => {
+            const rawValue = String(sectionPositionInput?.value || '');
+            const normalized = normalizePositionTitle(rawValue);
+            const existingNormalized = new Set(
+                getActiveSectionPositionTitles()
+                    .map((title) => normalizePositionTitle(title))
+                    .filter(Boolean)
+            );
+
+            let message = '';
+            if (!normalized) {
+                message = 'Position title cannot be empty.';
+            } else if (existingNormalized.has(normalized)) {
+                message = 'Position already exists in this section (same spelling, different capitalization is not allowed).';
+            }
+
+            const isValid = message === '';
+
+            if (sectionPositionSubmitBtn) {
+                sectionPositionSubmitBtn.disabled = !isValid;
+                sectionPositionSubmitBtn.classList.toggle('opacity-70', !isValid);
+                sectionPositionSubmitBtn.classList.toggle('cursor-not-allowed', !isValid);
+            }
+
+            if (!isValid) {
+                if (showErrorMessage && sectionPositionError) {
+                    sectionPositionError.textContent = message;
+                    sectionPositionError.classList.remove('hidden');
+                }
+                sectionPositionInput?.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            } else {
+                sectionPositionError?.classList.add('hidden');
+                if (sectionPositionError) {
+                    sectionPositionError.textContent = '';
+                }
+                sectionPositionInput?.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            }
+
+            return isValid;
+        };
+
         const addSectionInputRow = (value = '') => {
             if (!initialSectionsRows) return;
 
@@ -1732,6 +1788,7 @@
                 sectionPositionSectionName.textContent = String(sectionEntry?.name || 'this section');
             }
 
+            validateSectionPositionInput(false);
             toggleSectionPositionModal(true);
         });
 
@@ -1743,27 +1800,21 @@
         });
 
         sectionPositionInput?.addEventListener('input', () => {
-            sectionPositionError?.classList.add('hidden');
-            sectionPositionInput.classList.remove('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            validateSectionPositionInput(true);
         });
 
         sectionPositionForm?.addEventListener('submit', async (event) => {
             event.preventDefault();
 
             const sectionId = String(activeSectionIdForPositionCreate || '').trim();
-            const positionTitle = String(sectionPositionInput?.value || '').trim();
+            const positionTitle = String(sectionPositionInput?.value || '').replace(/\s+/g, ' ').trim();
 
             if (!sectionId) {
                 showToast('Section context is missing. Please reopen the dialog.', 'error');
                 return;
             }
 
-            if (!positionTitle) {
-                if (sectionPositionError) {
-                    sectionPositionError.textContent = 'Position title cannot be empty.';
-                    sectionPositionError.classList.remove('hidden');
-                }
-                sectionPositionInput?.classList.add('border-red-300', 'ring-2', 'ring-red-100', 'focus:border-red-400', 'focus:ring-red-100');
+            if (!validateSectionPositionInput(true)) {
                 sectionPositionInput?.focus();
                 return;
             }
@@ -1828,7 +1879,8 @@
                 const sectionEntry = activeDivisionSections.find((item) => String(item.id) === sectionId);
                 if (sectionEntry) {
                     const currentPositions = Array.isArray(sectionEntry.positions) ? sectionEntry.positions : [];
-                    if (!currentPositions.includes(positionTitle)) {
+                    const normalizedCurrent = new Set(currentPositions.map((title) => normalizePositionTitle(title)));
+                    if (!normalizedCurrent.has(normalizePositionTitle(positionTitle))) {
                         sectionEntry.positions = [...currentPositions, positionTitle].sort((a, b) => a.localeCompare(b));
                     }
                 }

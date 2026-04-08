@@ -32,32 +32,10 @@ class InventoryAssignmentController extends Controller
     {
         $categories = Category::parentsWithChildren();
         $locations = PhysicalLocation::query()
-            ->with('parent')
             ->where('is_active', true)
             ->orderBy('location_name')
             ->get()
-            ->map(function (PhysicalLocation $location) {
-                $suffix = [];
-
-                if ($location->location_code) {
-                    $suffix[] = $location->location_code;
-                }
-
-                if ($location->parent?->location_name) {
-                    $suffix[] = $location->parent->location_name;
-                }
-
-                $label = $location->location_name;
-                if ($suffix) {
-                    $label .= ' ('.implode(' | ', $suffix).')';
-                }
-
-                return [
-                    'id' => $location->location_id,
-                    'name' => $location->location_name,
-                    'label' => $label,
-                ];
-            })
+            ->map(fn (PhysicalLocation $location) => $this->formatLocationOption($location))
             ->values();
 
         // Aggregate stats for the dashboard cards
@@ -88,6 +66,49 @@ class InventoryAssignmentController extends Controller
             'categories' => $categories,
             'locations' => $locations,
             'stats' => $stats,
+        ]);
+    }
+
+    public function storeLocation(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'location_name' => ['required', 'string', 'max:255'],
+            'location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'storage', 'other'])],
+            'parent_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
+        ]);
+
+        $normalizedName = preg_replace('/\s+/', ' ', trim((string) $validated['location_name']));
+        $locationType = (string) ($validated['location_type'] ?? 'other');
+        $parentLocationId = (int) ($validated['parent_location_id'] ?? 0) ?: null;
+
+        $existingQuery = PhysicalLocation::query()
+            ->where('is_active', true)
+            ->whereRaw('LOWER(TRIM(location_name)) = ?', [mb_strtolower($normalizedName, 'UTF-8')]);
+
+        if ($parentLocationId) {
+            $existingQuery->where('parent_location_id', $parentLocationId);
+        } else {
+            $existingQuery->whereNull('parent_location_id');
+        }
+
+        $location = $existingQuery->first();
+
+        if (! $location) {
+            $location = PhysicalLocation::query()->create([
+                'location_name' => $normalizedName,
+                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'storage', 'other'], true) ? $locationType : 'other',
+                'parent_location_id' => $parentLocationId,
+                'is_active' => true,
+                'description' => 'Added from inventory assignment form.',
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Location added successfully.',
+            'data' => [
+                'location' => $this->formatLocationOption($location),
+            ],
         ]);
     }
 
@@ -254,6 +275,9 @@ class InventoryAssignmentController extends Controller
             'date_acquired' => ['required', 'date'],
             'estimated_useful_life' => ['nullable', 'string', 'max:100'],
             'initial_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
+            'initial_location_name' => ['nullable', 'string', 'max:255'],
+            'initial_location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'storage', 'other'])],
+            'initial_location_parent_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
             'serial_numbers' => ['nullable', 'array'],
             'serial_numbers.*' => ['nullable', 'string', 'max:255'],
         ]);
@@ -332,8 +356,24 @@ class InventoryAssignmentController extends Controller
         $accountableOfficerId = $accountableOfficer?->employee_id;
         $assignedSectionId = $accountableOfficer?->section?->section_id;
         $assignedDivisionId = $accountableOfficer?->section?->division_id;
-        $requestedLocationId = (int) $request->input('initial_location_id', 0) ?: null;
-        $initialLocationId = $requestedLocationId ?: $this->suggestLocationForEmployee($accountableOfficer);
+        $requestedLocationId = (int) ($validated['initial_location_id'] ?? 0) ?: null;
+        $requestedLocationName = trim((string) ($validated['initial_location_name'] ?? ''));
+        $requestedLocationType = (string) ($validated['initial_location_type'] ?? 'other');
+        $requestedLocationParentId = (int) ($validated['initial_location_parent_id'] ?? 0) ?: null;
+
+        $initialLocation = $this->resolveInitialLocation(
+            $requestedLocationId,
+            $requestedLocationName,
+            $requestedLocationType,
+            $requestedLocationParentId,
+            $assignedDivisionId,
+            $assignedSectionId
+        );
+        if (! $initialLocation) {
+            $suggestedLocationId = $this->suggestLocationForEmployee($accountableOfficer);
+            $initialLocation = $suggestedLocationId ? PhysicalLocation::query()->find($suggestedLocationId) : null;
+        }
+        $initialLocationId = $initialLocation?->location_id;
 
         $dateAcquired = Carbon::parse($validated['date_acquired']);
         $year = (int) $dateAcquired->format('Y');
@@ -500,8 +540,96 @@ class InventoryAssignmentController extends Controller
             'data' => [
                 'item' => $this->transformItem($updatedItem, includeAssociations: true),
                 'created_property_numbers' => $createdPropertyNumbers,
+                'initial_location' => $this->formatLocationOption($initialLocation),
             ],
         ]);
+    }
+
+    protected function resolveInitialLocation(?int $locationId, ?string $locationName, string $locationType, ?int $parentLocationId, ?int $divisionId, ?int $sectionId): ?PhysicalLocation
+    {
+        $normalizedName = preg_replace('/\s+/', ' ', trim((string) $locationName));
+        if ($normalizedName) {
+            $existingQuery = PhysicalLocation::query()
+                ->where('is_active', true)
+                ->whereRaw('LOWER(TRIM(location_name)) = ?', [mb_strtolower($normalizedName, 'UTF-8')]);
+
+            if ($parentLocationId) {
+                $existingQuery->where('parent_location_id', $parentLocationId);
+            } else {
+                $existingQuery->whereNull('parent_location_id');
+            }
+
+            $existing = $existingQuery->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            return PhysicalLocation::query()->create([
+                'location_name' => $normalizedName,
+                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'storage', 'other'], true) ? $locationType : 'other',
+                'parent_location_id' => $parentLocationId,
+                'division_id' => $divisionId,
+                'section_id' => $sectionId,
+                'description' => 'Auto-created from inventory assignment initial location input.',
+                'is_active' => true,
+            ]);
+        }
+
+        if (! $locationId) {
+            return null;
+        }
+
+        return PhysicalLocation::query()
+            ->where('is_active', true)
+            ->find($locationId);
+    }
+
+    protected function formatLocationOption(?PhysicalLocation $location): ?array
+    {
+        if (! $location) {
+            return null;
+        }
+
+        $label = $this->buildLocationPathLabel($location);
+
+        return [
+            'id' => $location->location_id,
+            'name' => $location->location_name,
+            'label' => $label,
+            'parent_id' => $location->parent_location_id,
+            'location_type' => $location->location_type,
+        ];
+    }
+
+    protected function buildLocationPathLabel(PhysicalLocation $location): string
+    {
+        $segments = [];
+        $cursor = $location;
+        $guard = 0;
+
+        while ($cursor && $guard < 12) {
+            $segment = trim((string) $cursor->location_name);
+            if ($segment !== '') {
+                $segments[] = $segment;
+            }
+
+            if (! $cursor->parent_location_id) {
+                break;
+            }
+
+            $cursor = PhysicalLocation::query()->find($cursor->parent_location_id);
+            $guard++;
+        }
+
+        $segments = array_reverse($segments);
+        $label = implode(' / ', $segments);
+
+        if ($location->location_code) {
+            $label .= ' ('.$location->location_code.')';
+        }
+
+        return $label ?: $location->location_name;
     }
 
     protected function transformItem(InspectionReportItem $item, bool $includeAssociations = false): array

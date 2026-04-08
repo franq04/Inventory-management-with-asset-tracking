@@ -319,6 +319,11 @@ Route::middleware('role:custodian')->group(function () {
             InventoryAssignmentController::class,
             'store',
         ])->name('inventory.store');
+
+        Route::post('inventory-assignment/locations', [
+            InventoryAssignmentController::class,
+            'storeLocation',
+        ])->name('inventory.locations.store');
     });
 });
 
