@@ -575,9 +575,9 @@
                                         <select id="employeeModalNewAccountRole" name="new_account_role" class="mt-1 h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/40">
                                             <option value="employee">Employee</option>
                                             <option value="custodian">Custodian</option>
-                                            <option value="iac">IAC</option>
+                                            <option value="iac">Inspection and Acceptance Officer</option>
                                             <option value="division_head">Division head</option>
-                                            <option value="bac">BAC Officer</option>
+                                            <option value="bac">Bids and Awards Committee</option>
                                         </select>
                                     </div>
                                     <div class="sm:col-span-2">
@@ -659,11 +659,27 @@
         ];
     });
 
+    $positionsBySectionData = $positions->groupBy('section_id')
+        ->mapWithKeys(function ($sectionPositions, $sectionId) {
+            if ($sectionId === null || $sectionId === '') {
+                return [];
+            }
+
+            return [
+                (string) $sectionId => $sectionPositions->map(function ($position) {
+                    return [
+                        'id' => (string) $position->position_id,
+                        'title' => (string) $position->position_title,
+                    ];
+                })->values(),
+            ];
+        });
+
     $accountOptionsData = $accounts->map(function ($account) {
         $normalizedRole = strtolower((string) $account->role);
         $roleLabel = match ($normalizedRole) {
-            'iac' => 'IAC',
-            'bac' => 'BAC Officer',
+            'iac' => 'Inspection and Acceptance Officer',
+            'bac' => 'Bids and Awards Committee',
             default => ucwords(str_replace('_', ' ', $normalizedRole)),
         };
 
@@ -772,6 +788,7 @@
         const sectionPositionStoreUrlTemplate = `{{ route('sections.positions.store', ['section' => '__SECTION__']) }}`;
 
         const sectionsByDivision = @json($sectionsByDivisionData);
+        const positionsBySection = @json($positionsBySectionData);
 
         const allSections = Object.values(sectionsByDivision).flat();
 
@@ -920,6 +937,26 @@
                     opt.selected = true;
                 }
                 editSectionField.appendChild(opt);
+            });
+        };
+
+        const renderPositionsForModal = (sectionId, selectedPosition = '') => {
+            if (!editPosition) return;
+
+            const normalizedSection = sectionId ? String(sectionId) : '';
+            const options = normalizedSection && positionsBySection[normalizedSection]
+                ? positionsBySection[normalizedSection]
+                : [];
+
+            editPosition.innerHTML = '<option value="">Unassigned</option>';
+            options.forEach((position) => {
+                const opt = document.createElement('option');
+                opt.value = String(position.id);
+                opt.textContent = position.title;
+                if (selectedPosition && String(selectedPosition) === String(position.id)) {
+                    opt.selected = true;
+                }
+                editPosition.appendChild(opt);
             });
         };
 
@@ -1574,9 +1611,8 @@
             if (editGender) editGender.value = button.dataset.gender || '';
             if (editMaritalStatus) editMaritalStatus.value = button.dataset.maritalStatus || '';
             if (editDivision) editDivision.value = button.dataset.divisionId || '';
-            if (editPosition) editPosition.value = button.dataset.positionId || '';
-
             renderSectionsForModal(button.dataset.divisionId || '', button.dataset.sectionId || '');
+            renderPositionsForModal(button.dataset.sectionId || '', button.dataset.positionId || '');
             renderAccountsForModal(button.dataset.employeeCode || '', button.dataset.accountId || '', button.dataset.accountLabel || '');
 
             if (editAvatar) {
@@ -2023,6 +2059,11 @@
 
         editDivision?.addEventListener('change', () => {
             renderSectionsForModal(editDivision.value || '', '');
+            renderPositionsForModal('', '');
+        });
+
+        editSectionField?.addEventListener('change', () => {
+            renderPositionsForModal(editSectionField.value || '', '');
         });
 
         editAccount?.addEventListener('change', () => {

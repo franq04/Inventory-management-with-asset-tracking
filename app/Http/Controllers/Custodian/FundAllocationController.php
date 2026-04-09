@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Custodian;
 use App\Http\Controllers\Controller;
 use App\Models\FundAllocation;
 use App\Models\AuditLog;
+use App\Models\PurchaseOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 
 class FundAllocationController extends Controller
 {
@@ -18,15 +20,18 @@ class FundAllocationController extends Controller
 
     public function index(Request $request)
     {
-        $summary = FundAllocation::query()
-            ->selectRaw('COUNT(*) as total_clusters')
-            ->selectRaw('COALESCE(SUM(total_amount), 0) as total_budget')
-            ->selectRaw('COALESCE(SUM(remaining_amount), 0) as total_remaining')
-            ->first();
+        $search = trim((string) $request->input('search'));
+        $utilizationFilter = (string) $request->input('utilization', 'all');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $query = $this->allocationIndexQuery($search, $utilizationFilter, $dateFrom, $dateTo);
+
+        $summary = $this->buildAllocationSummary($query);
 
         $totalBudget = (float) ($summary->total_budget ?? 0);
+        $totalAllocated = (float) ($summary->total_utilized ?? 0);
         $totalRemaining = (float) ($summary->total_remaining ?? 0);
-        $totalAllocated = max($totalBudget - $totalRemaining, 0);
         $utilizationRate = $totalBudget > 0 ? ($totalAllocated / $totalBudget) * 100 : 0;
 
         $kpis = [
@@ -37,9 +42,11 @@ class FundAllocationController extends Controller
             'utilizationRate' => $utilizationRate,
         ];
 
-        $allocations = FundAllocation::with(['creator.employee'])
+        $allocations = $query
+            ->with(['creator.employee'])
             ->orderByDesc('id')
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
         if ($request->ajax() || $request->boolean('ajax') || $request->expectsJson()) {
             return response()->json([
@@ -50,7 +57,85 @@ class FundAllocationController extends Controller
             ]);
         }
 
-        return view('custodian.fund_allocations.index', compact('allocations', 'kpis'));
+        return view('custodian.fund_allocations.index', compact('allocations', 'kpis', 'search', 'utilizationFilter', 'dateFrom', 'dateTo'));
+    }
+
+    public function show(FundAllocation $fundAllocation)
+    {
+        $fundAllocation->load(['creator.employee']);
+
+        $purchaseOrders = PurchaseOrder::query()
+            ->with([
+                'purchaseRequest.requester.employee',
+                'supplier',
+                'status',
+                'items',
+            ])
+            ->whereHas('purchaseRequest', function ($query) use ($fundAllocation) {
+                $query->where('fund_allocation_id', $fundAllocation->id);
+            })
+            ->orderByDesc('order_date')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $totalUtilized = (float) $purchaseOrders->sum(function (PurchaseOrder $order) {
+            return (float) $order->items->sum(function ($item) {
+                return ((float) ($item->quantity ?? 0)) * ((float) ($item->unit_cost ?? 0));
+            });
+        });
+        $totalAmount = (float) $fundAllocation->total_amount;
+        $remainingAmount = max($totalAmount - $totalUtilized, 0);
+        $utilizationRate = $totalAmount > 0 ? min(($totalUtilized / $totalAmount) * 100, 100) : 0;
+
+        $creatorEmployee = $fundAllocation->creator?->employee;
+        $creatorName = $creatorEmployee
+            ? trim(collect([
+                $creatorEmployee->first_name,
+                $creatorEmployee->middle_name,
+                $creatorEmployee->last_name,
+                $creatorEmployee->suffix,
+            ])->filter()->implode(' '))
+            : ($fundAllocation->creator?->username ?? 'Unknown');
+
+        $utilizationRows = $purchaseOrders->map(function (PurchaseOrder $order) {
+            return [
+                'po_no' => $order->po_no,
+                'pr_no' => $order->pr_no,
+                'status' => $order->status?->status_name ?? 'Unknown',
+                'requester' => $order->purchaseRequest?->requester?->username ?? '—',
+                'supplier' => $order->supplier?->supplier_name ?? '—',
+                'ordered_at' => optional($order->order_date)->format('M d, Y') ?: optional($order->created_at)->format('M d, Y h:i A'),
+                'ordered_amount' => (float) $order->items->sum(function ($item) {
+                    return ((float) ($item->quantity ?? 0)) * ((float) ($item->unit_cost ?? 0));
+                }),
+                'properties' => $order->items->map(function ($item) {
+                    return [
+                        'description' => $item->item_description,
+                        'quantity' => (int) $item->quantity,
+                        'unit' => $item->unit,
+                        'unit_cost' => (float) $item->unit_cost,
+                        'ordered_total_cost' => (float) (($item->quantity ?? 0) * ($item->unit_cost ?? 0)),
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id' => $fundAllocation->id,
+                'fund_cluster' => $fundAllocation->fund_cluster,
+                'total_amount' => $totalAmount,
+                'remaining_amount' => $remainingAmount,
+                'allocated_amount' => max($totalAmount - $remainingAmount, 0),
+                'utilized_amount' => $totalUtilized,
+                'utilization_rate' => $utilizationRate,
+                'created_at' => optional($fundAllocation->created_at)->format('M d, Y h:i A'),
+                'created_by' => $creatorName,
+                'po_count' => $purchaseOrders->count(),
+                'utilization_rows' => $utilizationRows,
+            ],
+        ]);
     }
 
     public function store(Request $request)
@@ -242,6 +327,180 @@ class FundAllocationController extends Controller
 
         return redirect()->route('custodian.fund_allocations.index')
             ->with('success', 'Fund allocation deleted successfully.');
+    }
+
+    public function printPdf(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $utilizationFilter = (string) $request->input('utilization', 'all');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $allocations = $this->allocationIndexQuery($search, $utilizationFilter, $dateFrom, $dateTo)
+            ->with(['creator.employee'])
+            ->orderByDesc('id')
+            ->get();
+
+        [$preparedByName, $preparedByRole] = $this->resolvePreparedBy();
+
+        return view('custodian.fund_allocations.print', [
+            'allocations' => $allocations,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
+            'search' => $search,
+            'utilizationFilter' => $utilizationFilter,
+        ]);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $utilizationFilter = (string) $request->input('utilization', 'all');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        $allocations = $this->allocationIndexQuery($search, $utilizationFilter, $dateFrom, $dateTo)
+            ->with(['creator.employee'])
+            ->orderByDesc('id')
+            ->get();
+
+        [$preparedByName, $preparedByRole] = $this->resolvePreparedBy();
+
+        $html = view('custodian.fund_allocations.excel', [
+            'allocations' => $allocations,
+            'generatedOnLabel' => $this->buildGeneratedOnLabel($dateFrom, $dateTo),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
+            'search' => $search,
+            'utilizationFilter' => $utilizationFilter,
+        ])->render();
+
+        return response($html)
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', 'attachment; filename="Fund-Allocations-' . date('Y-m-d') . '.xls"');
+    }
+
+    private function allocationIndexQuery(string $search = '', string $utilizationFilter = 'all', ?string $dateFrom = null, ?string $dateTo = null)
+    {
+        $utilizationSubquery = DB::table('purchase_orders as po')
+            ->join('purchase_requests as pr', 'pr.pr_no', '=', 'po.pr_no')
+            ->leftJoin('purchase_order_items as poi', 'poi.po_no', '=', 'po.po_no')
+            ->whereNotNull('pr.fund_allocation_id')
+            ->groupBy('pr.fund_allocation_id')
+            ->selectRaw('pr.fund_allocation_id as fund_allocation_id')
+            ->selectRaw('COALESCE(SUM(COALESCE(poi.total_cost, (COALESCE(poi.quantity, 0) * COALESCE(poi.unit_cost, 0)))), 0) as utilized_amount')
+            ->selectRaw('COUNT(DISTINCT po.po_no) as po_count');
+
+        $query = FundAllocation::query()
+            ->leftJoinSub($utilizationSubquery, 'utilization', function ($join) {
+                $join->on('utilization.fund_allocation_id', '=', 'fund_allocations.id');
+            })
+            ->select('fund_allocations.*')
+            ->selectRaw('COALESCE(utilization.utilized_amount, 0) as utilized_amount')
+            ->selectRaw('COALESCE(utilization.po_count, 0) as po_count');
+
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('fund_allocations.fund_cluster', 'like', "%{$search}%")
+                    ->orWhereHas('creator', function ($accountQuery) use ($search) {
+                        $accountQuery->where('username', 'like', "%{$search}%")
+                            ->orWhereHas('employee', function ($employeeQuery) use ($search) {
+                                $employeeQuery
+                                    ->where('first_name', 'like', "%{$search}%")
+                                    ->orWhere('last_name', 'like', "%{$search}%")
+                                    ->orWhere('middle_name', 'like', "%{$search}%");
+                            });
+                    })
+                    ->orWhereExists(function ($orderQuery) use ($search) {
+                        $orderQuery->selectRaw('1')
+                            ->from('purchase_orders as po')
+                            ->join('purchase_requests as pr', 'pr.pr_no', '=', 'po.pr_no')
+                            ->whereColumn('pr.fund_allocation_id', 'fund_allocations.id')
+                            ->where(function ($nested) use ($search) {
+                                $nested->where('po.po_no', 'like', "%{$search}%")
+                                    ->orWhere('pr.pr_no', 'like', "%{$search}%");
+                            });
+                    });
+            });
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('fund_allocations.created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('fund_allocations.created_at', '<=', $dateTo);
+        }
+
+        switch ($utilizationFilter) {
+            case 'unused':
+                $query->whereRaw('COALESCE(utilization.utilized_amount, 0) <= 0');
+                break;
+            case 'partial':
+                $query->whereRaw('COALESCE(utilization.utilized_amount, 0) > 0')
+                    ->whereRaw('COALESCE(utilization.utilized_amount, 0) < fund_allocations.total_amount');
+                break;
+            case 'full':
+                $query->whereRaw('COALESCE(utilization.utilized_amount, 0) >= fund_allocations.total_amount');
+                break;
+            case 'over':
+                $query->whereRaw('COALESCE(utilization.utilized_amount, 0) > fund_allocations.total_amount');
+                break;
+            default:
+                break;
+        }
+
+        return $query;
+    }
+
+    private function buildAllocationSummary(EloquentBuilder $query): object
+    {
+        return DB::query()
+            ->fromSub((clone $query)->toBase(), 'allocation_rows')
+            ->selectRaw('COUNT(*) as total_clusters')
+            ->selectRaw('COALESCE(SUM(total_amount), 0) as total_budget')
+                ->selectRaw('COALESCE(SUM(GREATEST(total_amount - utilized_amount, 0)), 0) as total_remaining')
+            ->selectRaw('COALESCE(SUM(utilized_amount), 0) as total_utilized')
+            ->first();
+    }
+
+    private function resolvePreparedBy(): array
+    {
+        $account = Auth::user();
+        $employee = $account?->employee;
+
+        $name = $employee
+            ? trim(collect([
+                $employee->first_name,
+                $employee->middle_name,
+                $employee->last_name,
+                $employee->suffix,
+            ])->filter()->implode(' '))
+            : ($account?->username ?? 'System User');
+
+        $role = $account?->role
+            ? ucwords(str_replace('_', ' ', (string) $account->role))
+            : 'User';
+
+        return [$name, $role];
+    }
+
+    private function buildGeneratedOnLabel(?string $dateFrom, ?string $dateTo): string
+    {
+        if ($dateFrom && $dateTo) {
+            return sprintf('%s to %s', date('F d, Y', strtotime($dateFrom)), date('F d, Y', strtotime($dateTo)));
+        }
+
+        if ($dateFrom) {
+            return sprintf('From %s', date('F d, Y', strtotime($dateFrom)));
+        }
+
+        if ($dateTo) {
+            return sprintf('Until %s', date('F d, Y', strtotime($dateTo)));
+        }
+
+        return now()->format('F d, Y');
     }
 
     /**

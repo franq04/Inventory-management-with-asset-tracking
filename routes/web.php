@@ -190,6 +190,12 @@ Route::middleware('role:custodian')->group(function () {
             ->name('fund_allocations.index');
         Route::get('fund-allocations/suggest', [App\Http\Controllers\Custodian\FundAllocationController::class, 'suggest'])
             ->name('fund_allocations.suggest');
+        Route::get('fund-allocations/export/print', [App\Http\Controllers\Custodian\FundAllocationController::class, 'printPdf'])
+            ->name('fund_allocations.print.pdf');
+        Route::get('fund-allocations/export/excel', [App\Http\Controllers\Custodian\FundAllocationController::class, 'exportExcel'])
+            ->name('fund_allocations.export.excel');
+        Route::get('fund-allocations/{fundAllocation}', [App\Http\Controllers\Custodian\FundAllocationController::class, 'show'])
+            ->name('fund_allocations.show');
         Route::post('fund-allocations', [App\Http\Controllers\Custodian\FundAllocationController::class, 'store'])
             ->name('fund_allocations.store');
         Route::put('fund-allocations', [App\Http\Controllers\Custodian\FundAllocationController::class, 'updateFromRequest'])

@@ -15,7 +15,9 @@
             <tbody class="divide-y divide-gray-100 bg-white text-sm text-gray-700">
                 @forelse($allocations as $allocation)
                     @php
-                        $allocated = $allocation->total_amount - $allocation->remaining_amount;
+                        $allocated = (float) ($allocation->utilized_amount ?? 0);
+                        $remaining = max((float) $allocation->total_amount - $allocated, 0);
+                        $poCount = (int) ($allocation->po_count ?? 0);
                         $utilization = $allocation->total_amount > 0
                             ? ($allocated / $allocation->total_amount) * 100
                             : 0;
@@ -33,7 +35,7 @@
                         </td>
                         <td class="px-6 py-4 text-right font-semibold text-gray-900">₱{{ number_format($allocation->total_amount, 2) }}</td>
                         <td class="px-6 py-4 text-right font-semibold text-gray-700">₱{{ number_format($allocated, 2) }}</td>
-                        <td class="px-6 py-4 text-right font-bold text-emerald-700">₱{{ number_format($allocation->remaining_amount, 2) }}</td>
+                        <td class="px-6 py-4 text-right font-bold text-emerald-700">₱{{ number_format($remaining, 2) }}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
                                 <div class="h-2 w-32 rounded-full bg-gray-200">
@@ -41,10 +43,16 @@
                                 </div>
                                 <span class="text-xs font-semibold text-gray-600">{{ number_format($utilization, 1) }}%</span>
                             </div>
+                            <p class="mt-1 text-center text-[11px] text-gray-500">{{ number_format($poCount) }} PO linked</p>
                         </td>
                         <td class="px-6 py-4 text-gray-700">{{ $creatorName }}</td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
+                                <button class="view-allocation inline-flex cursor-pointer items-center justify-center rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-sky-700 transition-all hover:-translate-y-0.5 hover:border-sky-300 hover:bg-sky-100"
+                                        data-id="{{ $allocation->id }}"
+                                        title="View allocation details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                                 <button class="edit-allocation inline-flex cursor-pointer items-center justify-center rounded-lg border border-[#1a3a2d]/15 bg-[#f4f8f5] px-3 py-1.5 text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/30 hover:bg-[#eaf4ee]"
                                         data-id="{{ $allocation->id }}"
                                         data-cluster="{{ $allocation->fund_cluster }}"
