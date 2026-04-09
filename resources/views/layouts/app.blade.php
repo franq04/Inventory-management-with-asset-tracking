@@ -191,6 +191,9 @@
             }, 2600);
         };
 
+        // Expose the shared top-right toast for page-level scripts.
+        window.pqsShowToast = showGlobalToast;
+
         const consumeStoredToast = () => {
             try {
                 const raw = window.sessionStorage.getItem(globalToastStorageKey);

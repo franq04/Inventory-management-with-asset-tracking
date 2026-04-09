@@ -1,6 +1,7 @@
 ﻿<?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -15,14 +16,14 @@ return new class extends Migration
             return;
         }
 
-          DB::statement('CREATE TABLE `positions` (
-      `position_id` int(11) NOT NULL,
-      `position_title` varchar(255) NOT NULL,
-      `section_id` int(11) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;');
-          DB::statement('ALTER TABLE `positions`
-      ADD PRIMARY KEY (`position_id`),
-      ADD KEY `idx_positions_section` (`section_id`);');
+        Schema::create('positions', function (Blueprint $table): void {
+            $table->integer('position_id');
+            $table->string('position_title', 255);
+            $table->integer('section_id')->nullable();
+
+            $table->primary('position_id');
+            $table->index('section_id', 'idx_positions_section');
+        });
     }
 
     /**
@@ -30,6 +31,22 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('positions');
+        if (! Schema::hasTable('positions')) {
+            return;
+        }
+
+        // Safety-first rollback: avoid destructive drops unless explicitly forced.
+        $forceDrop = filter_var(env('MIGRATIONS_FORCE_DROP_EXISTING', false), FILTER_VALIDATE_BOOLEAN);
+        $hasData = DB::table('positions')->exists();
+        $hasIncomingForeignKeys = DB::table('information_schema.KEY_COLUMN_USAGE')
+            ->where('TABLE_SCHEMA', DB::getDatabaseName())
+            ->where('REFERENCED_TABLE_NAME', 'positions')
+            ->exists();
+
+        if (($hasData || $hasIncomingForeignKeys) && ! $forceDrop) {
+            return;
+        }
+
+        Schema::drop('positions');
     }
 };

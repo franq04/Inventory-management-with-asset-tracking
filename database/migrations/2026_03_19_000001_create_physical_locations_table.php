@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -38,6 +39,22 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('physical_locations');
+        if (! Schema::hasTable('physical_locations')) {
+            return;
+        }
+
+        // Safety-first rollback: avoid destructive drops unless explicitly forced.
+        $forceDrop = filter_var(env('MIGRATIONS_FORCE_DROP_EXISTING', false), FILTER_VALIDATE_BOOLEAN);
+        $hasData = DB::table('physical_locations')->exists();
+        $hasIncomingForeignKeys = DB::table('information_schema.KEY_COLUMN_USAGE')
+            ->where('TABLE_SCHEMA', DB::getDatabaseName())
+            ->where('REFERENCED_TABLE_NAME', 'physical_locations')
+            ->exists();
+
+        if (($hasData || $hasIncomingForeignKeys) && ! $forceDrop) {
+            return;
+        }
+
+        Schema::drop('physical_locations');
     }
 };

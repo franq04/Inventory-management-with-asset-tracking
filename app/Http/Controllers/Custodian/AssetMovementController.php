@@ -26,6 +26,43 @@ use Illuminate\View\View;
 
 class AssetMovementController extends Controller
 {
+    public function previewTurnover(Request $request): JsonResponse
+    {
+        $this->authorize('turnover', PqsRecord::class);
+
+        $validated = $request->validate([
+            'employee_id' => ['required', 'exists:employees,employee_id'],
+        ]);
+
+        $employeeId = $validated['employee_id'];
+
+        $assets = PqsRecord::query()
+            ->where(function ($query) use ($employeeId): void {
+                $query->where('current_custodian_employee_id', $employeeId)
+                    ->orWhere('accountable_officer_id', $employeeId);
+            })
+            ->orderBy('property_no')
+            ->get(['property_no', 'asset_status']);
+
+        $eligible = $assets
+            ->filter(fn (PqsRecord $asset): bool => $asset->canBeTurnedOver())
+            ->values();
+
+        return $this->jsonResponse([
+            'status' => 'success',
+            'data' => [
+                'summary' => [
+                    'total_assets' => $assets->count(),
+                    'eligible_assets' => $eligible->count(),
+                    'skipped_assets' => $assets->count() - $eligible->count(),
+                    'sample_assets' => $eligible->take(10)->map(fn (PqsRecord $asset): array => [
+                        'property_no' => $asset->property_no,
+                    ])->all(),
+                ],
+            ],
+        ]);
+    }
+
     public function processTurnover(Request $request): JsonResponse
     {
         $this->authorize('turnover', PqsRecord::class);
@@ -66,7 +103,7 @@ class AssetMovementController extends Controller
             ->get();
 
         if ($assets->isEmpty()) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No assets were found for the selected employee.',
                 'data' => [
@@ -86,7 +123,7 @@ class AssetMovementController extends Controller
             ->values();
 
         if ($skippedAssets->isNotEmpty()) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Some selected assets cannot be turned over because they are no longer transferable.',
                 'data' => [
@@ -182,7 +219,7 @@ class AssetMovementController extends Controller
             }
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'message' => 'Employee asset turnover completed successfully.',
             'data' => [
@@ -216,7 +253,7 @@ class AssetMovementController extends Controller
             'to_custodian_employee_id' => ['nullable', 'exists:employees,employee_id'],
             'to_division_id' => ['nullable', 'exists:divisions,division_id'],
             'to_section_id' => ['nullable', 'exists:sections,section_id'],
-            'movement_type' => ['required', 'in:transfer,relocation,inventory_correction,maintenance_out,maintenance_in'],
+            'movement_type' => ['required', 'in:transfer'],
             'reason_code' => ['nullable', 'string', 'max:100'],
             'effective_at' => ['nullable', 'date'],
             'remarks' => ['nullable', 'string', 'max:1000'],
@@ -227,17 +264,25 @@ class AssetMovementController extends Controller
         $location = null;
         if (! empty($validated['to_location_id'])) {
             $location = PhysicalLocation::query()->find($validated['to_location_id']);
+            if (! $location || ! $location->is_active) {
+                return $this->jsonResponse([
+                    'status' => 'error',
+                    'message' => 'Selected target location is inactive or unavailable.',
+                ], 422);
+            }
         }
 
-        $targetLocationId = $validated['to_location_id'] ?? null;
-        $targetCustodianId = $validated['to_custodian_employee_id'] ?? null;
-        $targetDivisionId = $validated['to_division_id'] ?? $location?->division_id;
-        $targetSectionId = $validated['to_section_id'] ?? $location?->section_id;
+        $targetLocationId = $validated['to_location_id'] ?? $pqsRecord->current_location_id;
+        $targetCustodianId = $validated['to_custodian_employee_id'] ?? $pqsRecord->current_custodian_employee_id;
 
-        if (! $targetDivisionId && ! $targetSectionId && ! $targetCustodianId && ! $targetLocationId) {
-            return response()->json([
+        // Server-side source of truth: org assignment follows selected target location.
+        $targetDivisionId = $location?->division_id ?? $pqsRecord->assigned_division_id;
+        $targetSectionId = $location?->section_id ?? $pqsRecord->assigned_section_id;
+
+        if (! $targetDivisionId && ! $targetSectionId && ! $targetLocationId && ! $targetCustodianId) {
+            return $this->jsonResponse([
                 'status' => 'error',
-                'message' => 'Provide at least one transfer target (location, custodian, division, or section).',
+                'message' => 'Provide a valid target location or target employee to process transfer movement.',
             ], 422);
         }
 
@@ -247,14 +292,14 @@ class AssetMovementController extends Controller
                 ->first(['division_id']);
 
             if (! $section) {
-                return response()->json([
+                return $this->jsonResponse([
                     'status' => 'error',
                     'message' => 'Selected section does not exist.',
                 ], 422);
             }
 
             if ($targetDivisionId && (int) $section->division_id !== (int) $targetDivisionId) {
-                return response()->json([
+                return $this->jsonResponse([
                     'status' => 'error',
                     'message' => 'Selected section does not belong to the chosen division.',
                 ], 422);
@@ -269,14 +314,14 @@ class AssetMovementController extends Controller
             && (int) ($pqsRecord->assigned_division_id ?? 0) === (int) ($targetDivisionId ?? 0)
             && (int) ($pqsRecord->assigned_section_id ?? 0) === (int) ($targetSectionId ?? 0)
         ) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'No movement detected. The target assignment matches current asset state.',
             ], 422);
         }
 
         if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST], true)) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Disposed or lost assets cannot be transferred.',
             ], 422);
@@ -295,7 +340,7 @@ class AssetMovementController extends Controller
                 'to_division_id' => $targetDivisionId ?? $pqsRecord->assigned_division_id,
                 'from_section_id' => $pqsRecord->assigned_section_id,
                 'to_section_id' => $targetSectionId ?? $pqsRecord->assigned_section_id,
-                'movement_type' => $validated['movement_type'],
+                'movement_type' => 'transfer',
                 'reason_code' => $validated['reason_code'] ?? null,
                 'effective_at' => $effectiveAt,
                 'recorded_by' => $account?->account_id,
@@ -305,16 +350,11 @@ class AssetMovementController extends Controller
             ]);
 
             $assetStatus = $pqsRecord->asset_status ?: PqsRecord::STATUS_ACTIVE;
-            if ($validated['movement_type'] === 'maintenance_out') {
-                $assetStatus = PqsRecord::STATUS_FOR_REPAIR;
-            }
-            if ($validated['movement_type'] === 'maintenance_in') {
-                $assetStatus = PqsRecord::STATUS_ACTIVE;
-            }
 
             $pqsRecord->update([
                 'current_location_id' => $movement->to_location_id,
                 'current_custodian_employee_id' => $movement->to_custodian_employee_id,
+                'accountable_officer_id' => $movement->to_custodian_employee_id ?: $pqsRecord->accountable_officer_id,
                 'assigned_division_id' => $movement->to_division_id,
                 'assigned_section_id' => $movement->to_section_id,
                 'asset_status' => $assetStatus,
@@ -371,7 +411,7 @@ class AssetMovementController extends Controller
             ]);
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'message' => 'Asset movement has been recorded successfully.',
             'data' => [
@@ -386,7 +426,7 @@ class AssetMovementController extends Controller
         $this->authorize('transfer', $pqsRecord);
 
         if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST], true)) {
-            return response()->json([
+            return $this->jsonResponse([
                 'status' => 'error',
                 'message' => 'Disposed or lost assets cannot be updated to serviceable or unserviceable.',
             ], 422);
@@ -453,7 +493,7 @@ class AssetMovementController extends Controller
             return $movement;
         });
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'message' => $condition === 'unserviceable'
                 ? 'Asset marked as unserviceable successfully.'
@@ -474,6 +514,8 @@ class AssetMovementController extends Controller
         $movements = AssetMovement::query()
             ->where('property_no', $pqsRecord->property_no)
             ->with([
+                'property.currentCustodian',
+                'property.accountableOfficer',
                 'fromLocation',
                 'toLocation',
                 'fromCustodian',
@@ -484,11 +526,13 @@ class AssetMovementController extends Controller
                 'fromSection',
                 'toSection',
             ])
-            ->orderByDesc('effective_at')
             ->orderByDesc('movement_id')
+            ->orderByDesc('effective_at')
             ->paginate($perPage);
 
-        return response()->json([
+        $this->enrichMovementCollectionForDisplay($movements->getCollection());
+
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => [
                 'asset' => $pqsRecord->loadMissing(['currentLocation', 'currentCustodian', 'assignedDivision', 'assignedSection']),
@@ -557,7 +601,7 @@ class AssetMovementController extends Controller
                 'total' => (int) $item->total,
             ]);
 
-        return response()->json([
+        return $this->jsonResponse([
             'status' => 'success',
             'data' => [
                 'totals' => [
@@ -575,6 +619,11 @@ class AssetMovementController extends Controller
         ]);
     }
 
+    private function jsonResponse(array $payload, int $status = 200): JsonResponse
+    {
+        return response()->json($payload, $status, [], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    }
+
     public function report(Request $request): View
     {
         $this->authorize('viewAny', PqsRecord::class);
@@ -583,10 +632,12 @@ class AssetMovementController extends Controller
         $query = $this->buildMovementReportQuery($request);
 
         $movements = (clone $query)
-            ->orderByDesc('effective_at')
             ->orderByDesc('movement_id')
-            ->paginate(15)
+            ->orderByDesc('effective_at')
+            ->paginate(5)
             ->withQueryString();
+
+        $this->enrichMovementCollectionForDisplay($movements->getCollection());
 
         $statsQuery = clone $query;
         $stats = [
@@ -637,12 +688,25 @@ class AssetMovementController extends Controller
         $this->validateReportFilters($request);
 
         $movements = $this->buildMovementReportQuery($request)
-            ->orderByDesc('effective_at')
             ->orderByDesc('movement_id')
+            ->orderByDesc('effective_at')
             ->get();
+
+        $this->enrichMovementCollectionForDisplay($movements);
+
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
 
         return view('inventory.pqs.movements.print', [
             'movements' => $movements,
+            'generatedOnLabel' => now()->format('F d, Y'),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
             'filters' => $request->only([
                 'search',
                 'movement_type',
@@ -663,12 +727,25 @@ class AssetMovementController extends Controller
         $this->validateReportFilters($request);
 
         $movements = $this->buildMovementReportQuery($request)
-            ->orderByDesc('effective_at')
             ->orderByDesc('movement_id')
+            ->orderByDesc('effective_at')
             ->get();
+
+        $this->enrichMovementCollectionForDisplay($movements);
+
+        $account = Auth::user();
+        $preparedByName = $account?->employee?->full_name
+            ?: $account?->username
+            ?: 'System User';
+        $preparedByRole = $account?->role
+            ? ucfirst(str_replace('_', ' ', (string) $account->role))
+            : 'User';
 
         $html = view('inventory.pqs.movements.excel', [
             'movements' => $movements,
+            'generatedOnLabel' => now()->format('F d, Y'),
+            'preparedByName' => $preparedByName,
+            'preparedByRole' => $preparedByRole,
         ])->render();
 
         return response($html)
@@ -682,9 +759,11 @@ class AssetMovementController extends Controller
         $this->validateReportFilters($request);
 
         $movements = $this->buildMovementReportQuery($request)
-            ->orderByDesc('effective_at')
             ->orderByDesc('movement_id')
+            ->orderByDesc('effective_at')
             ->get();
+
+        $this->enrichMovementCollectionForDisplay($movements);
 
         $stream = fopen('php://temp', 'r+');
 
@@ -708,10 +787,10 @@ class AssetMovementController extends Controller
                 $movement->property_no,
                 $movement->property?->article,
                 $movement->movement_type,
-                $movement->fromLocation?->location_name,
-                $movement->toLocation?->location_name,
-                $movement->fromCustodian?->full_name,
-                $movement->toCustodian?->full_name,
+                $movement->from_endpoint_display,
+                $movement->to_endpoint_display,
+                $movement->from_custodian_display,
+                $movement->to_custodian_display,
                 $movement->movedByAccount?->username ?: 'System',
                 $movement->reason_code,
                 $movement->remarks,
@@ -785,6 +864,8 @@ class AssetMovementController extends Controller
         $query = AssetMovement::query()
             ->with([
                 'property',
+                'property.currentCustodian',
+                'property.accountableOfficer',
                 'fromLocation',
                 'toLocation',
                 'fromCustodian',
@@ -827,7 +908,36 @@ class AssetMovementController extends Controller
         }
 
         if ($request->filled('custodian_employee_id')) {
-            $query->where('to_custodian_employee_id', $request->input('custodian_employee_id'));
+            $custodianEmployeeId = (string) $request->input('custodian_employee_id');
+            $fallbackPropertyNos = PqsRecord::query()
+                ->where(function ($propertyQuery) use ($custodianEmployeeId): void {
+                    $propertyQuery->where('current_custodian_employee_id', $custodianEmployeeId)
+                        ->orWhere('accountable_officer_id', $custodianEmployeeId);
+                })
+                ->pluck('property_no')
+                ->filter(fn ($propertyNo) => is_string($propertyNo) && trim($propertyNo) !== '')
+                ->values()
+                ->all();
+
+            // Keep filtering behavior aligned with report/timeline display fallback:
+            // to custodian -> from custodian -> current owner on property record.
+            $query->where(function ($builder) use ($custodianEmployeeId, $fallbackPropertyNos): void {
+                $builder->where('to_custodian_employee_id', $custodianEmployeeId)
+                    ->orWhere(function ($nested) use ($custodianEmployeeId): void {
+                        $nested->whereNull('to_custodian_employee_id')
+                            ->where('from_custodian_employee_id', $custodianEmployeeId);
+                    })
+                    ->orWhere(function ($nested) use ($fallbackPropertyNos): void {
+                        $nested->whereNull('to_custodian_employee_id')
+                            ->whereNull('from_custodian_employee_id');
+
+                        if (! empty($fallbackPropertyNos)) {
+                            $nested->whereIn('property_no', $fallbackPropertyNos);
+                        } else {
+                            $nested->whereRaw('1 = 0');
+                        }
+                    });
+            });
         }
 
         if ($request->filled('batch_reference')) {
@@ -843,5 +953,73 @@ class AssetMovementController extends Controller
         }
 
         return $query;
+    }
+
+    protected function enrichMovementCollectionForDisplay(iterable $movements): void
+    {
+        foreach ($movements as $movement) {
+            if (! $movement instanceof AssetMovement) {
+                continue;
+            }
+
+            $this->enrichMovementForDisplay($movement);
+        }
+    }
+
+    protected function enrichMovementForDisplay(AssetMovement $movement): void
+    {
+        $fromLocation = trim((string) ($movement->fromLocation?->location_name ?? ''));
+        $toLocation = trim((string) ($movement->toLocation?->location_name ?? ''));
+        $fromCustodian = trim((string) ($movement->fromCustodian?->full_name ?? ''));
+        $toCustodian = trim((string) ($movement->toCustodian?->full_name ?? ''));
+        $currentOwner = $this->resolveMovementCurrentOwner($movement);
+
+        $movement->setAttribute('current_owner_display', $currentOwner ?: 'Unspecified');
+        $movement->setAttribute('from_custodian_display', $fromCustodian ?: ($currentOwner ?: 'Unspecified'));
+        $movement->setAttribute('to_custodian_display', $toCustodian ?: ($currentOwner ?: 'Unspecified'));
+        $movement->setAttribute('from_endpoint_display', $this->formatMovementEndpoint($fromLocation, $fromCustodian, $currentOwner));
+        $movement->setAttribute('to_endpoint_display', $this->formatMovementEndpoint($toLocation, $toCustodian, $currentOwner));
+    }
+
+    protected function resolveMovementCurrentOwner(AssetMovement $movement): ?string
+    {
+        $owner = trim((string) (
+            $movement->toCustodian?->full_name
+            ?? $movement->fromCustodian?->full_name
+            ?? $movement->property?->currentCustodian?->full_name
+            ?? $movement->property?->accountableOfficer?->full_name
+            ?? ''
+        ));
+
+        return $owner !== '' ? $owner : null;
+    }
+
+    protected function formatMovementEndpoint(?string $location, ?string $custodian, ?string $currentOwner): string
+    {
+        $locationName = trim((string) ($location ?? ''));
+        $custodianName = trim((string) ($custodian ?? ''));
+        $ownerName = trim((string) ($currentOwner ?? ''));
+
+        if ($custodianName !== '' && $locationName !== '') {
+            return sprintf('%s @ %s', $custodianName, $locationName);
+        }
+
+        if ($custodianName !== '') {
+            return $custodianName;
+        }
+
+        if ($locationName !== '' && $ownerName !== '') {
+            return sprintf('%s (Owner: %s)', $locationName, $ownerName);
+        }
+
+        if ($locationName !== '') {
+            return $locationName;
+        }
+
+        if ($ownerName !== '') {
+            return $ownerName;
+        }
+
+        return 'Unspecified';
     }
 }

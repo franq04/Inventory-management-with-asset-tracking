@@ -84,42 +84,33 @@
                 <thead class="border-b">
                     <tr class="text-left text-gray-500 uppercase tracking-wider text-xs">
                         <th class="px-2 sm:px-4 py-3">PR Number</th>
-                        <th class="px-2 sm:px-4 py-3">Requester</th>
-                        <th class="px-2 sm:px-4 py-3 hidden md:table-cell">Status</th>
+                        <th class="px-2 sm:px-4 py-3">Status</th>
                         <th class="px-2 sm:px-4 py-3">Total Cost</th>
-                        <th class="px-2 sm:px-4 py-3 hidden lg:table-cell">Submitted</th>
                         <th class="px-2 sm:px-4 py-3 text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($purchaseRequests as $pr)
-                        @php
-                            $requesterName = $pr->requester?->employee 
-                                ? trim($pr->requester->employee->first_name . ' ' . $pr->requester->employee->last_name)
-                                : ($pr->requester?->username ?? 'Unknown');
-                        @endphp
                         <tr class="border-b hover:bg-gray-50">
-                            <td class="px-2 sm:px-4 py-3 font-semibold text-xs sm:text-sm">{{ $pr->pr_no }}</td>
-                            <td class="px-2 sm:px-4 py-3 text-xs sm:text-sm">{{ $requesterName }}</td>
-                            <td class="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden md:table-cell">
+                            <td class="px-2 sm:px-4 py-2.5 font-semibold text-xs sm:text-sm">{{ $pr->pr_no }}</td>
+                            <td class="px-2 sm:px-4 py-2.5 text-xs sm:text-sm">
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold
                                            {{ $pr->status?->status_name === 'Recommended' ? 'bg-emerald-100 text-emerald-700' : 
                                               ($pr->status?->status_name === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700') }}">
                                     {{ $pr->status?->status_name ?? '—' }}
                                 </span>
                             </td>
-                            <td class="px-2 sm:px-4 py-3 text-xs sm:text-sm">₱{{ number_format($pr->total_estimated_cost ?? 0, 2) }}</td>
-                            <td class="px-2 sm:px-4 py-3 text-xs sm:text-sm hidden lg:table-cell">{{ optional($pr->created_at)->format('M d, Y') }}</td>
-                            <td class="px-2 sm:px-4 py-3 text-center">
+                            <td class="px-2 sm:px-4 py-2.5 text-xs sm:text-sm">₱{{ number_format($pr->total_estimated_cost ?? 0, 2) }}</td>
+                            <td class="px-2 sm:px-4 py-2.5 text-center">
                                 <a href="{{ route('division_head.requests.show', $pr) }}" 
-                                   class="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 rounded-md bg-[#1a3a2d] text-white text-xs sm:text-sm hover:bg-[#2d5a45] transition-colors">
+                                   class="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-md bg-[#1a3a2d] text-white text-xs sm:text-[11px] hover:bg-[#2d5a45] transition-colors">
                                     Open
                                 </a>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-2 sm:px-4 py-8 sm:py-12 text-center text-gray-500">
+                            <td colspan="4" class="px-2 sm:px-4 py-8 sm:py-12 text-center text-gray-500">
                                 <i class="fas fa-inbox fa-2x sm:fa-3x text-gray-300 mb-3"></i>
                                 <p class="font-medium text-sm sm:text-base">No purchase requests found.</p>
                                 <p class="text-xs mt-1">Requests awaiting your action will appear here.</p>

@@ -119,13 +119,10 @@
             <table id="custodianPurchaseRequestsTable" class="min-w-full text-sm">
                 <thead class="bg-[#f5f8f6] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                     <tr class="text-left">
-                        <th class="px-4 py-3 font-semibold">PR Number</th>
-                        <th class="px-4 py-3 font-semibold">Requested By</th>
-                        <th class="px-4 py-3 font-semibold">Division / Section</th>
-                        <th class="px-4 py-3 font-semibold">Status</th>
-                        <th class="px-4 py-3 font-semibold">Total Cost</th>
-                        <th class="px-4 py-3 font-semibold text-right">Submitted</th>
-                        <th class="px-4 py-3 font-semibold text-center">Actions</th>
+                        <th class="px-4 py-2.5 font-semibold">PR Number</th>
+                        <th class="px-4 py-2.5 font-semibold">Status</th>
+                        <th class="px-4 py-2.5 font-semibold">Total Cost</th>
+                        <th class="px-4 py-2.5 font-semibold text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,18 +139,10 @@
                             ])->filter()->implode(' ');
                         @endphp
                         <tr data-row data-status-id="{{ $request->status_id }}" data-created-at="{{ optional($request->created_at)->format('Y-m-d') }}" data-search="{{ e(strtolower($searchTokens)) }}" class="border-b border-gray-100/90 last:border-0 hover:bg-[#f6fbf8] transition-colors duration-200">
-                            <td class="px-4 py-4 align-top">
+                            <td class="px-4 py-3 align-top">
                                 <span class="block font-semibold text-[#1a3a2d]">{{ $request->pr_no }}</span>
-                                <span class="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500">PR Record</span>
                             </td>
-                            <td class="px-4 py-4 align-top text-gray-700 font-medium">{{ $request->requester?->username ?? 'Unknown' }}</td>
-                            <td class="px-4 py-4 align-top text-gray-600">
-                                <div class="text-xs font-semibold leading-5">
-                                    <span class="text-gray-800">{{ $request->division?->division_name ?? '—' }}</span>
-                                    <span class="block text-gray-500 font-normal">{{ $request->section?->section_name ?? '—' }}</span>
-                                </div>
-                            </td>
-                            <td class="px-4 py-4 align-top">
+                            <td class="px-4 py-3 align-top">
                                 {{-- NEW: Dynamic Status Colors --}}
                                 @php
                                     $statusName = strtolower($request->status?->status_name ?? 'unknown');
@@ -168,16 +157,15 @@
                                         $statusColorClasses = 'bg-sky-50 text-sky-700 border-sky-200';
                                     }
                                 @endphp
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold capitalize border {{ $statusColorClasses }}">
+                                <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold capitalize border {{ $statusColorClasses }}">
                                     <i class="fas fa-circle text-[8px]"></i>{{ $request->status?->status_name ?? 'Unknown' }}
                                 </span>
                             </td>
-                            <td class="px-4 py-4 align-top">
-                                <span class="inline-flex rounded-full bg-[#f2f7f4] px-3 py-1.5 text-sm font-semibold text-gray-800">₱{{ number_format((float) $request->total_estimated_cost, 2) }}</span>
+                            <td class="px-4 py-3 align-top">
+                                <span class="inline-flex rounded-full bg-[#f2f7f4] px-2.5 py-1 text-xs font-semibold text-gray-800">₱{{ number_format((float) $request->total_estimated_cost, 2) }}</span>
                             </td>
-                            <td class="px-4 py-4 align-top text-right text-gray-500 text-xs leading-5">{{ optional($request->created_at)->format('M d, Y h:i A') }}</td>
-                            <td class="px-4 py-4 align-top text-center">
-                                <button class="js-view-custodian-pr inline-flex items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md"
+                            <td class="px-4 py-3 align-top text-center">
+                                <button class="js-view-custodian-pr inline-flex items-center gap-1.5 rounded-lg border border-[#1a3a2d]/10 bg-[#f4f8f5] px-3 py-2 text-[11px] font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md"
                                     data-show-url="{{ route($routes['show'], [$routeParam => $request]) }}"
                                     data-update-url="{{ route($routes['update'], [$routeParam => $request]) }}">
                                     <i class="fas fa-edit"></i>
@@ -187,7 +175,7 @@
                         </tr>
                     @empty
                         <tr data-static-row="empty">
-                            <td colspan="7" class="px-4 py-16 text-center text-gray-500">
+                            <td colspan="4" class="px-4 py-16 text-center text-gray-500">
                                 <i class="fas fa-clipboard-list text-5xl text-gray-300 mb-4"></i>
                                 <p class="font-medium text-lg">No purchase requests to review.</p>
                                 <p class="text-sm">New submissions will appear here automatically.</p>
@@ -195,7 +183,7 @@
                         </tr>
                     @endforelse
                     <tr id="purchaseRequestsNoResults" class="hidden">
-                        <td colspan="7" class="px-4 py-12 text-center text-gray-500">
+                        <td colspan="4" class="px-4 py-12 text-center text-gray-500">
                             <i class="fas fa-search-minus text-3xl text-gray-300 mb-3"></i>
                             <p class="font-medium">No matching results.</p>
                             <p class="text-xs">Try adjusting your search terms.</p>

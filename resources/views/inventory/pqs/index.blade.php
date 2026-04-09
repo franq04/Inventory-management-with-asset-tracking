@@ -43,88 +43,103 @@
         <div class="space-y-6 lg:col-span-2">
             {{-- Enhanced Filters & Actions --}}
             <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
-                <form id="pqsFiltersForm" method="GET" class="space-y-4" action="{{ route('pqs.index') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                        <div class="relative lg:col-span-2">
+                <form id="pqsFiltersForm" method="GET" class="space-y-5" action="{{ route('pqs.index') }}">
+                    <div class="space-y-5">
+                        <div class="relative">
                             <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
                             <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
                             <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search property no, description, employee, category, location..." class="w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] py-[9px] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
                         </div>
-                        <div id="categoryDropdown" class="relative z-20">
-                            <label for="category" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                            <div id="categoryDropdown" class="relative z-20">
+                                <label for="category" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
 
-                            <input type="hidden" name="category" id="category" value="{{ $categoryFilter ?? '' }}" data-auto-submit>
+                                <input type="hidden" name="category" id="category" value="{{ $categoryFilter ?? '' }}" data-auto-submit>
 
-                            <button id="categoryDropdownToggle" type="button" class="mt-1 flex w-full py-[9px] items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50" aria-haspopup="listbox" aria-expanded="false">
-                                <span id="categoryDropdownLabel" class="block truncate text-gray-700 text-sm">
-                                    {{ $categoryFilter ? ($categories->where('cat_id', $categoryFilter)->first()->cat_name ?? 'All Categories') : 'All Categories' }}
-                                </span>
-                                <i id="categoryDropdownChevron" class="fas fa-chevron-down text-[#2d5a4a]/45 text-xs transition-transform duration-200"></i>
-                            </button>
+                                <button id="categoryDropdownToggle" type="button" class="mt-1 flex w-full py-[9px] items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="categoryDropdownLabel" class="block truncate text-gray-700 text-sm">
+                                        {{ $categoryFilter ? ($categories->where('cat_id', $categoryFilter)->first()->cat_name ?? 'All Categories') : 'All Categories' }}
+                                    </span>
+                                    <i id="categoryDropdownChevron" class="fas fa-chevron-down text-[#2d5a4a]/45 text-xs transition-transform duration-200"></i>
+                                </button>
 
-                            <div id="categoryDropdownMenu" class="absolute z-50 mt-2 hidden w-full origin-top-right rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                <div class="px-3 pt-3 pb-2 border-b border-gray-50">
-                                    <div class="relative">
-                                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                                        <input id="categoryDropdownSearch" type="text" placeholder="Search prefix..." class="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                <div id="categoryDropdownMenu" class="absolute z-50 mt-2 hidden w-full origin-top-right rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                    <div class="px-3 pt-3 pb-2 border-b border-gray-50">
+                                        <div class="relative">
+                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                            <input id="categoryDropdownSearch" type="text" placeholder="Search prefix..." class="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                        </div>
                                     </div>
-                                </div>
 
-                                <ul id="categoryDropdownOptions" class="max-h-56 overflow-y-auto py-1 custom-scrollbar" role="listbox">
-                                    <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ !$categoryFilter ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="" data-name="All Categories" role="option" aria-selected="{{ !$categoryFilter ? 'true' : 'false' }}">
-                                        <span class="block truncate">All Categories</span>
-                                        <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ !$categoryFilter ? '' : 'hidden' }}">
-                                            <i class="fas fa-check text-xs"></i>
-                                        </span>
-                                    </li>
-                                    @foreach ($categories as $category)
-                                        <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ (string) $categoryFilter === (string) $category->cat_id ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="{{ $category->cat_id }}" data-name="{{ $category->cat_name }}" role="option" aria-selected="{{ (string) $categoryFilter === (string) $category->cat_id ? 'true' : 'false' }}">
-                                            <span class="block truncate">{{ $category->cat_name }}</span>
-                                            <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ (string) $categoryFilter === (string) $category->cat_id ? '' : 'hidden' }}">
+                                    <ul id="categoryDropdownOptions" class="max-h-56 overflow-y-auto py-1 custom-scrollbar" role="listbox">
+                                        <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ !$categoryFilter ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="" data-name="All Categories" role="option" aria-selected="{{ !$categoryFilter ? 'true' : 'false' }}">
+                                            <span class="block truncate">All Categories</span>
+                                            <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ !$categoryFilter ? '' : 'hidden' }}">
                                                 <i class="fas fa-check text-xs"></i>
                                             </span>
                                         </li>
-                                    @endforeach
+                                        @foreach ($categories as $category)
+                                            <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ (string) $categoryFilter === (string) $category->cat_id ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="{{ $category->cat_id }}" data-name="{{ $category->cat_name }}" role="option" aria-selected="{{ (string) $categoryFilter === (string) $category->cat_id ? 'true' : 'false' }}">
+                                                <span class="block truncate">{{ $category->cat_name }}</span>
+                                                <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ (string) $categoryFilter === (string) $category->cat_id ? '' : 'hidden' }}">
+                                                    <i class="fas fa-check text-xs"></i>
+                                                </span>
+                                            </li>
+                                        @endforeach
 
-                                    <li id="categoryDropdownEmpty" class="hidden py-3 px-4 text-center text-sm text-gray-500 italic">
-                                        No categories found
-                                    </li>
-                                </ul>
+                                        <li id="categoryDropdownEmpty" class="hidden py-3 px-4 text-center text-sm text-gray-500 italic">
+                                            No categories found
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div>
+                                 <label for="assignment" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Assignment Status</label>
+                                <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
+                                    <option value="" @selected(!$assignmentFilter)>Any</option>
+                                    <option value="ics" @selected($assignmentFilter === 'ics')>With ICS</option>
+                                    <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
+                                    <option value="unassigned" @selected($assignmentFilter === 'unassigned')>Unassigned</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="date_from" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
+                                <input id="date_from" name="date_from" type="date" value="{{ $dateFrom ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
+                            </div>
+                            <div>
+                                <label for="date_to" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
+                                <input id="date_to" name="date_to" type="date" value="{{ $dateTo ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
                             </div>
                         </div>
-                        <div>
-                             <label for="assignment" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Assignment Status</label>
-                            <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
-                                <option value="" @selected(!$assignmentFilter)>Any</option>
-                                <option value="ics" @selected($assignmentFilter === 'ics')>With ICS</option>
-                                <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
-                                <option value="unassigned" @selected($assignmentFilter === 'unassigned')>Unassigned</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="date_from" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
-                            <input id="date_from" name="date_from" type="date" value="{{ $dateFrom ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
-                        </div>
-                        <div>
-                            <label for="date_to" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
-                            <input id="date_to" name="date_to" type="date" value="{{ $dateTo ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
-                        </div>
                     </div>
-                     <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-100 pt-4">
-                         <span class="text-sm text-gray-500"><span id="pqs-record-count">{{ number_format($records->total()) }}</span> records found</span>
-                         <div class="flex flex-wrap items-center gap-2">
-                            <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
+                     <div class="flex flex-col gap-4 border-t border-gray-100 pt-5 lg:flex-row lg:items-start lg:justify-between">
+                         <span class="text-sm font-medium text-gray-500 lg:pt-2"><span id="pqs-record-count">{{ number_format($records->total()) }}</span> records found</span>
+                         <div class="flex w-full flex-col gap-3 xl:w-auto xl:items-end">
+                            <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="inline-flex h-9 w-9 items-center justify-center self-start rounded-xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white xl:self-end" title="Reset Filters">
                                <i class="fas fa-undo"></i>
-                           </a>
-                          <a href="{{ route('pqs.movements.report') }}" class="inline-flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100">
-                              <i class="fas fa-timeline"></i> Movement Report
-                          </a>
-                           <button type="button" id="pqsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
-                                <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
-                            </button>
-                            <button type="button" id="pqsExportExcelBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
-                                <i class="fas fa-file-excel text-green-600"></i> Export Excel
-                            </button>
+                            </a>
+                            <div class="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:gap-3">
+                                <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/45 p-1.5 sm:items-center xl:w-auto">
+                                    <a href="{{ route('pqs.movements.report') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                        <i class="fas fa-timeline"></i> Movement Report
+                                    </a>
+                                    <button type="button" data-open-location-registry-modal class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                        <i class="fas fa-plus"></i> Add Location
+                                    </button>
+                                    <button type="button" id="pqsBulkTurnoverOpen" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                        <i class="fas fa-people-arrows-left-right"></i> Bulk Turnover
+                                    </button>
+                                </div>
+                                <div class="hidden h-8 w-px bg-gray-200 xl:block"></div>
+                                <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-gray-200 bg-gray-50/65 p-1.5 sm:items-center xl:w-auto">
+                                    <button type="button" id="pqsPrintPdfBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
+                                        <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
+                                    </button>
+                                    <button type="button" id="pqsExportExcelBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
+                                        <i class="fas fa-file-excel text-green-600"></i> Export Excel
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                      <button type="submit" data-no-global-loading="true" class="sr-only">Submit</button>
@@ -222,6 +237,109 @@
     </div>
 </div>
 @include('inventory.pqs.partials._view-modal')
+
+<div id="pqsBulkTurnoverModal" class="fixed inset-0 z-[55] hidden bg-black/45 px-4 py-6 opacity-0 transition duration-300" role="dialog" aria-modal="true" aria-labelledby="pqsBulkTurnoverTitle">
+    <div class="mx-auto flex h-full max-w-3xl items-center justify-center">
+        <div class="modal-panel w-full max-h-full overflow-hidden rounded-2xl bg-white opacity-0 scale-95 translate-y-2 shadow-2xl transition duration-300">
+            <div class="flex items-start justify-between border-b px-6 py-4">
+                <div>
+                    <h3 id="pqsBulkTurnoverTitle" class="text-lg font-semibold text-[#1a3a2d]">Bulk Employee Turnover</h3>
+                    <p class="mt-1 text-sm text-gray-600">This action can move multiple assets. Review and confirm before processing.</p>
+                </div>
+                <button type="button" data-close-bulk-turnover class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="max-h-[70vh] overflow-y-auto px-6 py-5">
+                <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <strong>Scope warning:</strong> this applies to all transferable assets under the selected employee, not only the currently viewed item.
+                </div>
+
+                <div id="pqsTurnoverPreview" class="mb-4 hidden rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-xs text-gray-700">
+                    <p id="pqsTurnoverPreviewSummary" class="font-semibold text-gray-800"></p>
+                    <p id="pqsTurnoverPreviewHint" class="mt-1 text-gray-600"></p>
+                    <ul id="pqsTurnoverPreviewAssets" class="mt-2 list-disc space-y-1 pl-4 text-gray-700"></ul>
+                </div>
+
+                <form id="pqsTurnoverForm" class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    <div>
+                        <label for="pqsTurnoverEmployee" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Resigning Employee</label>
+                        <div class="relative mt-1">
+                            <button id="pqsTurnoverEmployeeToggle" type="button" class="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                                <span id="pqsTurnoverEmployeeLabel">Select employee</span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </button>
+                            <div id="pqsTurnoverEmployeePanel" class="absolute z-30 mt-1 hidden w-full rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                                <input id="pqsTurnoverEmployeeSearch" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" placeholder="Search employee...">
+                                <ul id="pqsTurnoverEmployeeList" class="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-100"></ul>
+                            </div>
+                        </div>
+                        <select id="pqsTurnoverEmployee" name="employee_id" class="hidden">
+                            <option value="">Select employee</option>
+                            @foreach($turnoverEmployees as $employee)
+                                <option value="{{ $employee->employee_id }}">
+                                    {{ $employee->full_name }} ({{ $employee->employee_id }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <p data-turnover-error-for="employee_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                    </div>
+
+                    <div>
+                        <label for="pqsTurnoverLocation" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Stockroom Location</label>
+                        <select id="pqsTurnoverLocation" name="stockroom_location_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                            <option value="">Select stockroom</option>
+                            @forelse($turnoverLocations as $location)
+                                <option value="{{ $location->location_id }}">
+                                    {{ $location->location_name }}{{ $location->location_code ? ' ('.$location->location_code.')' : '' }}
+                                </option>
+                            @empty
+                                <option value="" disabled>No active stockroom locations found</option>
+                            @endforelse
+                        </select>
+                        @if($turnoverLocations->isEmpty())
+                            <p id="pqsTurnoverStockroomHint" class="mt-1 text-xs font-medium text-amber-700">No active stockroom locations are available yet. Create one first in location management.</p>
+                        @endif
+                        <p data-turnover-error-for="stockroom_location_id" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                    </div>
+
+                    <div>
+                        <label for="pqsTurnoverEffectiveAt" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Effective Date</label>
+                        <input id="pqsTurnoverEffectiveAt" name="effective_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                        <p data-turnover-error-for="effective_at" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                    </div>
+
+                    <div>
+                        <label for="pqsTurnoverRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks</label>
+                        <textarea id="pqsTurnoverRemarks" name="remarks" rows="3" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Optional turnover notes"></textarea>
+                        <p data-turnover-error-for="remarks" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="pqsTurnoverConfirm" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Type CONFIRM to proceed</label>
+                        <input id="pqsTurnoverConfirm" type="text" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm uppercase" placeholder="CONFIRM">
+                    </div>
+
+                    <div class="md:col-span-2 flex flex-wrap items-center gap-3">
+                        <button id="pqsTurnoverSubmit" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                            <i class="fas fa-people-arrows"></i>
+                            Process Turnover
+                        </button>
+                        <button type="button" data-close-bulk-turnover class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@include('inventory.locations.partials._add-modal', [
+    'locationRegistryStoreRoute' => route('physical_locations.store'),
+    'locationRegistryParents' => $transferLocations,
+])
 @endsection
 
 @push('scripts')
@@ -339,6 +457,9 @@
             setLoading(false);
         }
     };
+
+    // Expose a safe refresh hook for other page scripts (e.g., modal actions).
+    window.pqsFetchRecords = fetchRecords;
 
     const debouncedFetch = () => {
         clearTimeout(debounceTimer);
@@ -559,11 +680,25 @@
     const currentSectionEl = document.getElementById('pqsViewCurrentSection');
     const lastMovementEl = document.getElementById('pqsViewLastMovement');
     const movementTimelineEl = document.getElementById('pqsMovementTimeline');
+    const movementTimelinePager = document.getElementById('pqsMovementTimelinePager');
+    const timelinePrevBtn = document.getElementById('pqsTimelinePrev');
+    const timelineNextBtn = document.getElementById('pqsTimelineNext');
+    const timelinePageInfo = document.getElementById('pqsTimelinePageInfo');
     const transferForm = document.getElementById('pqsTransferForm');
     const transferSubmit = document.getElementById('pqsTransferSubmit');
     const transferError = document.getElementById('pqsTransferError');
     const transferLocation = document.getElementById('pqsTransferLocation');
+    const transferLocationToggle = document.getElementById('pqsTransferLocationToggle');
+    const transferLocationLabel = document.getElementById('pqsTransferLocationLabel');
+    const transferLocationPanel = document.getElementById('pqsTransferLocationPanel');
+    const transferLocationSearch = document.getElementById('pqsTransferLocationSearch');
+    const transferLocationList = document.getElementById('pqsTransferLocationList');
     const transferCustodian = document.getElementById('pqsTransferCustodian');
+    const transferCustodianToggle = document.getElementById('pqsTransferCustodianToggle');
+    const transferCustodianLabel = document.getElementById('pqsTransferCustodianLabel');
+    const transferCustodianPanel = document.getElementById('pqsTransferCustodianPanel');
+    const transferCustodianSearch = document.getElementById('pqsTransferCustodianSearch');
+    const transferCustodianList = document.getElementById('pqsTransferCustodianList');
     const transferDivision = document.getElementById('pqsTransferDivision');
     const transferSection = document.getElementById('pqsTransferSection');
     const transferReason = document.getElementById('pqsTransferReason');
@@ -572,8 +707,8 @@
     const transferFieldErrors = Array.from(document.querySelectorAll('[data-transfer-error-for]'));
     const transferInputMap = {
         movement_type: transferMovementType,
-        to_location_id: transferLocation,
-        to_custodian_employee_id: transferCustodian,
+        to_location_id: transferLocationToggle,
+        to_custodian_employee_id: transferCustodianToggle,
         to_division_id: transferDivision,
         to_section_id: transferSection,
         reason_code: transferReason,
@@ -581,12 +716,26 @@
     };
     const turnoverForm = document.getElementById('pqsTurnoverForm');
     const turnoverSubmit = document.getElementById('pqsTurnoverSubmit');
-    const turnoverError = document.getElementById('pqsTurnoverError');
-    const turnoverSuccess = document.getElementById('pqsTurnoverSuccess');
     const turnoverEmployee = document.getElementById('pqsTurnoverEmployee');
+    const turnoverEmployeeToggle = document.getElementById('pqsTurnoverEmployeeToggle');
+    const turnoverEmployeeLabel = document.getElementById('pqsTurnoverEmployeeLabel');
+    const turnoverEmployeePanel = document.getElementById('pqsTurnoverEmployeePanel');
+    const turnoverEmployeeSearch = document.getElementById('pqsTurnoverEmployeeSearch');
+    const turnoverEmployeeList = document.getElementById('pqsTurnoverEmployeeList');
     const turnoverLocation = document.getElementById('pqsTurnoverLocation');
+    const turnoverStockroomHint = document.getElementById('pqsTurnoverStockroomHint');
     const turnoverEffectiveAt = document.getElementById('pqsTurnoverEffectiveAt');
     const turnoverRemarks = document.getElementById('pqsTurnoverRemarks');
+    const turnoverConfirm = document.getElementById('pqsTurnoverConfirm');
+    const bulkTurnoverOpenBtn = document.getElementById('pqsBulkTurnoverOpen');
+    const bulkTurnoverModal = document.getElementById('pqsBulkTurnoverModal');
+    const bulkTurnoverModalPanel = bulkTurnoverModal ? bulkTurnoverModal.querySelector('.modal-panel') : null;
+    const bulkTurnoverCloseEls = bulkTurnoverModal ? Array.from(bulkTurnoverModal.querySelectorAll('[data-close-bulk-turnover]')) : [];
+    const turnoverPreview = document.getElementById('pqsTurnoverPreview');
+    const turnoverPreviewSummary = document.getElementById('pqsTurnoverPreviewSummary');
+    const turnoverPreviewHint = document.getElementById('pqsTurnoverPreviewHint');
+    const turnoverPreviewAssets = document.getElementById('pqsTurnoverPreviewAssets');
+    let restoreBulkTurnoverBodyOverflowOnClose = false;
     const actionTabButtons = Array.from(document.querySelectorAll('[data-pqs-action-tab]'));
     const detailSections = Array.from(document.querySelectorAll('.pqs-detail-section'));
     const actionWorkspace = document.getElementById('pqsActionWorkspace');
@@ -602,7 +751,7 @@
     const conditionUnserviceableBtn = document.getElementById('pqsConditionUnserviceable');
     const turnoverFieldErrors = Array.from(document.querySelectorAll('[data-turnover-error-for]'));
     const turnoverInputMap = {
-        employee_id: turnoverEmployee,
+        employee_id: turnoverEmployeeToggle,
         stockroom_location_id: turnoverLocation,
         effective_at: turnoverEffectiveAt,
         remarks: turnoverRemarks,
@@ -672,6 +821,12 @@
     const recTopLocations = document.getElementById('pqsRecTopLocations');
     const recRefresh = document.getElementById('pqsReconcileRefresh');
     const reconcileEndpoint = "{{ route('pqs.reconciliation.summary') }}";
+    const turnoverPreviewEndpoint = "{{ route('pqs.movements.turnover.preview') }}";
+    const timelineEndpointTemplate = "{{ route('pqs.movements.timeline', ['pqsRecord' => '__PROPERTY__']) }}";
+    const timelinePageSize = 3;
+    let timelineRequestToken = 0;
+    let timelineCurrentPage = 1;
+    let timelineLastPage = 1;
 
     const setText = (element, value, fallback = '—') => {
         if (!element) {
@@ -865,24 +1020,36 @@
         transferSubmit.disabled = false;
     };
 
-    const setTurnoverError = (message = '') => {
-        if (!turnoverError) {
+    const notifySuccess = (message) => {
+        const text = String(message || '').trim();
+        if (!text) {
             return;
         }
 
-        const hasMessage = String(message || '').trim() !== '';
-        turnoverError.classList.toggle('hidden', !hasMessage);
-        turnoverError.textContent = hasMessage ? message : '';
+        if (typeof window.pqsShowToast === 'function') {
+            window.pqsShowToast(text, 'success');
+            return;
+        }
+
+        if (window.alertify && typeof window.alertify.success === 'function') {
+            window.alertify.success(text);
+        }
     };
 
-    const setTurnoverSuccess = (message = '') => {
-        if (!turnoverSuccess) {
+    const notifyError = (message) => {
+        const text = String(message || '').trim();
+        if (!text) {
             return;
         }
 
-        const hasMessage = String(message || '').trim() !== '';
-        turnoverSuccess.classList.toggle('hidden', !hasMessage);
-        turnoverSuccess.textContent = hasMessage ? message : '';
+        if (typeof window.pqsShowToast === 'function') {
+            window.pqsShowToast(text, 'error');
+            return;
+        }
+
+        if (window.alertify && typeof window.alertify.error === 'function') {
+            window.alertify.error(text);
+        }
     };
 
     const clearTurnoverFieldErrors = () => {
@@ -951,6 +1118,144 @@
             turnoverSubmit.innerHTML = turnoverSubmit.dataset.originalHtml;
         }
         turnoverSubmit.disabled = false;
+    };
+
+    const setTurnoverPreview = (payload = null) => {
+        if (!turnoverPreview || !turnoverPreviewSummary || !turnoverPreviewHint || !turnoverPreviewAssets) {
+            return;
+        }
+
+        if (!payload) {
+            turnoverPreview.classList.add('hidden');
+            turnoverPreviewSummary.textContent = '';
+            turnoverPreviewHint.textContent = '';
+            turnoverPreviewAssets.innerHTML = '';
+            return;
+        }
+
+        const totalAssets = Number(payload.total_assets || 0);
+        const eligibleAssets = Number(payload.eligible_assets || 0);
+        const skippedAssets = Number(payload.skipped_assets || 0);
+        const items = Array.isArray(payload.sample_assets) ? payload.sample_assets : [];
+
+        turnoverPreview.classList.remove('hidden');
+        turnoverPreviewSummary.textContent = `${eligibleAssets.toLocaleString('en-PH')} eligible of ${totalAssets.toLocaleString('en-PH')} total assets`;
+        turnoverPreviewHint.textContent = skippedAssets > 0
+            ? `${skippedAssets.toLocaleString('en-PH')} item(s) are non-transferable and will be skipped.`
+            : 'All listed assets are transferable.';
+
+        if (items.length === 0) {
+            turnoverPreviewAssets.innerHTML = '<li class="list-none text-gray-500 italic">No asset preview available.</li>';
+            return;
+        }
+
+        turnoverPreviewAssets.innerHTML = items
+            .map((item) => `<li>${escapeHtml(item.property_no || 'Unknown Property')}</li>`)
+            .join('');
+    };
+
+    const loadTurnoverPreview = async () => {
+        const employeeId = turnoverEmployee?.value || '';
+        if (!employeeId) {
+            setTurnoverPreview(null);
+            return;
+        }
+
+        try {
+            const response = await fetch(turnoverPreviewEndpoint, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                },
+                body: JSON.stringify({ employee_id: employeeId }),
+            });
+
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setTurnoverPreview(null);
+                return;
+            }
+
+            setTurnoverPreview(data?.data?.summary || null);
+        } catch (error) {
+            setTurnoverPreview(null);
+        }
+    };
+
+    const openBulkTurnoverModal = () => {
+        if (!bulkTurnoverModal) {
+            return;
+        }
+
+        if (!bulkTurnoverModal.classList.contains('hidden')) {
+            return;
+        }
+
+        restoreBulkTurnoverBodyOverflowOnClose = !document.body.classList.contains('overflow-hidden');
+        bulkTurnoverModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                bulkTurnoverModal.scrollTop = 0;
+                if (bulkTurnoverModalPanel) {
+                    bulkTurnoverModalPanel.scrollTop = 0;
+                    bulkTurnoverModalPanel.querySelectorAll('.overflow-y-auto, .overflow-y-scroll').forEach((element) => {
+                        element.scrollTop = 0;
+                    });
+                }
+
+                bulkTurnoverModal.classList.remove('opacity-0');
+                bulkTurnoverModalPanel?.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            });
+        });
+        document.body.classList.add('overflow-hidden');
+
+        clearTurnoverFieldErrors();
+        setTurnoverPreview(null);
+        if (turnoverConfirm) {
+            turnoverConfirm.value = '';
+            turnoverConfirm.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+            turnoverConfirm.classList.add('border-gray-200');
+        }
+        if (turnoverEmployeeSearch) {
+            turnoverEmployeeSearch.value = '';
+        }
+        closeTurnoverSearchPanels();
+        setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
+
+        setTimeout(() => {
+            const focusTarget = turnoverEmployeeToggle || turnoverEmployee || turnoverLocation;
+            if (focusTarget) {
+                try {
+                    focusTarget.focus({ preventScroll: true });
+                } catch (error) {
+                    focusTarget.focus();
+                }
+            }
+        }, 300);
+    };
+
+    const closeBulkTurnoverModal = () => {
+        if (!bulkTurnoverModal) {
+            return;
+        }
+
+        if (bulkTurnoverModal.classList.contains('hidden')) {
+            return;
+        }
+
+        bulkTurnoverModal.classList.add('opacity-0');
+        bulkTurnoverModalPanel?.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        setTimeout(() => {
+            bulkTurnoverModal.classList.add('hidden');
+            if (restoreBulkTurnoverBodyOverflowOnClose) {
+                document.body.classList.remove('overflow-hidden');
+            }
+            restoreBulkTurnoverBodyOverflowOnClose = false;
+        }, 300);
+        closeTurnoverSearchPanels();
     };
 
     const setActionTab = (tabName = 'details') => {
@@ -1035,35 +1340,191 @@
         });
     };
 
-    const renderMovementTimeline = (movements = []) => {
+    const setTimelinePager = (currentPage = 1, lastPage = 1) => {
+        timelineCurrentPage = currentPage;
+        timelineLastPage = lastPage;
+
+        if (!movementTimelinePager || !timelinePrevBtn || !timelineNextBtn || !timelinePageInfo) {
+            return;
+        }
+
+        const showPager = lastPage > 1;
+        movementTimelinePager.classList.toggle('hidden', !showPager);
+        movementTimelinePager.classList.toggle('flex', showPager);
+
+        timelinePrevBtn.disabled = currentPage <= 1;
+        timelineNextBtn.disabled = currentPage >= lastPage;
+        timelinePageInfo.textContent = `Page ${currentPage} of ${lastPage}`;
+    };
+
+    const employeeName = (employee) => {
+        if (!employee || typeof employee !== 'object') {
+            return '';
+        }
+
+        if (typeof employee.full_name === 'string' && employee.full_name.trim() !== '') {
+            return employee.full_name.trim();
+        }
+
+        if (typeof employee.name === 'string' && employee.name.trim() !== '') {
+            return employee.name.trim();
+        }
+
+        const parts = [employee.first_name, employee.middle_name, employee.last_name, employee.suffix]
+            .map((part) => String(part || '').trim())
+            .filter((part) => part !== '');
+
+        return parts.join(' ');
+    };
+
+    const buildEndpointDisplay = (locationName, custodianName, currentOwnerName) => {
+        const location = String(locationName || '').trim();
+        const custodian = String(custodianName || '').trim();
+        const owner = String(currentOwnerName || '').trim();
+
+        if (custodian && location) {
+            return `${custodian} @ ${location}`;
+        }
+
+        if (custodian) {
+            return custodian;
+        }
+
+        if (location && owner) {
+            return `${location} (Owner: ${owner})`;
+        }
+
+        if (location) {
+            return location;
+        }
+
+        if (owner) {
+            return owner;
+        }
+
+        return 'Unspecified';
+    };
+
+    const mapTimelineItem = (movement, currentOwnerName = '') => {
+        const fromLocation = movement?.from_location?.location_name
+            || movement?.fromLocation?.location_name
+            || movement?.from_location
+            || '';
+        const toLocation = movement?.to_location?.location_name
+            || movement?.toLocation?.location_name
+            || movement?.to_location
+            || '';
+        const fromCustodian = movement?.from_custodian_display
+            || movement?.from_custodian?.full_name
+            || movement?.fromCustodian?.full_name
+            || '';
+        const toCustodian = movement?.to_custodian_display
+            || movement?.to_custodian?.full_name
+            || movement?.toCustodian?.full_name
+            || '';
+        const ownerName = movement?.current_owner_display || currentOwnerName || toCustodian || fromCustodian || '';
+        const fromDisplay = movement?.from_endpoint_display
+            || buildEndpointDisplay(fromLocation, fromCustodian, ownerName);
+        const toDisplay = movement?.to_endpoint_display
+            || buildEndpointDisplay(toLocation, toCustodian, ownerName);
+        const movedBy = movement?.moved_by
+            || movement?.moved_by_account?.username
+            || movement?.movedByAccount?.username
+            || 'System';
+
+        return {
+            movement_type: movement?.movement_type || 'movement',
+            from_display: fromDisplay,
+            to_display: toDisplay,
+            moved_by: movedBy,
+            effective_at: movement?.effective_at || null,
+            remarks: movement?.remarks || '',
+        };
+    };
+
+    const renderMovementTimeline = (movements = [], currentPage = 1, lastPage = 1) => {
         if (!movementTimelineEl) {
             return;
         }
 
         if (!Array.isArray(movements) || movements.length === 0) {
             movementTimelineEl.innerHTML = '<p class="text-gray-400 italic">No movement records yet.</p>';
+            setTimelinePager(1, 1);
             return;
         }
 
         movementTimelineEl.innerHTML = movements.map((movement) => {
-            const fromLocation = movement.from_location || 'Unspecified';
-            const toLocation = movement.to_location || 'Unspecified';
+            const fromDisplay = movement.from_display || 'Unspecified';
+            const toDisplay = movement.to_display || 'Unspecified';
             const movedBy = movement.moved_by || 'System';
             const when = movement.effective_at ? formatDate(movement.effective_at) : '—';
             const remarks = movement.remarks ? `<p class="mt-1 text-xs text-gray-500">${escapeHtml(movement.remarks)}</p>` : '';
+            const movementType = String(movement.movement_type || 'movement').replace(/_/g, ' ');
 
             return `
                 <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                     <div class="flex flex-wrap items-center justify-between gap-2">
-                        <p class="font-semibold text-gray-800">${escapeHtml((movement.movement_type || 'movement').replace('_', ' '))}</p>
+                        <p class="font-semibold text-gray-800">${escapeHtml(movementType)}</p>
                         <span class="text-xs text-gray-500">${escapeHtml(when)}</span>
                     </div>
-                    <p class="text-sm text-gray-700 mt-1">${escapeHtml(fromLocation)} → ${escapeHtml(toLocation)}</p>
+                    <p class="mt-1 line-clamp-2 text-sm text-gray-700">${escapeHtml(fromDisplay)} → ${escapeHtml(toDisplay)}</p>
                     <p class="text-xs text-gray-500">By ${escapeHtml(movedBy)}</p>
                     ${remarks}
                 </div>
             `;
         }).join('');
+
+        setTimelinePager(currentPage, lastPage);
+    };
+
+    const loadMovementTimelinePage = async (propertyNo, page = 1) => {
+        const normalizedPropertyNo = String(propertyNo || '').trim();
+        if (!normalizedPropertyNo) {
+            renderMovementTimeline([], 1, 1);
+            return;
+        }
+
+        const requestToken = ++timelineRequestToken;
+
+        try {
+            const timelineUrl = timelineEndpointTemplate.replace('__PROPERTY__', encodeURIComponent(normalizedPropertyNo));
+            const params = new URLSearchParams({ per_page: String(timelinePageSize), page: String(Math.max(1, page)) });
+            const response = await fetch(`${timelineUrl}?${params.toString()}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Unable to fetch movement timeline (status ${response.status}).`);
+            }
+
+            const payload = await response.json().catch(() => ({}));
+            if (requestToken !== timelineRequestToken) {
+                return;
+            }
+
+            const pager = payload?.data?.movements || {};
+            const currentOwnerName = employeeName(payload?.data?.asset?.currentCustodian)
+                || employeeName(payload?.data?.asset?.current_custodian)
+                || employeeName(payload?.data?.asset?.accountableOfficer)
+                || employeeName(payload?.data?.asset?.accountable_officer)
+                || '';
+            const entries = Array.isArray(pager?.data)
+                ? pager.data.map((item) => mapTimelineItem(item, currentOwnerName))
+                : [];
+            const currentPage = Number(pager?.current_page || 1);
+            const lastPage = Number(pager?.last_page || 1);
+
+            renderMovementTimeline(entries, currentPage, lastPage);
+        } catch (error) {
+            if (requestToken !== timelineRequestToken) {
+                return;
+            }
+
+            renderMovementTimeline([], 1, 1);
+        }
     };
 
     const syncSectionOptions = () => {
@@ -1107,6 +1568,255 @@
         }
     };
 
+    const setSelectLabel = (selectField, labelField) => {
+        if (!selectField || !labelField) {
+            return;
+        }
+
+        const selected = selectField.selectedOptions[0];
+        const label = selected ? String(selected.textContent || '').trim() : 'Keep current';
+        labelField.textContent = label || 'Keep current';
+    };
+
+    const setKeepCurrentOptionLabel = (selectField, labelText) => {
+        if (!selectField) {
+            return;
+        }
+
+        const keepCurrentOption = Array.from(selectField.options).find((option) => option.value === '');
+        if (!keepCurrentOption) {
+            return;
+        }
+
+        keepCurrentOption.textContent = labelText;
+    };
+
+    const syncTransferKeepCurrentLabels = (record) => {
+        if (!record) {
+            return;
+        }
+
+        const currentOwnerName = String(
+            record.current_custodian?.name
+            || record.accountable_officer?.name
+            || ''
+        ).trim();
+
+        const currentLocationName = String(record.current_location?.name || '').trim();
+
+        const ownerLabel = `Keep current: ${currentOwnerName || 'Unassigned owner'}`;
+        const locationLabel = `Keep current: ${currentLocationName || 'Unassigned location'}`;
+
+        setKeepCurrentOptionLabel(transferCustodian, ownerLabel);
+        setKeepCurrentOptionLabel(transferLocation, locationLabel);
+    };
+
+    const closeTransferSearchPanels = () => {
+        transferLocationPanel?.classList.add('hidden');
+        transferCustodianPanel?.classList.add('hidden');
+    };
+
+    const closeTurnoverSearchPanels = () => {
+        turnoverEmployeePanel?.classList.add('hidden');
+    };
+
+    const renderSearchableList = ({ selectField, listField, queryText, onSelect }) => {
+        if (!selectField || !listField) {
+            return;
+        }
+
+        const normalizedQuery = String(queryText || '').trim().toLowerCase();
+        const excludedValue = String(selectField.dataset.excludeValue || '').trim();
+
+        if (excludedValue !== '' && String(selectField.value || '') === excludedValue) {
+            selectField.value = '';
+        }
+
+        const options = Array.from(selectField.options).filter((option) => {
+            if (option.value !== '' && excludedValue !== '' && String(option.value) === excludedValue) {
+                return false;
+            }
+
+            const label = String(option.textContent || '').toLowerCase();
+            return normalizedQuery === '' || label.includes(normalizedQuery);
+        });
+
+        if (options.length === 0) {
+            listField.innerHTML = '<li class="px-3 py-2 text-xs text-gray-500">No matches found.</li>';
+            return;
+        }
+
+        listField.innerHTML = options.map((option) => {
+            const isSelected = selectField.value === option.value;
+            const itemClass = isSelected
+                ? 'bg-emerald-50 text-[#1a3a2d]'
+                : 'text-gray-700 hover:bg-gray-50';
+
+            return `<li><button type="button" data-option-value="${escapeHtml(option.value)}" class="w-full px-3 py-2 text-left text-sm ${itemClass}">${escapeHtml(String(option.textContent || '').trim())}</button></li>`;
+        }).join('');
+
+        Array.from(listField.querySelectorAll('button[data-option-value]')).forEach((button) => {
+            button.addEventListener('click', () => {
+                const value = button.getAttribute('data-option-value') || '';
+                selectField.value = value;
+                selectField.dispatchEvent(new Event('change', { bubbles: true }));
+                if (onSelect) {
+                    onSelect();
+                }
+            });
+        });
+    };
+
+    const setupSearchableControl = ({
+        selectField,
+        toggleField,
+        panelField,
+        searchField,
+        listField,
+        labelField,
+        onSelect,
+    }) => {
+        if (!selectField || !toggleField || !panelField || !searchField || !listField || !labelField) {
+            return;
+        }
+
+        let activeIndex = -1;
+
+        const getOptionButtons = () => Array.from(listField.querySelectorAll('button[data-option-value]'));
+
+        const setActiveButton = (targetIndex) => {
+            const buttons = getOptionButtons();
+            if (buttons.length === 0) {
+                activeIndex = -1;
+                return;
+            }
+
+            const clampedIndex = Math.max(0, Math.min(targetIndex, buttons.length - 1));
+            activeIndex = clampedIndex;
+
+            buttons.forEach((button, index) => {
+                const isActive = index === clampedIndex;
+                button.classList.toggle('bg-emerald-100', isActive);
+                button.classList.toggle('text-[#1a3a2d]', isActive);
+                button.classList.toggle('ring-1', isActive);
+                button.classList.toggle('ring-emerald-200', isActive);
+                button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            buttons[clampedIndex].scrollIntoView({ block: 'nearest' });
+        };
+
+        const render = () => {
+            renderSearchableList({
+                selectField,
+                listField,
+                queryText: searchField.value,
+                onSelect: () => {
+                    panelField.classList.add('hidden');
+                    searchField.value = '';
+                    setSelectLabel(selectField, labelField);
+                    render();
+                },
+            });
+
+            const buttons = getOptionButtons();
+            if (buttons.length === 0) {
+                activeIndex = -1;
+                return;
+            }
+
+            const selectedIndex = buttons.findIndex((button) => button.getAttribute('data-option-value') === selectField.value);
+            setActiveButton(selectedIndex >= 0 ? selectedIndex : 0);
+        };
+
+        toggleField.addEventListener('click', () => {
+            const willOpen = panelField.classList.contains('hidden');
+            closeTransferSearchPanels();
+            if (willOpen) {
+                panelField.classList.remove('hidden');
+                render();
+                searchField.focus();
+            }
+        });
+
+        searchField.addEventListener('input', render);
+        searchField.addEventListener('keydown', (event) => {
+            const key = event.key;
+
+            if (key === 'Escape') {
+                panelField.classList.add('hidden');
+                return;
+            }
+
+            if (key === 'Tab') {
+                const buttons = getOptionButtons();
+                if (!panelField.classList.contains('hidden') && activeIndex >= 0 && buttons[activeIndex]) {
+                    buttons[activeIndex].click();
+                }
+                return;
+            }
+
+            if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(key)) {
+                return;
+            }
+
+            if (panelField.classList.contains('hidden')) {
+                panelField.classList.remove('hidden');
+                render();
+            }
+
+            const buttons = getOptionButtons();
+            if (buttons.length === 0) {
+                return;
+            }
+
+            if (key === 'ArrowDown') {
+                event.preventDefault();
+                const nextIndex = activeIndex < 0 ? 0 : Math.min(activeIndex + 1, buttons.length - 1);
+                setActiveButton(nextIndex);
+                return;
+            }
+
+            if (key === 'ArrowUp') {
+                event.preventDefault();
+                const prevIndex = activeIndex < 0 ? 0 : Math.max(activeIndex - 1, 0);
+                setActiveButton(prevIndex);
+                return;
+            }
+
+            if (key === 'Enter' && activeIndex >= 0) {
+                event.preventDefault();
+                buttons[activeIndex].click();
+            }
+        });
+
+        toggleField.addEventListener('keydown', (event) => {
+            if (!['Enter', ' ', 'ArrowDown'].includes(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+            const willOpen = panelField.classList.contains('hidden');
+            closeTransferSearchPanels();
+            if (willOpen) {
+                panelField.classList.remove('hidden');
+                render();
+                searchField.focus();
+            }
+        });
+
+        selectField.addEventListener('change', () => {
+            setSelectLabel(selectField, labelField);
+            if (onSelect) {
+                onSelect();
+            }
+            render();
+        });
+
+        setSelectLabel(selectField, labelField);
+        render();
+    };
+
     const escapeHtml = (value = '') => String(value)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -1142,6 +1852,51 @@
             day: 'numeric',
             year: 'numeric',
         });
+    };
+
+    const upsertLocationOption = (selectField, location, includePredicate = null) => {
+        if (!selectField || !location) {
+            return false;
+        }
+
+        if (typeof includePredicate === 'function' && !includePredicate(location)) {
+            return false;
+        }
+
+        const optionValue = String(location.location_id || '').trim();
+        if (optionValue === '') {
+            return false;
+        }
+
+        const optionLabel = String(location.display_name || location.location_name || '').trim();
+        const divisionId = location.division_id !== null && location.division_id !== undefined
+            ? String(location.division_id)
+            : '';
+        const sectionId = location.section_id !== null && location.section_id !== undefined
+            ? String(location.section_id)
+            : '';
+
+        let option = Array.from(selectField.options).find((entry) => String(entry.value) === optionValue);
+        if (!option) {
+            option = document.createElement('option');
+            option.value = optionValue;
+            selectField.appendChild(option);
+        }
+
+        option.textContent = optionLabel || `Location ${optionValue}`;
+        if ('divisionId' in option.dataset) {
+            option.dataset.divisionId = divisionId;
+        } else if (divisionId !== '') {
+            option.dataset.divisionId = divisionId;
+        }
+
+        if ('sectionId' in option.dataset) {
+            option.dataset.sectionId = sectionId;
+        } else if (sectionId !== '') {
+            option.dataset.sectionId = sectionId;
+        }
+
+        return true;
     };
 
     const setBadgeState = (state) => {
@@ -1313,19 +2068,32 @@
         setText(currentSectionEl, '', 'Unassigned');
         setText(lastMovementEl, '', '—');
         renderMovementTimeline([]);
+        timelineRequestToken += 1;
 
         if (transferForm) {
             transferForm.reset();
             setTransferError('');
             clearTransferFieldErrors();
+            if (transferLocationSearch) {
+                transferLocationSearch.value = '';
+            }
+            if (transferCustodianSearch) {
+                transferCustodianSearch.value = '';
+            }
+            closeTransferSearchPanels();
+            setSelectLabel(transferLocation, transferLocationLabel);
+            setSelectLabel(transferCustodian, transferCustodianLabel);
             syncSectionOptions();
         }
 
         if (turnoverForm) {
             turnoverForm.reset();
-            setTurnoverError('');
-            setTurnoverSuccess('');
             clearTurnoverFieldErrors();
+            if (turnoverEmployeeSearch) {
+                turnoverEmployeeSearch.value = '';
+            }
+            closeTurnoverSearchPanels();
+            setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
         }
 
         if (conditionForm) {
@@ -1497,14 +2265,27 @@
         setText(currentSectionEl, record.assigned_section || '', 'Unassigned');
         setText(lastMovementEl, formatDate(record.last_movement_at), '—');
 
-        renderMovementTimeline(record.recent_movements || []);
+        syncTransferKeepCurrentLabels(record);
+
+        loadMovementTimelinePage(record.property_no, 1);
+
+        const currentOwnerId = String(
+            record.current_custodian?.id
+            || record.accountable_officer?.id
+            || ''
+        ).trim();
+        const currentLocationId = String(record.current_location_id || '').trim();
 
         if (transferLocation) {
-            transferLocation.value = record.current_location_id || '';
+            transferLocation.dataset.excludeValue = currentLocationId;
+            transferLocation.value = '';
         }
         if (transferCustodian) {
-            transferCustodian.value = record.current_custodian_employee_id || '';
+            transferCustodian.dataset.excludeValue = currentOwnerId;
+            transferCustodian.value = '';
         }
+        setSelectLabel(transferCustodian, transferCustodianLabel);
+        setSelectLabel(transferLocation, transferLocationLabel);
         if (transferDivision) {
             transferDivision.value = record.assigned_division_id || '';
         }
@@ -1740,10 +2521,27 @@
         }
     });
 
+    timelinePrevBtn?.addEventListener('click', () => {
+        if (!currentRecord?.property_no || timelineCurrentPage <= 1) {
+            return;
+        }
+
+        loadMovementTimelinePage(currentRecord.property_no, timelineCurrentPage - 1);
+    });
+
+    timelineNextBtn?.addEventListener('click', () => {
+        if (!currentRecord?.property_no || timelineCurrentPage >= timelineLastPage) {
+            return;
+        }
+
+        loadMovementTimelinePage(currentRecord.property_no, timelineCurrentPage + 1);
+    });
+
     transferLocation?.addEventListener('change', () => {
         applyLocationDefaults();
         clearTransferFieldError('to_location_id');
     });
+    transferCustodian?.addEventListener('change', () => clearTransferFieldError('to_custodian_employee_id'));
 
     actionTabButtons.forEach((button) => {
         button.addEventListener('click', () => {
@@ -1758,15 +2556,113 @@
     });
 
     transferSection?.addEventListener('change', () => clearTransferFieldError('to_section_id'));
-    transferCustodian?.addEventListener('change', () => clearTransferFieldError('to_custodian_employee_id'));
     transferMovementType?.addEventListener('change', () => clearTransferFieldError('movement_type'));
     transferReason?.addEventListener('input', () => clearTransferFieldError('reason_code'));
     transferRemarks?.addEventListener('input', () => clearTransferFieldError('remarks'));
 
     turnoverEmployee?.addEventListener('change', () => clearTurnoverFieldError('employee_id'));
+    turnoverEmployee?.addEventListener('change', loadTurnoverPreview);
     turnoverLocation?.addEventListener('change', () => clearTurnoverFieldError('stockroom_location_id'));
     turnoverEffectiveAt?.addEventListener('change', () => clearTurnoverFieldError('effective_at'));
     turnoverRemarks?.addEventListener('input', () => clearTurnoverFieldError('remarks'));
+    turnoverConfirm?.addEventListener('input', () => {
+        turnoverConfirm.classList.remove('border-rose-400', 'ring-2', 'ring-rose-200');
+        turnoverConfirm.classList.add('border-gray-200');
+    });
+
+    bulkTurnoverOpenBtn?.addEventListener('click', openBulkTurnoverModal);
+    bulkTurnoverCloseEls.forEach((el) => el.addEventListener('click', closeBulkTurnoverModal));
+    bulkTurnoverModal?.addEventListener('click', (event) => {
+        if (event.target === bulkTurnoverModal) {
+            closeBulkTurnoverModal();
+        }
+    });
+
+    setupSearchableControl({
+        selectField: transferLocation,
+        toggleField: transferLocationToggle,
+        panelField: transferLocationPanel,
+        searchField: transferLocationSearch,
+        listField: transferLocationList,
+        labelField: transferLocationLabel,
+        onSelect: () => {
+            applyLocationDefaults();
+            clearTransferFieldError('to_location_id');
+        },
+    });
+
+    setupSearchableControl({
+        selectField: transferCustodian,
+        toggleField: transferCustodianToggle,
+        panelField: transferCustodianPanel,
+        searchField: transferCustodianSearch,
+        listField: transferCustodianList,
+        labelField: transferCustodianLabel,
+        onSelect: () => {
+            clearTransferFieldError('to_custodian_employee_id');
+        },
+    });
+
+    setupSearchableControl({
+        selectField: turnoverEmployee,
+        toggleField: turnoverEmployeeToggle,
+        panelField: turnoverEmployeePanel,
+        searchField: turnoverEmployeeSearch,
+        listField: turnoverEmployeeList,
+        labelField: turnoverEmployeeLabel,
+        onSelect: () => {
+            clearTurnoverFieldError('employee_id');
+        },
+    });
+
+    document.addEventListener('location-registry:created', (event) => {
+        const location = event?.detail?.location;
+        if (!location) {
+            return;
+        }
+
+        const transferUpdated = upsertLocationOption(transferLocation, location);
+        if (transferUpdated && transferLocation) {
+            transferLocation.value = String(location.location_id);
+            transferLocation.dispatchEvent(new Event('change', { bubbles: true }));
+            setSelectLabel(transferLocation, transferLocationLabel);
+            if (!transferLocationPanel?.classList.contains('hidden')) {
+                transferLocationSearch?.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+
+        const turnoverUpdated = upsertLocationOption(
+            turnoverLocation,
+            location,
+            (entry) => Boolean(entry.is_storage)
+        );
+
+        if (turnoverUpdated && turnoverLocation && !turnoverLocation.value) {
+            turnoverLocation.value = String(location.location_id);
+            turnoverLocation.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (turnoverUpdated && turnoverStockroomHint) {
+            turnoverStockroomHint.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) {
+            return;
+        }
+
+        const clickedInLocation = target.closest('#pqsTransferLocationPanel') || target.closest('#pqsTransferLocationToggle');
+        const clickedInCustodian = target.closest('#pqsTransferCustodianPanel') || target.closest('#pqsTransferCustodianToggle');
+        const clickedInTurnoverEmployee = target.closest('#pqsTurnoverEmployeePanel') || target.closest('#pqsTurnoverEmployeeToggle');
+        if (!clickedInLocation && !clickedInCustodian) {
+            closeTransferSearchPanels();
+        }
+        if (!clickedInTurnoverEmployee) {
+            closeTurnoverSearchPanels();
+        }
+    });
 
     transferForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -1805,12 +2701,18 @@
                 body: JSON.stringify(payload),
             });
 
-            const data = await response.json().catch(() => ({}));
+            const responseContentType = String(response.headers.get('content-type') || '').toLowerCase();
+            const data = responseContentType.includes('application/json')
+                ? await response.json().catch(() => ({}))
+                : {};
             if (!response.ok) {
                 if (data?.errors) {
                     setTransferFieldErrors(data.errors);
                 }
-                const validationMessage = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to save movement.';
+                const fallbackMessage = !responseContentType.includes('application/json')
+                    ? `Request failed with status ${response.status}.`
+                    : '';
+                const validationMessage = data?.message || Object.values(data?.errors || {}).flat().join(' ') || fallbackMessage || 'Failed to save movement.';
                 throw new Error(validationMessage);
             }
 
@@ -1818,9 +2720,12 @@
                 await fetchAndPopulateRecord(currentShowUrl);
             }
 
-            fetchRecords();
+            await window.pqsFetchRecords?.();
+            notifySuccess(data?.message || 'Asset movement has been recorded successfully.');
         } catch (error) {
-            setTransferError(error?.message || 'Unable to save movement right now.');
+            const message = error?.message || 'Unable to save movement right now.';
+            setTransferError(message);
+            notifyError(message);
         } finally {
             setTransferLoading(false);
         }
@@ -1830,8 +2735,16 @@
         event.preventDefault();
 
         clearTurnoverFieldErrors();
-        setTurnoverError('');
-        setTurnoverSuccess('');
+
+        if ((turnoverConfirm?.value || '').trim().toUpperCase() !== 'CONFIRM') {
+            if (turnoverConfirm) {
+                turnoverConfirm.classList.remove('border-gray-200');
+                turnoverConfirm.classList.add('border-rose-400', 'ring-2', 'ring-rose-200');
+            }
+            notifyError('Type CONFIRM before processing bulk turnover.');
+            return;
+        }
+
         setTurnoverLoading(true);
 
         try {
@@ -1864,16 +2777,24 @@
                 throw new Error(validationMessage);
             }
 
-            setTurnoverSuccess(data?.message || 'Employee asset turnover completed successfully.');
+            const successMessage = data?.message || 'Employee asset turnover completed successfully.';
+            notifySuccess(successMessage);
             turnoverForm?.reset();
+            setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
+            if (turnoverConfirm) {
+                turnoverConfirm.value = '';
+            }
+            setTurnoverPreview(null);
 
             if (currentShowUrl) {
                 await fetchAndPopulateRecord(currentShowUrl);
             }
 
-            fetchRecords();
+            await window.pqsFetchRecords?.();
+            closeBulkTurnoverModal();
         } catch (error) {
-            setTurnoverError(error?.message || 'Unable to process turnover right now.');
+            const errorMessage = error?.message || 'Unable to process turnover right now.';
+            notifyError(errorMessage);
         } finally {
             setTurnoverLoading(false);
         }
@@ -1921,7 +2842,7 @@
                 await fetchAndPopulateRecord(currentShowUrl);
             }
 
-            fetchRecords();
+            await window.pqsFetchRecords?.();
         } catch (error) {
             setConditionMessage(conditionError, error?.message || 'Unable to update condition right now.', 'error');
         } finally {

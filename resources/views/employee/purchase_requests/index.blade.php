@@ -180,12 +180,10 @@
                 <table id="employeePurchaseRequestsTable" class="min-w-full text-sm">
                     <thead class="bg-[#f5f8f6] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-500">
                 <tr>
-                    <th class="px-5 py-3 text-left">PR Number</th>
-                    <th class="px-5 py-3 text-left">Status</th>
-                    <th class="px-5 py-3 text-left">Purpose</th>
-                    <th class="px-5 py-3 text-left">Total Cost</th>
-                    <th class="px-5 py-3 text-right">Submitted</th>
-                    <th class="px-5 py-3 text-center">Actions</th>
+                    <th class="px-4 py-2.5 text-left">PR Number</th>
+                    <th class="px-4 py-2.5 text-left">Status</th>
+                    <th class="px-4 py-2.5 text-left">Total Cost</th>
+                    <th class="px-4 py-2.5 text-center">Actions</th>
                 </tr>
             </thead>
                     <tbody>
@@ -212,34 +210,27 @@
                         $searchIndex = strtolower($searchTokens);
                     @endphp
                     <tr data-row data-status="{{ $statusSlug }}" data-search="{{ e($searchIndex) }}" class="group border-b border-gray-100/90 last:border-0 hover:bg-[#f6fbf8] transition-colors duration-200">
-                        <td class="px-5 py-4 align-top">
+                        <td class="px-4 py-3 align-top">
                             <span class="block font-bold text-[#1a3a2d] group-hover:text-[#18472f] transition">{{ $request->pr_no }}</span>
-                            <span class="mt-1 inline-flex rounded-full bg-gray-100 px-2 py-1 text-[11px] font-medium text-gray-500">Ref. {{ $loop->iteration }}</span>
                         </td>
-                        <td class="px-5 py-4 align-top">
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide {{ $design['badge'] }}">
+                        <td class="px-4 py-3 align-top">
+                                <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide {{ $design['badge'] }}">
                                     <i class="fa-solid {{ $design['icon'] }} text-[10px]"></i>{{ $statusName }}
                             </span>
                         </td>
-                        <td class="px-5 py-4 align-top text-gray-600 max-w-md">
-                            <span class="block line-clamp-2 leading-6" title="{{ $request->purpose }}">{{ $request->purpose }}</span>
-                        </td>
-                        <td class="px-5 py-4 align-top">
-                            <span class="inline-flex rounded-full bg-[#f2f7f4] px-3 py-1.5 text-sm font-semibold text-gray-800">
+                        <td class="px-4 py-3 align-top">
+                            <span class="inline-flex rounded-full bg-[#f2f7f4] px-2.5 py-1 text-xs font-semibold text-gray-800">
                                 ₱{{ number_format((float) $request->total_estimated_cost, 2) }}
                             </span>
                         </td>
-                        <td class="px-5 py-4 align-top text-right text-gray-500 text-xs leading-5">
-                            {{ optional($request->created_at)->format('M d, Y h:i A') }}
-                        </td>
-                        <td class="px-5 py-4 align-top text-center">
-                            <div class="inline-flex items-center gap-2">
-                                <button class="js-view-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-4 py-2.5 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md" data-show-url="{{ route('employee.purchase-requests.show', $request) }}">
+                        <td class="px-4 py-3 align-top text-center">
+                            <div class="inline-flex items-center gap-1.5">
+                                <button class="js-view-employee-pr inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-[#1a3a2d]/10 bg-[#f4f8f5] px-3 py-2 text-[11px] font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md" data-show-url="{{ route('employee.purchase-requests.show', $request) }}">
                                 <i class="fas fa-eye"></i>
                                 View
                                 </button>
                                 @if($canDeleteRequest)
-                                    <button class="js-edit-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-700 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-100 hover:shadow-md"
+                                    <button class="js-edit-employee-pr inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-700 transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-100 hover:shadow-md"
                                         data-pr-no="{{ $request->pr_no }}"
                                         data-show-url="{{ route('employee.purchase-requests.show', $request) }}"
                                         data-update-url="{{ route('employee.purchase-requests.update', $request) }}">
@@ -248,7 +239,7 @@
                                     </button>
                                 @endif
                                 @if($canDeleteRequest)
-                                    <button class="js-delete-employee-pr inline-flex cursor-pointer items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-semibold text-rose-700 transition-all hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-100 hover:shadow-md"
+                                    <button class="js-delete-employee-pr inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold text-rose-700 transition-all hover:-translate-y-0.5 hover:border-rose-300 hover:bg-rose-100 hover:shadow-md"
                                         data-pr-no="{{ $request->pr_no }}"
                                         data-delete-url="{{ route('employee.purchase-requests.destroy', $request) }}">
                                         <i class="fas fa-trash"></i>
@@ -260,7 +251,7 @@
                     </tr>
                 @empty
                     <tr data-empty-state>
-                        <td colspan="6" class="px-5 py-16 text-center text-gray-500">
+                        <td colspan="4" class="px-5 py-16 text-center text-gray-500">
                             <i class="fas fa-inbox text-5xl text-gray-300 mb-4"></i>
                             <p class="font-medium text-lg">No purchase requests found.</p>
                             <p class="text-sm">Use the button above to file your first request.</p>
@@ -268,7 +259,7 @@
                     </tr>
                 @endforelse
                     <tr id="employeePrNoResults" class="hidden">
-                        <td colspan="6" class="px-5 py-12 text-center text-gray-500">
+                        <td colspan="4" class="px-5 py-12 text-center text-gray-500">
                         <i class="fas fa-search-minus text-4xl text-gray-300 mb-3"></i>
                         <p class="font-semibold">No matching purchase requests.</p>
                         <p class="text-xs">Clear or adjust your filters to see more results.</p>

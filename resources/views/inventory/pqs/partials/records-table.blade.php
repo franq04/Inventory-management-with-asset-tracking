@@ -5,15 +5,15 @@
                 <tr>
                     <th class="px-6 py-3">Property Number</th>
                     <th class="px-6 py-3">Property Description</th>
-                    <th class="px-6 py-3">Accountable Employee</th>
+                    <th class="px-6 py-3">Current Employee (Accountable Employee)</th>
                     <th class="px-6 py-3 text-center">Actions</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
                 @forelse ($records as $record)
                     @php
-                        $officer = $record->accountableOfficer;
-                        $officerName = $officer ? trim(($officer->first_name ?? '') . ' ' . ($officer->last_name ?? '')) : null;
+                        $displayOwner = $record->currentCustodian ?: $record->accountableOfficer;
+                        $officerName = $displayOwner ? trim(($displayOwner->first_name ?? '') . ' ' . ($displayOwner->last_name ?? '')) : null;
                         $hasIcs = $record->icsRecord !== null;
                         $hasPar = $record->parRecord !== null;
                         $isAssigned = $officerName !== null;
@@ -28,7 +28,7 @@
                         <td class="px-6 py-4">
                             @if($isAssigned)
                                 <div class="font-medium text-gray-800">{{ $officerName }}</div>
-                                <div class="text-xs text-gray-500">ID: {{ $officer->employee_id ?? '—' }}</div>
+                                <div class="text-xs text-gray-500">ID: {{ $displayOwner->employee_id ?? '—' }}</div>
                             @else
                                 <span class="text-gray-400 italic">Unassigned</span>
                             @endif

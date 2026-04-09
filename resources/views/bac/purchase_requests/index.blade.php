@@ -75,20 +75,17 @@
                 <table id="bacPurchaseRequestsTable" class="min-w-full text-sm">
                     <thead class="bg-[#f5f8f6] text-left text-[11px] font-semibold text-gray-500 uppercase tracking-[0.18em]">
                         <tr>
-                            <th class="px-6 py-3">PR Number</th>
-                            <th class="px-6 py-3">Requested By</th>
-                            <th class="px-6 py-3 hidden md:table-cell">Status</th>
-                            <th class="px-6 py-3">Total Cost</th>
-                            <th class="px-6 py-3 text-right">Submitted</th>
-                            <th class="px-6 py-3 text-center">Actions</th>
+                            <th class="px-4 py-2.5">PR Number</th>
+                            <th class="px-4 py-2.5">Status</th>
+                            <th class="px-4 py-2.5">Total Cost</th>
+                            <th class="px-4 py-2.5 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100 text-sm text-gray-700">
                         @forelse($purchaseRequests as $pr)
                         <tr class="hover:bg-gray-50/70 transition-colors" data-pr-no="{{ $pr->pr_no }}" data-status-id="{{ (int) $pr->status_id }}">
-                            <td class="px-6 py-4 font-semibold text-[#1a3a2d]">{{ $pr->pr_no }}</td>
-                            <td class="px-6 py-4 text-gray-700 font-medium">{{ $pr->requester?->username ?? 'Unknown' }}</td>
-                            <td class="px-6 py-4 hidden md:table-cell">
+                            <td class="px-4 py-3 font-semibold text-[#1a3a2d]">{{ $pr->pr_no }}</td>
+                            <td class="px-4 py-3">
                                 @php
                                     $statusName = strtolower($pr->status?->status_name ?? 'unknown');
                                     $statusColorClasses = 'bg-gray-100 text-gray-700 border-gray-200';
@@ -100,14 +97,13 @@
                                         $statusColorClasses = 'bg-amber-50 text-amber-700 border-amber-200';
                                     }
                                 @endphp
-                                <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold capitalize border {{ $statusColorClasses }}">
+                                <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-bold capitalize border {{ $statusColorClasses }}">
                                     <i class="fas fa-circle text-[8px]"></i>{{ $pr->status?->status_name ?? 'Unknown' }}
                                 </span>
                             </td>
-                            <td class="px-6 py-4 font-semibold text-gray-800">₱{{ number_format((float) $pr->total_estimated_cost, 2) }}</td>
-                            <td class="px-6 py-4 text-right text-gray-500 text-xs">{{ optional($pr->created_at)->format('M d, Y h:i A') }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <button class="js-view-bac-pr inline-flex items-center gap-2 px-4 py-2 bg-[#1a3a2d] hover:bg-[#2d5a4a] text-white text-xs font-semibold rounded-lg transition-all"
+                            <td class="px-4 py-3 font-semibold text-gray-800">₱{{ number_format((float) $pr->total_estimated_cost, 2) }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button class="js-view-bac-pr inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a3a2d] hover:bg-[#2d5a4a] text-white text-[11px] font-semibold rounded-md transition-all"
                                     data-pr-no="{{ $pr->pr_no }}"
                                     data-show-url="{{ route('bac.requests.show', $pr) }}">
                                     <i class="fas fa-gavel"></i>
@@ -117,7 +113,7 @@
                         </tr>
                         @empty
                         <tr data-static-row="empty">
-                            <td colspan="6" class="px-6 py-16 text-center text-gray-500">
+                            <td colspan="4" class="px-6 py-16 text-center text-gray-500">
                                 <i class="fas fa-clipboard-list text-5xl text-gray-300 mb-4"></i>
                                 <p class="font-medium text-lg">No purchase requests for BAC at the moment.</p>
                             </td>

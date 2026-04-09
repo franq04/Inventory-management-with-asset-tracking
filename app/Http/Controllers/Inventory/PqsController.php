@@ -84,6 +84,7 @@ class PqsController extends Controller
 
         $transferCustodians = Employee::query()
             ->whereNotNull('account_id')
+            ->with(['section:section_id,division_id'])
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get(['employee_id', 'first_name', 'middle_name', 'last_name', 'suffix', 'section_id']);
@@ -170,7 +171,7 @@ class PqsController extends Controller
         $icsRecord = $record->icsRecord;
         $parRecord = $record->parRecord;
         $recentMovements = $record->movements
-            ->sortByDesc('effective_at')
+            ->sortByDesc('movement_id')
             ->take(10)
             ->values();
 

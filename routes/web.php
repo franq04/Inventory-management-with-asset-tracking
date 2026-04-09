@@ -6,6 +6,7 @@ use App\Http\Controllers\Custodian\AuditLogController;
 use App\Http\Controllers\Custodian\AssetMovementController;
 use App\Http\Controllers\Custodian\InspectionController;
 use App\Http\Controllers\Custodian\InventoryAssignmentController;
+use App\Http\Controllers\Custodian\PhysicalLocationController;
 use App\Http\Controllers\Custodian\PurchaseOrderController;
 use App\Http\Controllers\Custodian\PurchaseRequestController as CustodianPurchaseRequestController;
 use App\Http\Controllers\DashboardController;
@@ -363,6 +364,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
 
     Route::prefix('inventory')->group(function () {
         Route::get('pqs', [PqsController::class, 'index'])->name('pqs.index');
+        Route::post('physical-locations', [PhysicalLocationController::class, 'store'])->name('physical_locations.store');
         Route::get('pqs/export/pdf', [PqsController::class, 'printPdf'])->name('pqs.print.pdf');
         Route::get('pqs/export/excel', [PqsController::class, 'exportExcel'])->name('pqs.export.excel');
         Route::get('asset-movements', [AssetMovementController::class, 'report'])->name('pqs.movements.report');
@@ -372,6 +374,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
         Route::get('pqs/details', [PqsController::class, 'showByProperty'])->name('pqs.show.by-property');
         Route::get('pqs/{pqsRecord}', [PqsController::class, 'show'])->name('pqs.show');
         Route::get('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'timeline'])->name('pqs.movements.timeline');
+        Route::post('pqs/turnover/preview', [AssetMovementController::class, 'previewTurnover'])->name('pqs.movements.turnover.preview');
         Route::post('pqs/turnover', [AssetMovementController::class, 'processTurnover'])->name('pqs.movements.turnover');
         Route::post('pqs/{pqsRecord}/movements', [AssetMovementController::class, 'transfer'])->name('pqs.movements.transfer');
         Route::post('pqs/{pqsRecord}/condition', [AssetMovementController::class, 'updateCondition'])->name('pqs.movements.condition');
