@@ -132,6 +132,10 @@
                             <i class="fas fa-calendar-day"></i>
                             <span id="pqsViewDateAcquiredChip">—</span>
                         </div>
+                        <div id="pqsViewConditionChip" class="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/95">
+                            <i class="fas fa-circle-check"></i>
+                            Serviceable
+                        </div>
                     </div>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -404,6 +408,7 @@
                                 <p><span class="font-semibold text-gray-500">Division:</span> <span id="pqsViewCurrentDivision">Unassigned</span></p>
                                 <p><span class="font-semibold text-gray-500">Section:</span> <span id="pqsViewCurrentSection">Unassigned</span></p>
                                 <p><span class="font-semibold text-gray-500">Last Movement:</span> <span id="pqsViewLastMovement">—</span></p>
+                                <p><span class="font-semibold text-gray-500">Condition:</span> <span id="pqsViewCurrentCondition">Serviceable</span></p>
                             </div>
                         </section>
 
@@ -480,6 +485,7 @@
                                     </div>
 
                                     <div id="pqsTransferError" class="hidden rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"></div>
+                                    <div id="pqsTransferBlockedNotice" class="hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800"></div>
 
                                     <button id="pqsTransferSubmit" type="submit" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#285641]">
                                         <i class="fas fa-random"></i>
@@ -501,21 +507,28 @@
                                         <input id="pqsConditionEffectiveAt" name="effective_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
                                     </div>
                                     <div>
-                                        <label for="pqsConditionRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks</label>
-                                        <textarea id="pqsConditionRemarks" name="remarks" rows="2" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Optional condition notes"></textarea>
+                                        <label for="pqsConditionRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks <span class="text-rose-600">*</span></label>
+                                        <textarea id="pqsConditionRemarks" name="remarks" rows="2" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Required condition notes"></textarea>
+                                        <p id="pqsConditionRemarksError" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
                                     </div>
 
                                     <div class="md:col-span-2 flex flex-wrap items-center gap-3">
-                                        <button type="button" id="pqsConditionServiceable" data-condition-value="serviceable" class="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800">
-                                            <i class="fas fa-circle-check"></i>
-                                            Mark Serviceable
-                                        </button>
                                         <button type="button" id="pqsConditionUnserviceable" data-condition-value="unserviceable" class="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800">
                                             <i class="fas fa-triangle-exclamation"></i>
                                             Mark Unserviceable
                                         </button>
                                     </div>
                                 </form>
+
+                                <div class="mt-4 rounded-xl border border-gray-200 bg-white px-3 py-3">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Condition History</p>
+                                        <span class="text-[11px] text-gray-400">Latest maintenance events</span>
+                                    </div>
+                                    <div id="pqsConditionHistory" class="mt-2 space-y-2 text-xs text-gray-700">
+                                        <p class="text-gray-400 italic">No condition history yet.</p>
+                                    </div>
+                                </div>
                             </div>
 
                         </section>

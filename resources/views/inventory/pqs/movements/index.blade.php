@@ -3,6 +3,44 @@
 @section('title', 'Asset Movement Report')
 
 @section('content')
+<style>
+    .movement-filter-row {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .movement-filter-control {
+        height: 3rem;
+        width: 100%;
+    }
+
+    .movement-filter-actions {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+        .movement-filter-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .movement-filter-actions {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .movement-filter-row {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .movement-filter-actions {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+    }
+</style>
 <div class="space-y-6 animate-card">
     <div class="rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -50,20 +88,25 @@
         @endphp
 
         <form method="GET" action="{{ route('pqs.movements.report') }}" class="space-y-5">
-            <div class="space-y-5">
-                <div class="relative">
-                    <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
-                    <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                    <input id="search" name="search" type="text" value="{{ $searchValue }}" placeholder="Search property no., article, movement remarks, reason code..." class="mt-1 h-11 w-full rounded-2xl border border-emerald-950/10 bg-[#f7faf8] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 transition focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10 {{ $errors->has('search') ? 'border-rose-300 bg-rose-50/30' : '' }}">
-                    @error('search')
-                        <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
-                    @enderror
+            <div class="rounded-2xl border border-emerald-950/8 bg-[#f8fbf9] p-4">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#1a3a2d]/75">Search and Filters</p>
+                    <p class="text-xs text-gray-500">Row 1: search. Row 2: core filters. Row 3: employee, dates, and actions.</p>
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div class="space-y-3">
+                    <div class="relative">
+                        <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                        <input id="search" name="search" type="text" value="{{ $searchValue }}" placeholder="Search property no., article, movement remarks, reason code..." class="movement-filter-control rounded-2xl border border-emerald-950/10 bg-white pl-11 pr-4 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15 {{ $errors->has('search') ? 'border-rose-300 bg-rose-50/30' : '' }}">
+                        @error('search')
+                            <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="movement-filter-row">
                     <div>
                         <label for="movement_type" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Movement Type</label>
-                        <select id="movement_type" name="movement_type" class="mt-1 h-11 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('movement_type') ? 'border-rose-300 bg-rose-50/30' : '' }}">
+                        <select id="movement_type" name="movement_type" class="movement-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('movement_type') ? 'border-rose-300 bg-rose-50/30' : '' }}">
                             <option value="">All Types</option>
                             @foreach ($movementTypes as $type)
                                 <option value="{{ $type }}" @selected((string) $movementTypeValue === (string) $type)>{{ ucwords(str_replace('_', ' ', $type)) }}</option>
@@ -76,7 +119,7 @@
 
                     <div id="movementDivisionDropdown" class="relative">
                         <label for="division_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Division</label>
-                        <button id="movementDivisionToggle" type="button" class="mt-1 flex h-11 w-full items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
+                        <button id="movementDivisionToggle" type="button" class="movement-filter-control mt-1 flex items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
                             <span id="movementDivisionLabel" class="truncate">All Divisions</span>
                             <i class="fas fa-chevron-down text-[11px] text-[#2d5a4a]/45"></i>
                         </button>
@@ -97,7 +140,7 @@
 
                     <div id="movementSectionDropdown" class="relative">
                         <label for="section_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Section</label>
-                        <button id="movementSectionToggle" type="button" class="mt-1 flex h-11 w-full items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
+                        <button id="movementSectionToggle" type="button" class="movement-filter-control mt-1 flex items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
                             <span id="movementSectionLabel" class="truncate">All Sections</span>
                             <i class="fas fa-chevron-down text-[11px] text-[#2d5a4a]/45"></i>
                         </button>
@@ -118,7 +161,7 @@
 
                     <div id="movementLocationDropdown" class="relative">
                         <label for="location_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Location</label>
-                        <button id="movementLocationToggle" type="button" class="mt-1 flex h-11 w-full items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
+                        <button id="movementLocationToggle" type="button" class="movement-filter-control mt-1 flex items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
                             <span id="movementLocationLabel" class="truncate">All Locations</span>
                             <i class="fas fa-chevron-down text-[11px] text-[#2d5a4a]/45"></i>
                         </button>
@@ -136,10 +179,13 @@
                             <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
                         @enderror
                     </div>
+                    </div>
+
+                    <div class="movement-filter-row">
 
                     <div id="movementEmployeeDropdown" class="relative">
                         <label for="custodian_employee_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Employee</label>
-                        <button id="movementEmployeeToggle" type="button" class="mt-1 flex h-11 w-full items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
+                        <button id="movementEmployeeToggle" type="button" class="movement-filter-control mt-1 flex items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm transition focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50">
                             <span id="movementEmployeeLabel" class="truncate">All Employees</span>
                             <i class="fas fa-chevron-down text-[11px] text-[#2d5a4a]/45"></i>
                         </button>
@@ -160,7 +206,7 @@
 
                     <div>
                         <label for="date_from" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
-                        <input id="date_from" name="date_from" type="date" value="{{ $dateFromValue }}" class="mt-1 h-11 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('date_from') ? 'border-rose-300 bg-rose-50/30' : '' }}">
+                        <input id="date_from" name="date_from" type="date" value="{{ $dateFromValue }}" class="movement-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('date_from') ? 'border-rose-300 bg-rose-50/30' : '' }}">
                         @error('date_from')
                             <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
                         @enderror
@@ -168,10 +214,39 @@
 
                     <div>
                         <label for="date_to" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
-                        <input id="date_to" name="date_to" type="date" value="{{ $dateToValue }}" class="mt-1 h-11 w-full rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('date_to') ? 'border-rose-300 bg-rose-50/30' : '' }}">
+                        <input id="date_to" name="date_to" type="date" value="{{ $dateToValue }}" class="movement-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50 {{ $errors->has('date_to') ? 'border-rose-300 bg-rose-50/30' : '' }}">
                         @error('date_to')
                             <p class="mt-1 text-xs font-medium text-rose-700">{{ $message }}</p>
                         @enderror
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">&nbsp;</label>
+                        <a href="{{ route('pqs.movements.report') }}" class="movement-filter-control mt-1 inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Reset Filters">
+                            <i class="fas fa-rotate-left text-gray-500"></i>
+                            <span>Reset</span>
+                        </a>
+                    </div>
+                    </div>
+
+                    <div class="movement-filter-actions">
+                        <a href="{{ route('pqs.movements.print.pdf', request()->query()) }}" target="_blank" class="movement-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                            <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
+                        </a>
+                        <a href="{{ route('pqs.movements.export.excel', request()->query()) }}" class="movement-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                            <i class="fas fa-file-excel text-emerald-600"></i> Export Excel
+                        </a>
+                        <a href="{{ route('pqs.movements.export.csv', request()->query()) }}" class="movement-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                            <i class="fas fa-file-csv text-sky-600"></i> Export CSV
+                        </a>
+                        <button type="button" id="movementAdvancedToggle" class="movement-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100" aria-controls="movementAdvancedFilters" aria-expanded="{{ $showAdvancedFilters ? 'true' : 'false' }}">
+                            <i class="fas fa-sliders"></i>
+                            <span>Advanced Filters</span>
+                            <i id="movementAdvancedChevron" class="fas fa-chevron-down text-[11px] transition-transform {{ $showAdvancedFilters ? 'rotate-180' : '' }}"></i>
+                        </button>
+                        <button type="submit" class="movement-filter-control inline-flex items-center justify-center gap-2 rounded-2xl bg-[#1a3a2d] px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214f3d]">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
                     </div>
                 </div>
             </div>
@@ -190,50 +265,14 @@
             </div>
 
             <div class="flex flex-col gap-4 border-t border-gray-100 pt-5 lg:flex-row lg:items-start lg:justify-between">
-                <div class="flex w-full items-center justify-between lg:w-auto lg:min-w-[220px] lg:justify-start">
-                    <span class="text-sm font-medium text-gray-500"><span>{{ number_format($movements->total()) }}</span> movement record(s) found</span>
-                    <a href="{{ route('pqs.movements.report') }}" class="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white lg:hidden" title="Reset Filters">
-                        <i class="fas fa-undo"></i>
+                <span class="text-sm font-medium text-gray-500"><span>{{ number_format($movements->total()) }}</span> movement record(s) found</span>
+                <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/45 p-1.5 sm:items-center lg:w-auto">
+                    <a href="{{ route('pqs.index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                        <i class="fas fa-box"></i> PQS Registry
                     </a>
-                </div>
-
-                <div class="flex w-full flex-col gap-3 lg:w-auto lg:items-end">
-                    <a href="{{ route('pqs.movements.report') }}" class="hidden lg:inline-flex h-9 w-9 items-center justify-center rounded-xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white" title="Reset Filters">
-                        <i class="fas fa-undo"></i>
-                    </a>
-
-                    <div class="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:gap-3">
-                        <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/45 p-1.5 sm:items-center xl:w-auto">
-                            <a href="{{ route('pqs.index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
-                                <i class="fas fa-box"></i> PQS Registry
-                            </a>
-                            <button type="button" data-open-location-registry-modal class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
-                                <i class="fas fa-plus"></i> Add Location
-                            </button>
-                            <button id="movementAdvancedToggle" type="button" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto" aria-controls="movementAdvancedFilters" aria-expanded="{{ $showAdvancedFilters ? 'true' : 'false' }}">
-                                <i class="fas fa-sliders"></i>
-                                <span>Advanced Filters</span>
-                                <i id="movementAdvancedChevron" class="fas fa-chevron-down text-[11px] transition-transform {{ $showAdvancedFilters ? 'rotate-180' : '' }}"></i>
-                            </button>
-                        </div>
-
-                        <div class="hidden h-8 w-px bg-gray-200 xl:block"></div>
-
-                        <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-gray-200 bg-gray-50/65 p-1.5 sm:items-center xl:w-auto">
-                            <a href="{{ route('pqs.movements.print.pdf', request()->query()) }}" target="_blank" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
-                                <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
-                            </a>
-                            <a href="{{ route('pqs.movements.export.excel', request()->query()) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
-                                <i class="fas fa-file-excel text-emerald-600"></i> Export Excel
-                            </a>
-                            <a href="{{ route('pqs.movements.export.csv', request()->query()) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
-                                <i class="fas fa-file-csv text-sky-600"></i> Export CSV
-                            </a>
-                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1a3a2d] px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#214f3d] sm:w-auto">
-                                <i class="fas fa-filter"></i> Apply Filters
-                            </button>
-                        </div>
-                    </div>
+                    <button type="button" data-open-location-registry-modal class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                        <i class="fas fa-plus"></i> Add Location
+                    </button>
                 </div>
             </div>
         </form>
@@ -247,14 +286,25 @@
                         <th class="px-4 py-3">Date</th>
                         <th class="px-4 py-3">Property</th>
                         <th class="px-4 py-3">Movement</th>
-                        <th class="px-4 py-3">Location</th>
                         <th class="px-4 py-3">Employee</th>
-                        <th class="px-4 py-3">Recorded By</th>
-                        <th class="px-4 py-3">Remarks</th>
+                        <th class="px-4 py-3 text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 bg-white text-sm text-gray-700">
                     @forelse ($movements as $movement)
+                        @php
+                            $movementType = (string) $movement->movement_type;
+                            $movementLabel = match ($movementType) {
+                                'maintenance_out' => 'Unserviceable',
+                                'maintenance_in' => 'Serviceable',
+                                default => ucwords(str_replace('_', ' ', $movementType)),
+                            };
+                            $movementBadgeClass = match ($movementType) {
+                                'maintenance_out' => 'border-rose-200 bg-rose-50 text-rose-700',
+                                'maintenance_in' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                                default => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+                            };
+                        @endphp
                         <tr class="hover:bg-gray-50/80 transition-colors">
                             <td class="whitespace-nowrap px-4 py-3">
                                 <div class="font-semibold text-gray-900">{{ optional($movement->effective_at)->format('M d, Y') }}</div>
@@ -265,22 +315,38 @@
                                 <div class="text-xs text-gray-500">{{ $movement->property?->article ?: 'N/A' }}</div>
                             </td>
                             <td class="px-4 py-3">
-                                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">{{ ucwords(str_replace('_', ' ', (string) $movement->movement_type)) }}</span>
-                            </td>
-                            <td class="px-4 py-3 text-xs leading-relaxed text-gray-700">
-                                <div><span class="font-semibold text-gray-600">From:</span> {{ $movement->from_endpoint_display ?: 'Unspecified' }}</div>
-                                <div><span class="font-semibold text-gray-600">To:</span> {{ $movement->to_endpoint_display ?: 'Unspecified' }}</div>
+                                <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold {{ $movementBadgeClass }}">{{ $movementLabel }}</span>
                             </td>
                             <td class="px-4 py-3 text-xs leading-relaxed text-gray-700">
                                 <div><span class="font-semibold text-gray-600">From:</span> {{ $movement->from_custodian_display ?: 'Unspecified' }}</div>
                                 <div><span class="font-semibold text-gray-600">To:</span> {{ $movement->to_custodian_display ?: 'Unspecified' }}</div>
                             </td>
-                            <td class="px-4 py-3 text-sm text-gray-700">{{ $movement->movedByAccount?->username ?: 'System' }}</td>
-                            <td class="px-4 py-3 text-sm text-gray-600">{{ $movement->remarks ?: '—' }}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button
+                                    type="button"
+                                    class="js-movement-view inline-flex items-center gap-2 rounded-xl border border-[#1a3a2d]/10 bg-[#f4f8f5] px-3 py-2 text-xs font-semibold text-[#1a3a2d] transition-all hover:-translate-y-0.5 hover:border-[#1a3a2d]/20 hover:bg-[#eaf4ee] hover:shadow-md"
+                                    data-movement-id="{{ $movement->movement_id }}"
+                                    data-effective-at="{{ optional($movement->effective_at)->format('M d, Y h:i A') ?: '—' }}"
+                                    data-property-no="{{ $movement->property_no }}"
+                                    data-article="{{ $movement->property?->article ?: 'N/A' }}"
+                                    data-movement-type="{{ $movementLabel }}"
+                                    data-from-endpoint="{{ $movement->from_endpoint_display ?: 'Unspecified' }}"
+                                    data-to-endpoint="{{ $movement->to_endpoint_display ?: 'Unspecified' }}"
+                                    data-from-employee="{{ $movement->from_custodian_display ?: 'Unspecified' }}"
+                                    data-to-employee="{{ $movement->to_custodian_display ?: 'Unspecified' }}"
+                                    data-recorded-by="{{ $movement->movedByAccount?->username ?: 'System' }}"
+                                    data-reason-code="{{ $movement->reason_code ?: '—' }}"
+                                    data-remarks="{{ $movement->remarks ?: '—' }}"
+                                    data-batch-reference="{{ $movement->source_record_id ?: '—' }}"
+                                    data-source-table="{{ $movement->source_table ?: '' }}">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </button>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-16 text-center text-sm text-gray-500">
+                            <td colspan="5" class="px-6 py-16 text-center text-sm text-gray-500">
                                 <i class="fas fa-route text-4xl text-gray-300"></i>
                                 <p class="mt-3 font-medium">No movement records matched your filters.</p>
                             </td>
@@ -295,6 +361,80 @@
                 {{ $movements->onEachSide(1)->links('vendor.pagination.procurement') }}
             </div>
         @endif
+    </div>
+</div>
+
+<div id="movementDetailModal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-900/55 p-4 opacity-0 transition duration-300" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="movementDetailTitle">
+    <div class="modal-panel w-full max-w-3xl rounded-2xl border border-emerald-950/10 bg-white opacity-0 scale-95 translate-y-2 shadow-2xl transition duration-300">
+        <div class="flex items-start justify-between border-b border-gray-200 px-6 py-4">
+            <div>
+                <h3 id="movementDetailTitle" class="text-lg font-semibold text-[#1a3a2d]">Movement Details</h3>
+                <p id="movementDetailSubtitle" class="mt-1 text-sm text-gray-600">Review full movement context, endpoints, and batch trace.</p>
+            </div>
+            <button type="button" data-close-movement-detail class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700">
+                <i class="fas fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="max-h-[70vh] overflow-y-auto px-6 py-5">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Movement ID</p>
+                    <p id="movementDetailId" class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Effective Date</p>
+                    <p id="movementDetailDate" class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 md:col-span-2">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Property</p>
+                    <p id="movementDetailProperty" class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                    <p id="movementDetailArticle" class="mt-0.5 text-xs text-gray-600">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Movement Type</p>
+                    <p id="movementDetailType" class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Recorded By</p>
+                    <p id="movementDetailRecordedBy" class="mt-1 text-sm font-semibold text-gray-900">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">From Endpoint</p>
+                    <p id="movementDetailFromEndpoint" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">To Endpoint</p>
+                    <p id="movementDetailToEndpoint" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">From Employee</p>
+                    <p id="movementDetailFromEmployee" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">To Employee</p>
+                    <p id="movementDetailToEmployee" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Reason Code</p>
+                    <p id="movementDetailReasonCode" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Batch Reference</p>
+                        <button id="movementDetailBatchCopy" type="button" class="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-600 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50" title="Copy batch reference" disabled>
+                            <i class="fas fa-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <p id="movementDetailBatchReference" class="mt-1 break-all font-mono text-xs text-gray-800">—</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 md:col-span-2">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">Remarks</p>
+                    <p id="movementDetailRemarks" class="mt-1 text-sm text-gray-800">—</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -446,6 +586,155 @@
         }
     };
 
+    const notifyError = (message) => {
+        const text = String(message || '').trim();
+        if (!text) {
+            return;
+        }
+
+        if (typeof window.pqsShowToast === 'function') {
+            window.pqsShowToast(text, 'error');
+            return;
+        }
+
+        if (window.alertify && typeof window.alertify.error === 'function') {
+            window.alertify.error(text);
+        }
+    };
+
+    const movementDetailModal = document.getElementById('movementDetailModal');
+    const movementDetailPanel = movementDetailModal?.querySelector('.modal-panel') || null;
+    const movementDetailCloseEls = Array.from(document.querySelectorAll('[data-close-movement-detail]'));
+    const movementDetailBatchCopyBtn = document.getElementById('movementDetailBatchCopy');
+    let restoreBodyOverflowOnMovementClose = false;
+    let movementDetailBatchReferenceForCopy = '';
+
+    const movementDetailFields = {
+        movementId: document.getElementById('movementDetailId'),
+        effectiveAt: document.getElementById('movementDetailDate'),
+        propertyNo: document.getElementById('movementDetailProperty'),
+        article: document.getElementById('movementDetailArticle'),
+        movementType: document.getElementById('movementDetailType'),
+        recordedBy: document.getElementById('movementDetailRecordedBy'),
+        fromEndpoint: document.getElementById('movementDetailFromEndpoint'),
+        toEndpoint: document.getElementById('movementDetailToEndpoint'),
+        fromEmployee: document.getElementById('movementDetailFromEmployee'),
+        toEmployee: document.getElementById('movementDetailToEmployee'),
+        reasonCode: document.getElementById('movementDetailReasonCode'),
+        batchReference: document.getElementById('movementDetailBatchReference'),
+        remarks: document.getElementById('movementDetailRemarks'),
+    };
+
+    const setMovementField = (element, value, fallback = '—') => {
+        if (!element) {
+            return;
+        }
+
+        const normalized = String(value || '').trim();
+        element.textContent = normalized !== '' ? normalized : fallback;
+    };
+
+    const setBatchCopyState = (value) => {
+        const normalized = String(value || '').trim();
+        movementDetailBatchReferenceForCopy = normalized;
+
+        if (!movementDetailBatchCopyBtn) {
+            return;
+        }
+
+        movementDetailBatchCopyBtn.disabled = normalized === '';
+    };
+
+    const copyBatchReference = async () => {
+        const value = String(movementDetailBatchReferenceForCopy || '').trim();
+        if (!value) {
+            return;
+        }
+
+        try {
+            if (navigator?.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            } else {
+                const helper = document.createElement('textarea');
+                helper.value = value;
+                helper.setAttribute('readonly', 'readonly');
+                helper.style.position = 'absolute';
+                helper.style.left = '-9999px';
+                document.body.appendChild(helper);
+                helper.select();
+                document.execCommand('copy');
+                document.body.removeChild(helper);
+            }
+
+            notifySuccess('Batch reference copied.');
+        } catch (error) {
+            notifyError('Unable to copy batch reference. Please copy it manually.');
+        }
+    };
+
+    const openMovementDetailModal = (button) => {
+        if (!movementDetailModal || !button) {
+            return;
+        }
+
+        setMovementField(movementDetailFields.movementId, button.dataset.movementId);
+        setMovementField(movementDetailFields.effectiveAt, button.dataset.effectiveAt);
+        setMovementField(movementDetailFields.propertyNo, button.dataset.propertyNo);
+        setMovementField(movementDetailFields.article, button.dataset.article);
+        setMovementField(movementDetailFields.movementType, button.dataset.movementType);
+        setMovementField(movementDetailFields.recordedBy, button.dataset.recordedBy);
+        setMovementField(movementDetailFields.fromEndpoint, button.dataset.fromEndpoint);
+        setMovementField(movementDetailFields.toEndpoint, button.dataset.toEndpoint);
+        setMovementField(movementDetailFields.fromEmployee, button.dataset.fromEmployee);
+        setMovementField(movementDetailFields.toEmployee, button.dataset.toEmployee);
+        setMovementField(movementDetailFields.reasonCode, button.dataset.reasonCode);
+        setMovementField(movementDetailFields.remarks, button.dataset.remarks);
+
+        const isTurnoverBatch = String(button.dataset.sourceTable || '').trim() === 'pqs_turnover_batch';
+        const batchReferenceValue = isTurnoverBatch ? String(button.dataset.batchReference || '').trim() : '';
+        setMovementField(
+            movementDetailFields.batchReference,
+            batchReferenceValue,
+            isTurnoverBatch ? '—' : 'Not a turnover batch entry'
+        );
+        setBatchCopyState(batchReferenceValue);
+
+        if (!movementDetailModal.classList.contains('hidden')) {
+            return;
+        }
+
+        restoreBodyOverflowOnMovementClose = !document.body.classList.contains('overflow-hidden');
+        movementDetailModal.classList.remove('hidden');
+        movementDetailModal.classList.add('flex');
+
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                movementDetailModal.classList.remove('opacity-0');
+                movementDetailPanel?.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            });
+        });
+
+        document.body.classList.add('overflow-hidden');
+    };
+
+    const closeMovementDetailModal = () => {
+        if (!movementDetailModal || movementDetailModal.classList.contains('hidden')) {
+            return;
+        }
+
+        movementDetailModal.classList.add('opacity-0');
+        movementDetailPanel?.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+
+        setTimeout(() => {
+            movementDetailModal.classList.add('hidden');
+            movementDetailModal.classList.remove('flex');
+            if (restoreBodyOverflowOnMovementClose) {
+                document.body.classList.remove('overflow-hidden');
+            }
+            restoreBodyOverflowOnMovementClose = false;
+        }, 300);
+    };
+
     const upsertLocationOption = (location) => {
         if (!locationSelect || !location) {
             return false;
@@ -540,6 +829,25 @@
         }
 
         notifySuccess(event?.detail?.message || 'Location list updated.');
+    });
+
+    Array.from(document.querySelectorAll('.js-movement-view')).forEach((button) => {
+        button.addEventListener('click', () => openMovementDetailModal(button));
+    });
+
+    movementDetailCloseEls.forEach((el) => el.addEventListener('click', closeMovementDetailModal));
+    movementDetailBatchCopyBtn?.addEventListener('click', copyBatchReference);
+
+    movementDetailModal?.addEventListener('click', (event) => {
+        if (event.target === movementDetailModal) {
+            closeMovementDetailModal();
+        }
+    });
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && movementDetailModal && !movementDetailModal.classList.contains('hidden')) {
+            closeMovementDetailModal();
+        }
     });
 
     syncSections();

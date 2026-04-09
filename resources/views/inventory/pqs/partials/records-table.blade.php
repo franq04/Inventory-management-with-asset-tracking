@@ -17,10 +17,21 @@
                         $hasIcs = $record->icsRecord !== null;
                         $hasPar = $record->parRecord !== null;
                         $isAssigned = $officerName !== null;
+                        $assetStatus = (string) ($record->asset_status ?? \App\Models\PqsRecord::STATUS_ACTIVE);
+                        $showUnserviceable = in_array($assetStatus, [
+                            \App\Models\PqsRecord::STATUS_FOR_REPAIR,
+                            \App\Models\PqsRecord::STATUS_DISPOSED,
+                            \App\Models\PqsRecord::STATUS_LOST,
+                        ], true);
                     @endphp
                     <tr class="hover:bg-gray-50/70 transition-colors">
                         <td class="px-6 py-4">
                             <div class="font-semibold text-gray-900 font-mono">{{ $record->property_no }}</div>
+                            @if ($showUnserviceable)
+                                <div class="mt-2">
+                                    <span class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">Unserviceable</span>
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             <div class="font-medium text-gray-800">{{ $record->description ?: $record->article }}</div>

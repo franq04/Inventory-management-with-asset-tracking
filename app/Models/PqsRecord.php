@@ -149,8 +149,8 @@ class PqsRecord extends Model
      */
     public function canBeTransferred(): bool
     {
-        // Cannot transfer disposed or lost assets
-        if (in_array($this->asset_status, [self::STATUS_DISPOSED, self::STATUS_LOST])) {
+        // Cannot transfer disposed, lost, or currently unserviceable assets.
+        if (in_array($this->asset_status, [self::STATUS_DISPOSED, self::STATUS_LOST, self::STATUS_FOR_REPAIR], true)) {
             return false;
         }
 

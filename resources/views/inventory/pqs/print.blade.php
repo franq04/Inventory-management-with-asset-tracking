@@ -143,6 +143,14 @@
             </thead>
             <tbody>
                 @forelse($chunk as $record)
+                @php
+                    $assetStatusLabel = match ((string) ($record->asset_status ?? \App\Models\PqsRecord::STATUS_ACTIVE)) {
+                        \App\Models\PqsRecord::STATUS_FOR_REPAIR,
+                        \App\Models\PqsRecord::STATUS_DISPOSED,
+                        \App\Models\PqsRecord::STATUS_LOST => 'Unserviceable',
+                        default => 'Serviceable',
+                    };
+                @endphp
                 <tr class="hover:bg-slate-50/60">
                     <td class="border border-black px-2 py-1.5 text-xs">{{ $record->property_no }}</td>
                     <td class="border border-black px-2 py-1.5 text-xs">{{ $record->article }}</td>
@@ -165,15 +173,7 @@
                         {{ $record->accountableOfficer ? $record->accountableOfficer->full_name : 'Unassigned' }}
                     </td>
                     <td class="border border-black px-2 py-1.5 text-center text-xs">
-                        @if($record->icsRecord && $record->parRecord)
-                            <span class="font-semibold">ICS/PAR</span>
-                        @elseif($record->icsRecord)
-                            <span class="font-semibold">ICS</span>
-                        @elseif($record->parRecord)
-                            <span class="font-semibold">PAR</span>
-                        @else
-                            <span class="text-gray-500">—</span>
-                        @endif
+                        <span class="font-semibold">{{ $assetStatusLabel }}</span>
                     </td>
                 </tr>
                 @empty

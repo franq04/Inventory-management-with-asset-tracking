@@ -6,6 +6,55 @@
 @php
     $completion = ($stats['total'] > 0) ? (($stats['total'] - $stats['unassigned']) / max($stats['total'], 1)) * 100 : 0;
 @endphp
+<style>
+    .pqs-filter-row-two-wrap {
+        overflow: visible;
+    }
+
+    .pqs-filter-row-two {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 0.75rem;
+        min-width: 0;
+    }
+
+    .pqs-filter-control {
+        height: 3rem;
+        width: 100%;
+    }
+
+    .pqs-filter-label {
+        display: block;
+        min-height: 1rem;
+        white-space: nowrap;
+    }
+
+    .pqs-filter-actions-row {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    @media (min-width: 768px) {
+        .pqs-filter-row-two {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .pqs-filter-actions-row {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .pqs-filter-row-two {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .pqs-filter-actions-row {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+</style>
 <div id="pqsRegistryPage" class="space-y-8 animate-card">
     <div class="relative overflow-hidden rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-7 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10">
         <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.16),_transparent_58%)]"></div>
@@ -43,106 +92,136 @@
         <div class="space-y-6 lg:col-span-2">
             {{-- Enhanced Filters & Actions --}}
             <div class="rounded-[26px] border border-emerald-950/8 bg-white/95 p-5 shadow-[0_24px_60px_-35px_rgba(15,23,42,0.42)] backdrop-blur">
-                <form id="pqsFiltersForm" method="GET" class="space-y-5" action="{{ route('pqs.index') }}">
-                    <div class="space-y-5">
-                        <div class="relative">
-                            <label for="search" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Search</label>
-                            <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 mt-2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
-                            <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search property no, description, employee, category, location..." class="w-full mt-1 rounded-2xl border border-emerald-950/10 bg-[#f7faf8] py-[9px] pl-11 pr-3 text-sm shadow-inner shadow-emerald-950/5 focus:border-[#1a3a2d] focus:bg-white focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                <form id="pqsFiltersForm" method="GET" class="space-y-4" action="{{ route('pqs.index') }}">
+                    <div class="rounded-2xl border border-emerald-950/8 bg-[#f8fbf9] p-4">
+                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#1a3a2d]/75">Search and Filters</p>
+                            <p class="text-xs text-gray-500">Row 1: search. Row 2: category, assignment, condition, dates, and actions.</p>
                         </div>
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                            <div id="categoryDropdown" class="relative z-20">
-                                <label for="category" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
 
-                                <input type="hidden" name="category" id="category" value="{{ $categoryFilter ?? '' }}" data-auto-submit>
+                        <div class="grid gap-3">
+                            <div class="relative">
+                                <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                                <input id="search" name="search" type="text" value="{{ $search }}" placeholder="Search property no, description, employee, category, location..." class="w-full rounded-2xl border border-emerald-950/10 bg-white py-3 pl-11 pr-4 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" />
+                            </div>
 
-                                <button id="categoryDropdownToggle" type="button" class="mt-1 flex w-full py-[9px] items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50" aria-haspopup="listbox" aria-expanded="false">
-                                    <span id="categoryDropdownLabel" class="block truncate text-gray-700 text-sm">
-                                        {{ $categoryFilter ? ($categories->where('cat_id', $categoryFilter)->first()->cat_name ?? 'All Categories') : 'All Categories' }}
-                                    </span>
-                                    <i id="categoryDropdownChevron" class="fas fa-chevron-down text-[#2d5a4a]/45 text-xs transition-transform duration-200"></i>
-                                </button>
+                            <div class="pqs-filter-row-two-wrap">
+                                <div class="pqs-filter-row-two">
+                                    <div id="categoryDropdown" class="relative z-20">
+                                        <label for="category" class="pqs-filter-label text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Category</label>
 
-                                <div id="categoryDropdownMenu" class="absolute z-50 mt-2 hidden w-full origin-top-right rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black ring-opacity-5 focus:outline-none">
-                                    <div class="px-3 pt-3 pb-2 border-b border-gray-50">
-                                        <div class="relative">
-                                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                                            <input id="categoryDropdownSearch" type="text" placeholder="Search prefix..." class="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                        <input type="hidden" name="category" id="category" value="{{ $categoryFilter ?? '' }}" data-auto-submit>
+
+                                        <button id="categoryDropdownToggle" type="button" class="pqs-filter-control mt-1 flex items-center justify-between rounded-2xl border border-emerald-950/10 bg-white px-3 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-1 focus:ring-[#1a3a2d]/50" aria-haspopup="listbox" aria-expanded="false">
+                                            <span id="categoryDropdownLabel" class="block truncate text-sm text-gray-700">
+                                                {{ $categoryFilter ? ($categories->where('cat_id', $categoryFilter)->first()->cat_name ?? 'All Categories') : 'All Categories' }}
+                                            </span>
+                                            <i id="categoryDropdownChevron" class="fas fa-chevron-down text-xs text-[#2d5a4a]/45 transition-transform duration-200"></i>
+                                        </button>
+
+                                        <div id="categoryDropdownMenu" class="absolute z-50 mt-2 hidden w-full origin-top-right rounded-2xl border border-gray-100 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.12)] ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                            <div class="border-b border-gray-50 px-3 pb-2 pt-3">
+                                                <div class="relative">
+                                                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
+                                                    <input id="categoryDropdownSearch" type="text" placeholder="Search prefix..." class="w-full rounded-xl border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-sm focus:border-emerald-500 focus:bg-white focus:ring-1 focus:ring-emerald-500" autocomplete="off">
+                                                </div>
+                                            </div>
+
+                                            <ul id="categoryDropdownOptions" class="custom-scrollbar max-h-56 overflow-y-auto py-1" role="listbox">
+                                                <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ !$categoryFilter ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="" data-name="All Categories" role="option" aria-selected="{{ !$categoryFilter ? 'true' : 'false' }}">
+                                                    <span class="block truncate">All Categories</span>
+                                                    <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ !$categoryFilter ? '' : 'hidden' }}">
+                                                        <i class="fas fa-check text-xs"></i>
+                                                    </span>
+                                                </li>
+                                                @foreach ($categories as $category)
+                                                    <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ (string) $categoryFilter === (string) $category->cat_id ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="{{ $category->cat_id }}" data-name="{{ $category->cat_name }}" role="option" aria-selected="{{ (string) $categoryFilter === (string) $category->cat_id ? 'true' : 'false' }}">
+                                                        <span class="block truncate">{{ $category->cat_name }}</span>
+                                                        <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ (string) $categoryFilter === (string) $category->cat_id ? '' : 'hidden' }}">
+                                                            <i class="fas fa-check text-xs"></i>
+                                                        </span>
+                                                    </li>
+                                                @endforeach
+
+                                                <li id="categoryDropdownEmpty" class="hidden px-4 py-3 text-center text-sm italic text-gray-500">
+                                                    No categories found
+                                                </li>
+                                            </ul>
                                         </div>
                                     </div>
 
-                                    <ul id="categoryDropdownOptions" class="max-h-56 overflow-y-auto py-1 custom-scrollbar" role="listbox">
-                                        <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ !$categoryFilter ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="" data-name="All Categories" role="option" aria-selected="{{ !$categoryFilter ? 'true' : 'false' }}">
-                                            <span class="block truncate">All Categories</span>
-                                            <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ !$categoryFilter ? '' : 'hidden' }}">
-                                                <i class="fas fa-check text-xs"></i>
-                                            </span>
-                                        </li>
-                                        @foreach ($categories as $category)
-                                            <li class="category-option relative cursor-pointer select-none py-2 pl-4 pr-9 text-sm text-gray-700 transition-colors hover:bg-emerald-50/80 {{ (string) $categoryFilter === (string) $category->cat_id ? 'bg-emerald-50/50 font-medium text-[#1a3a2d]' : '' }}" data-value="{{ $category->cat_id }}" data-name="{{ $category->cat_name }}" role="option" aria-selected="{{ (string) $categoryFilter === (string) $category->cat_id ? 'true' : 'false' }}">
-                                                <span class="block truncate">{{ $category->cat_name }}</span>
-                                                <span class="category-check absolute inset-y-0 right-0 flex items-center pr-4 text-[#1a3a2d] {{ (string) $categoryFilter === (string) $category->cat_id ? '' : 'hidden' }}">
-                                                    <i class="fas fa-check text-xs"></i>
-                                                </span>
-                                            </li>
-                                        @endforeach
+                                    <div>
+                                        <label for="assignment" class="pqs-filter-label text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Assignment</label>
+                                        <select id="assignment" name="assignment" data-auto-submit class="pqs-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15">
+                                            <option value="" @selected(!$assignmentFilter)>Any</option>
+                                            <option value="ics" @selected($assignmentFilter === 'ics')>With ICS</option>
+                                            <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
+                                            <option value="unassigned" @selected($assignmentFilter === 'unassigned')>Unassigned</option>
+                                        </select>
+                                    </div>
 
-                                        <li id="categoryDropdownEmpty" class="hidden py-3 px-4 text-center text-sm text-gray-500 italic">
-                                            No categories found
-                                        </li>
-                                    </ul>
+                                    <div>
+                                        <label for="condition" class="pqs-filter-label text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Condition</label>
+                                        <select id="condition" name="condition" data-auto-submit class="pqs-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15">
+                                            <option value="" @selected(!$conditionFilter)>Any</option>
+                                            <option value="serviceable" @selected($conditionFilter === 'serviceable')>Serviceable</option>
+                                            <option value="unserviceable" @selected($conditionFilter === 'unserviceable')>Unserviceable</option>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="date_from" class="pqs-filter-label text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
+                                        <input id="date_from" name="date_from" type="date" value="{{ $dateFrom ?? '' }}" class="pqs-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" />
+                                    </div>
+
+                                    <div>
+                                        <label for="date_to" class="pqs-filter-label text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
+                                        <input id="date_to" name="date_to" type="date" value="{{ $dateTo ?? '' }}" class="pqs-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                 <label for="assignment" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Assignment Status</label>
-                                <select id="assignment" name="assignment" data-auto-submit class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
-                                    <option value="" @selected(!$assignmentFilter)>Any</option>
-                                    <option value="ics" @selected($assignmentFilter === 'ics')>With ICS</option>
-                                    <option value="par" @selected($assignmentFilter === 'par')>With PAR</option>
-                                    <option value="unassigned" @selected($assignmentFilter === 'unassigned')>Unassigned</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="date_from" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date From</label>
-                                <input id="date_from" name="date_from" type="date" value="{{ $dateFrom ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
-                            </div>
-                            <div>
-                                <label for="date_to" class="text-xs font-semibold uppercase tracking-[0.12em] text-[#2d5a4a]/75">Date To</label>
-                                <input id="date_to" name="date_to" type="date" value="{{ $dateTo ?? '' }}" class="mt-1 w-full rounded-2xl border border-emerald-950/10 bg-white shadow-sm py-[9px] px-3 text-sm focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50" />
+
+                                <div class="pqs-filter-actions-row mt-3">
+                                    <div>
+                                        <button type="button" id="pqsPrintPdfBtn" class="pqs-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                            <i class="fas fa-file-pdf text-rose-600"></i>
+                                            <span>Print</span>
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <button type="button" id="pqsExportExcelBtn" class="pqs-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                            <i class="fas fa-file-excel text-emerald-600"></i>
+                                            <span>Excel</span>
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="pqs-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50" title="Reset Filters">
+                                            <i class="fas fa-rotate-left text-gray-500"></i>
+                                            <span>Reset</span>
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                     <div class="flex flex-col gap-4 border-t border-gray-100 pt-5 lg:flex-row lg:items-start lg:justify-between">
-                         <span class="text-sm font-medium text-gray-500 lg:pt-2"><span id="pqs-record-count">{{ number_format($records->total()) }}</span> records found</span>
-                         <div class="flex w-full flex-col gap-3 xl:w-auto xl:items-end">
-                            <a id="pqsResetFilters" href="{{ route('pqs.index') }}" class="inline-flex h-9 w-9 items-center justify-center self-start rounded-xl border border-[#1a3a2d]/20 bg-white text-[#1a3a2d] shadow-sm transition hover:bg-[#1a3a2d] hover:text-white xl:self-end" title="Reset Filters">
-                               <i class="fas fa-undo"></i>
+
+                    <div class="flex flex-col gap-4 border-t border-gray-100 pt-5 lg:flex-row lg:items-start lg:justify-between">
+                        <span class="text-sm font-medium text-gray-500 lg:pt-2"><span id="pqs-record-count">{{ number_format($records->total()) }}</span> records found</span>
+                        <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/45 p-1.5 sm:items-center lg:w-auto">
+                            <a href="{{ route('pqs.movements.report') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                <i class="fas fa-timeline"></i> Movement Report
                             </a>
-                            <div class="flex w-full flex-col gap-3 xl:flex-row xl:items-center xl:gap-3">
-                                <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-emerald-100 bg-emerald-50/45 p-1.5 sm:items-center xl:w-auto">
-                                    <a href="{{ route('pqs.movements.report') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
-                                        <i class="fas fa-timeline"></i> Movement Report
-                                    </a>
-                                    <button type="button" data-open-location-registry-modal class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
-                                        <i class="fas fa-plus"></i> Add Location
-                                    </button>
-                                    <button type="button" id="pqsBulkTurnoverOpen" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
-                                        <i class="fas fa-people-arrows-left-right"></i> Bulk Turnover
-                                    </button>
-                                </div>
-                                <div class="hidden h-8 w-px bg-gray-200 xl:block"></div>
-                                <div class="flex w-full flex-wrap items-stretch gap-2 rounded-2xl border border-gray-200 bg-gray-50/65 p-1.5 sm:items-center xl:w-auto">
-                                    <button type="button" id="pqsPrintPdfBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
-                                        <i class="fas fa-file-pdf text-rose-600"></i> Print PDF
-                                    </button>
-                                    <button type="button" id="pqsExportExcelBtn" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d] sm:w-auto">
-                                        <i class="fas fa-file-excel text-green-600"></i> Export Excel
-                                    </button>
-                                </div>
-                            </div>
+                            <button type="button" data-open-location-registry-modal class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                <i class="fas fa-plus"></i> Add Location
+                            </button>
+                            <button type="button" id="pqsBulkTurnoverOpen" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-semibold text-emerald-700 transition-all hover:border-emerald-300 hover:bg-emerald-100 sm:w-auto">
+                                <i class="fas fa-people-arrows-left-right"></i> Bulk Turnover
+                            </button>
                         </div>
                     </div>
-                     <button type="submit" data-no-global-loading="true" class="sr-only">Submit</button>
+
+                    <button type="submit" data-no-global-loading="true" class="sr-only">Submit</button>
                 </form>
             </div>
 
@@ -336,6 +415,34 @@
     </div>
 </div>
 
+<div id="pqsConditionConfirmModal" class="fixed inset-0 z-[120] hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="pqsConditionConfirmTitle">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-condition-confirm-close></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="condition-confirm-panel w-full max-w-md rounded-2xl border border-emerald-950/10 bg-white shadow-2xl opacity-0 scale-95 translate-y-2 transition-all duration-300 ease-out">
+            <div class="flex items-center gap-3 border-b border-gray-100 px-5 py-4">
+                <div id="pqsConditionConfirmIcon" class="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 text-rose-700">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h4 id="pqsConditionConfirmTitle" class="text-base font-bold text-[#1a3a2d]">Mark Asset Unserviceable</h4>
+                    <p class="text-xs text-gray-500">Please review before proceeding.</p>
+                </div>
+            </div>
+            <div class="px-5 py-4">
+                <p id="pqsConditionConfirmMessage" class="text-sm text-gray-700 whitespace-pre-line">Are you sure you want to continue?</p>
+            </div>
+            <div class="flex items-center justify-end gap-2 border-t border-gray-100 bg-[#fbfcfb] px-5 py-4">
+                <button type="button" id="pqsConditionConfirmNo" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-condition-confirm-close>
+                    Cancel
+                </button>
+                <button type="button" id="pqsConditionConfirmYes" class="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
+                    Mark Unserviceable
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @include('inventory.locations.partials._add-modal', [
     'locationRegistryStoreRoute' => route('physical_locations.store'),
     'locationRegistryParents' => $transferLocations,
@@ -354,6 +461,7 @@
     const searchInput = document.getElementById('search');
     const categorySelect = document.getElementById('category');
     const assignmentSelect = document.getElementById('assignment');
+    const conditionSelect = document.getElementById('condition');
     const dateFromInput = document.getElementById('date_from');
     const dateToInput = document.getElementById('date_to');
     const categoryDropdown = document.getElementById('categoryDropdown');
@@ -392,6 +500,11 @@
         const assignmentValue = assignmentSelect?.value;
         if (assignmentValue) {
             params.set('assignment', assignmentValue);
+        }
+
+        const conditionValue = conditionSelect?.value;
+        if (conditionValue) {
+            params.set('condition', conditionValue);
         }
 
         const dateFromValue = dateFromInput?.value;
@@ -678,7 +791,9 @@
     const currentCustodianEl = document.getElementById('pqsViewCurrentCustodian');
     const currentDivisionEl = document.getElementById('pqsViewCurrentDivision');
     const currentSectionEl = document.getElementById('pqsViewCurrentSection');
+    const currentConditionEl = document.getElementById('pqsViewCurrentCondition');
     const lastMovementEl = document.getElementById('pqsViewLastMovement');
+    const conditionChipEl = document.getElementById('pqsViewConditionChip');
     const movementTimelineEl = document.getElementById('pqsMovementTimeline');
     const movementTimelinePager = document.getElementById('pqsMovementTimelinePager');
     const timelinePrevBtn = document.getElementById('pqsTimelinePrev');
@@ -687,6 +802,7 @@
     const transferForm = document.getElementById('pqsTransferForm');
     const transferSubmit = document.getElementById('pqsTransferSubmit');
     const transferError = document.getElementById('pqsTransferError');
+    const transferBlockedNotice = document.getElementById('pqsTransferBlockedNotice');
     const transferLocation = document.getElementById('pqsTransferLocation');
     const transferLocationToggle = document.getElementById('pqsTransferLocationToggle');
     const transferLocationLabel = document.getElementById('pqsTransferLocationLabel');
@@ -731,11 +847,18 @@
     const bulkTurnoverModal = document.getElementById('pqsBulkTurnoverModal');
     const bulkTurnoverModalPanel = bulkTurnoverModal ? bulkTurnoverModal.querySelector('.modal-panel') : null;
     const bulkTurnoverCloseEls = bulkTurnoverModal ? Array.from(bulkTurnoverModal.querySelectorAll('[data-close-bulk-turnover]')) : [];
+    const conditionConfirmModal = document.getElementById('pqsConditionConfirmModal');
+    const conditionConfirmPanel = conditionConfirmModal ? conditionConfirmModal.querySelector('.condition-confirm-panel') : null;
+    const conditionConfirmMessage = document.getElementById('pqsConditionConfirmMessage');
+    const conditionConfirmYesBtn = document.getElementById('pqsConditionConfirmYes');
+    const conditionConfirmCloseEls = conditionConfirmModal ? Array.from(conditionConfirmModal.querySelectorAll('[data-condition-confirm-close]')) : [];
     const turnoverPreview = document.getElementById('pqsTurnoverPreview');
     const turnoverPreviewSummary = document.getElementById('pqsTurnoverPreviewSummary');
     const turnoverPreviewHint = document.getElementById('pqsTurnoverPreviewHint');
     const turnoverPreviewAssets = document.getElementById('pqsTurnoverPreviewAssets');
     let restoreBulkTurnoverBodyOverflowOnClose = false;
+    let restoreConditionConfirmBodyOverflowOnClose = false;
+    let conditionConfirmResolver = null;
     const actionTabButtons = Array.from(document.querySelectorAll('[data-pqs-action-tab]'));
     const detailSections = Array.from(document.querySelectorAll('.pqs-detail-section'));
     const actionWorkspace = document.getElementById('pqsActionWorkspace');
@@ -746,9 +869,23 @@
     const conditionSuccess = document.getElementById('pqsConditionSuccess');
     const conditionError = document.getElementById('pqsConditionError');
     const conditionEffectiveAt = document.getElementById('pqsConditionEffectiveAt');
+    const conditionReasonCode = document.getElementById('pqsConditionReasonCode');
+    const conditionReasonHelp = document.getElementById('pqsConditionReasonHelp');
+    const conditionReasonError = document.getElementById('pqsConditionReasonError');
+    const conditionExpectedFixDateWrap = document.getElementById('pqsConditionExpectedFixDateWrap');
+    const conditionExpectedFixDate = document.getElementById('pqsConditionExpectedFixDate');
+    const conditionExpectedFixDateError = document.getElementById('pqsConditionExpectedFixDateError');
+    const conditionHistoryEl = document.getElementById('pqsConditionHistory');
     const conditionRemarks = document.getElementById('pqsConditionRemarks');
-    const conditionServiceableBtn = document.getElementById('pqsConditionServiceable');
+    const conditionRemarksError = document.getElementById('pqsConditionRemarksError');
     const conditionUnserviceableBtn = document.getElementById('pqsConditionUnserviceable');
+    const allConditionReasonOptions = conditionReasonCode
+        ? Array.from(conditionReasonCode.options).map((option) => ({
+            value: String(option.value || ''),
+            label: String(option.textContent || ''),
+            condition: String(option.dataset.condition || 'both'),
+        }))
+        : [];
     const turnoverFieldErrors = Array.from(document.querySelectorAll('[data-turnover-error-for]'));
     const turnoverInputMap = {
         employee_id: turnoverEmployeeToggle,
@@ -810,8 +947,116 @@
     const defaultDocumentExtra = 'Generate PQS record to create custodial documents automatically.';
     const defaultEntityName = 'Department of Agriculture - Bureau of Plant Industry';
     const defaultFundCluster = '01';
+    const statusActive = '{{ \App\Models\PqsRecord::STATUS_ACTIVE }}';
+    const statusForRepair = '{{ \App\Models\PqsRecord::STATUS_FOR_REPAIR }}';
+    const statusDisposed = '{{ \App\Models\PqsRecord::STATUS_DISPOSED }}';
+    const statusLost = '{{ \App\Models\PqsRecord::STATUS_LOST }}';
     let currentRecord = null;
     let currentShowUrl = null;
+
+    const normalizeAssetStatus = (status) => String(status || '').trim() || statusActive;
+
+    const humanizeReasonCode = (reasonCode) => String(reasonCode || '')
+        .trim()
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+    const getConditionPresentation = (status) => {
+        const normalizedStatus = normalizeAssetStatus(status);
+
+        if (normalizedStatus === statusForRepair) {
+            return {
+                label: 'Unserviceable',
+                icon: 'fa-triangle-exclamation',
+                chipClass: 'border-rose-200 bg-rose-50 text-rose-700',
+            };
+        }
+
+        if (normalizedStatus === statusDisposed) {
+            return {
+                label: 'Unserviceable',
+                icon: 'fa-triangle-exclamation',
+                chipClass: 'border-rose-200 bg-rose-50 text-rose-700',
+            };
+        }
+
+        if (normalizedStatus === statusLost) {
+            return {
+                label: 'Unserviceable',
+                icon: 'fa-triangle-exclamation',
+                chipClass: 'border-rose-200 bg-rose-50 text-rose-700',
+            };
+        }
+
+        return {
+            label: 'Serviceable',
+            icon: 'fa-circle-check',
+            chipClass: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        };
+    };
+
+    const getTransferBlockedMessage = (status) => {
+        const normalizedStatus = normalizeAssetStatus(status);
+
+        if (normalizedStatus === statusForRepair) {
+            return 'Transfer is disabled while this asset is unserviceable.';
+        }
+
+        if (normalizedStatus === statusDisposed) {
+            return 'Transfer is disabled because this asset is already disposed.';
+        }
+
+        if (normalizedStatus === statusLost) {
+            return 'Transfer is disabled because this asset is marked as lost.';
+        }
+
+        return '';
+    };
+
+    const updateTransferActionAvailability = (record) => {
+        const transferTabButton = actionTabButtons.find((button) => button.dataset.pqsActionTab === 'transfer');
+        const blockedMessage = getTransferBlockedMessage(record?.asset_status);
+        const isBlocked = blockedMessage !== '';
+
+        if (transferTabButton) {
+            transferTabButton.disabled = isBlocked;
+            transferTabButton.classList.toggle('opacity-60', isBlocked);
+            transferTabButton.classList.toggle('cursor-not-allowed', isBlocked);
+            transferTabButton.title = isBlocked ? blockedMessage : 'Transfer';
+        }
+
+        if (transferSubmit) {
+            transferSubmit.disabled = isBlocked;
+            transferSubmit.classList.toggle('opacity-60', isBlocked);
+            transferSubmit.classList.toggle('cursor-not-allowed', isBlocked);
+            transferSubmit.title = isBlocked ? blockedMessage : 'Save Movement';
+        }
+
+        if (transferBlockedNotice) {
+            transferBlockedNotice.classList.toggle('hidden', !isBlocked);
+            transferBlockedNotice.textContent = isBlocked ? blockedMessage : '';
+        }
+
+        if (isBlocked && transferError) {
+            transferError.classList.add('hidden');
+            transferError.textContent = '';
+        }
+    };
+
+    const renderConditionChip = (status) => {
+        const presentation = getConditionPresentation(status);
+
+        if (currentConditionEl) {
+            currentConditionEl.textContent = presentation.label;
+        }
+
+        if (!conditionChipEl) {
+            return;
+        }
+
+        conditionChipEl.className = `inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-wide ${presentation.chipClass}`;
+        conditionChipEl.innerHTML = `<i class="fas ${presentation.icon}"></i>${escapeHtml(presentation.label)}`;
+    };
 
     const recAssets = document.getElementById('pqsRecAssets');
     const recActive = document.getElementById('pqsRecActive');
@@ -827,6 +1072,7 @@
     let timelineRequestToken = 0;
     let timelineCurrentPage = 1;
     let timelineLastPage = 1;
+    let timelineEntriesCache = [];
 
     const setText = (element, value, fallback = '—') => {
         if (!element) {
@@ -1222,6 +1468,9 @@
         if (turnoverEmployeeSearch) {
             turnoverEmployeeSearch.value = '';
         }
+        if (turnoverEffectiveAt && String(turnoverEffectiveAt.value || '').trim() === '') {
+            turnoverEffectiveAt.value = todayInputValue();
+        }
         closeTurnoverSearchPanels();
         setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
 
@@ -1257,6 +1506,72 @@
         }, 300);
         closeTurnoverSearchPanels();
     };
+
+    const closeConditionConfirmModal = (confirmed = false) => {
+        if (!conditionConfirmModal || conditionConfirmModal.classList.contains('hidden')) {
+            if (conditionConfirmResolver) {
+                const resolve = conditionConfirmResolver;
+                conditionConfirmResolver = null;
+                resolve(Boolean(confirmed));
+            }
+            return;
+        }
+
+        conditionConfirmModal.classList.add('opacity-0');
+        conditionConfirmPanel?.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+        setTimeout(() => {
+            conditionConfirmModal.classList.add('hidden');
+            if (restoreConditionConfirmBodyOverflowOnClose) {
+                document.body.classList.remove('overflow-hidden');
+            }
+            restoreConditionConfirmBodyOverflowOnClose = false;
+        }, 220);
+
+        if (conditionConfirmResolver) {
+            const resolve = conditionConfirmResolver;
+            conditionConfirmResolver = null;
+            resolve(Boolean(confirmed));
+        }
+    };
+
+    const openConditionConfirmModal = (message) => new Promise((resolve) => {
+        if (!conditionConfirmModal || !conditionConfirmMessage) {
+            resolve(false);
+            return;
+        }
+
+        if (conditionConfirmResolver) {
+            const pendingResolve = conditionConfirmResolver;
+            conditionConfirmResolver = null;
+            pendingResolve(false);
+        }
+
+        conditionConfirmResolver = resolve;
+        conditionConfirmMessage.textContent = String(message || 'Are you sure you want to continue?');
+        restoreConditionConfirmBodyOverflowOnClose = !document.body.classList.contains('overflow-hidden');
+
+        conditionConfirmModal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                conditionConfirmModal.classList.remove('opacity-0');
+                conditionConfirmPanel?.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            });
+        });
+
+        document.body.classList.add('overflow-hidden');
+
+        setTimeout(() => {
+            if (!conditionConfirmYesBtn) {
+                return;
+            }
+
+            try {
+                conditionConfirmYesBtn.focus({ preventScroll: true });
+            } catch (error) {
+                conditionConfirmYesBtn.focus();
+            }
+        }, 230);
+    });
 
     const setActionTab = (tabName = 'details') => {
         const paneMap = {
@@ -1321,23 +1636,176 @@
     };
 
     const setConditionLoading = (isLoading) => {
-        [conditionServiceableBtn, conditionUnserviceableBtn].forEach((button) => {
-            if (!button) {
-                return;
-            }
+        if (!conditionUnserviceableBtn) {
+            return;
+        }
 
-            if (isLoading) {
-                button.dataset.originalHtml = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-                button.disabled = true;
-                return;
-            }
+        if (isLoading) {
+            conditionUnserviceableBtn.dataset.originalHtml = conditionUnserviceableBtn.innerHTML;
+            conditionUnserviceableBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            conditionUnserviceableBtn.disabled = true;
+            return;
+        }
 
-            if (button.dataset.originalHtml) {
-                button.innerHTML = button.dataset.originalHtml;
+        if (conditionUnserviceableBtn.dataset.originalHtml) {
+            conditionUnserviceableBtn.innerHTML = conditionUnserviceableBtn.dataset.originalHtml;
+        }
+
+        conditionUnserviceableBtn.disabled = false;
+    };
+
+    const setConditionReasonError = (message = '') => {
+        if (!conditionReasonError || !conditionReasonCode) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        conditionReasonError.classList.toggle('hidden', !hasMessage);
+        conditionReasonError.textContent = hasMessage ? message : '';
+        conditionReasonCode.classList.toggle('border-rose-300', hasMessage);
+        conditionReasonCode.classList.toggle('bg-rose-50/30', hasMessage);
+    };
+
+    const setConditionRemarksError = (message = '') => {
+        if (!conditionRemarks || !conditionRemarksError) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        conditionRemarksError.classList.toggle('hidden', !hasMessage);
+        conditionRemarksError.textContent = hasMessage ? message : '';
+        conditionRemarks.classList.toggle('border-rose-300', hasMessage);
+        conditionRemarks.classList.toggle('bg-rose-50/30', hasMessage);
+    };
+
+    const setConditionReasonHelpText = (conditionValue) => {
+        if (!conditionReasonHelp) {
+            return;
+        }
+
+        if (conditionValue === 'serviceable') {
+            conditionReasonHelp.textContent = 'Recommended when marking as serviceable.';
+            return;
+        }
+
+        conditionReasonHelp.textContent = 'Required when marking as unserviceable.';
+    };
+
+    const setConditionExpectedFixDateError = (message = '') => {
+        if (!conditionExpectedFixDate || !conditionExpectedFixDateError) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        conditionExpectedFixDateError.classList.toggle('hidden', !hasMessage);
+        conditionExpectedFixDateError.textContent = hasMessage ? message : '';
+        conditionExpectedFixDate.classList.toggle('border-rose-300', hasMessage);
+        conditionExpectedFixDate.classList.toggle('bg-rose-50/30', hasMessage);
+    };
+
+    const syncExpectedFixDateVisibility = (conditionValue = 'unserviceable') => {
+        if (!conditionExpectedFixDateWrap || !conditionExpectedFixDate) {
+            return;
+        }
+
+        const reasonValue = String(conditionReasonCode?.value || '').trim();
+        const showExpectedFixDate = conditionValue === 'unserviceable' && reasonValue === 'for_repair';
+
+        conditionExpectedFixDateWrap.classList.toggle('hidden', !showExpectedFixDate);
+        if (!showExpectedFixDate) {
+            conditionExpectedFixDate.value = '';
+            setConditionExpectedFixDateError('');
+        }
+    };
+
+    const applyConditionReasonOptions = (conditionValue = 'unserviceable') => {
+        if (!conditionReasonCode || allConditionReasonOptions.length === 0) {
+            return;
+        }
+
+        const selectedValue = String(conditionReasonCode.value || '');
+        const allowed = allConditionReasonOptions.filter((entry) => {
+            if (entry.value === '') {
+                return true;
             }
-            button.disabled = false;
+            if (entry.condition === 'both') {
+                return true;
+            }
+            return entry.condition === conditionValue;
         });
+
+        conditionReasonCode.innerHTML = allowed.map((entry) => {
+            const selectedAttr = entry.value === selectedValue ? ' selected' : '';
+            return `<option value="${escapeHtml(entry.value)}"${selectedAttr}>${escapeHtml(entry.label)}</option>`;
+        }).join('');
+
+        const stillSelected = allowed.some((entry) => entry.value === selectedValue);
+        if (!stillSelected) {
+            conditionReasonCode.value = '';
+        }
+
+        setConditionReasonHelpText(conditionValue);
+        syncExpectedFixDateVisibility(conditionValue);
+    };
+
+    const updateConditionButtonsState = (record) => {
+        const isUnserviceable = normalizeAssetStatus(record?.asset_status) === statusForRepair;
+
+        if (!conditionUnserviceableBtn) {
+            return;
+        }
+
+        conditionUnserviceableBtn.disabled = isUnserviceable;
+        conditionUnserviceableBtn.classList.toggle('opacity-60', isUnserviceable);
+        conditionUnserviceableBtn.classList.toggle('cursor-not-allowed', isUnserviceable);
+        conditionUnserviceableBtn.title = isUnserviceable
+            ? 'Asset is already marked as unserviceable.'
+            : 'Mark Unserviceable';
+    };
+
+    const renderConditionHistory = (movements = []) => {
+        if (!conditionHistoryEl) {
+            return;
+        }
+
+        const conditionMovements = Array.isArray(movements)
+            ? movements.filter((movement) => ['maintenance_out', 'maintenance_in'].includes(String(movement?.movement_type || '').trim()))
+            : [];
+
+        if (conditionMovements.length === 0) {
+            conditionHistoryEl.innerHTML = '<p class="text-gray-400 italic">No condition history yet.</p>';
+            return;
+        }
+
+        conditionHistoryEl.innerHTML = conditionMovements.map((movement) => {
+            const when = movement?.effective_at ? formatDate(movement.effective_at) : '—';
+            const isUnserviceable = String(movement?.movement_type || '') === 'maintenance_out';
+            const stateLabel = isUnserviceable ? 'Marked Unserviceable' : 'Marked Serviceable';
+            const stateClass = isUnserviceable
+                ? 'bg-rose-100 text-rose-700 border-rose-200'
+                : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            const byText = movement?.moved_by ? `By ${movement.moved_by}` : 'By System';
+            const reasonCode = humanizeReasonCode(movement?.reason_code || '');
+            const reasonHtml = reasonCode !== ''
+                ? `<p class="mt-1 text-[11px] text-gray-600">Reason: <span class="font-medium text-gray-700">${escapeHtml(reasonCode)}</span></p>`
+                : '';
+            const remarks = String(movement?.remarks || '').trim();
+            const remarksHtml = remarks !== ''
+                ? `<p class="mt-1 text-[11px] text-gray-500">${escapeHtml(remarks)}</p>`
+                : '';
+
+            return `
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${stateClass}">${escapeHtml(stateLabel)}</span>
+                        <span class="text-[11px] text-gray-500">${escapeHtml(when)}</span>
+                    </div>
+                    <p class="mt-1 text-[11px] text-gray-600">${escapeHtml(byText)}</p>
+                    ${reasonHtml}
+                    ${remarksHtml}
+                </div>
+            `;
+        }).join('');
     };
 
     const setTimelinePager = (currentPage = 1, lastPage = 1) => {
@@ -1434,6 +1902,7 @@
 
         return {
             movement_type: movement?.movement_type || 'movement',
+            reason_code: movement?.reason_code || '',
             from_display: fromDisplay,
             to_display: toDisplay,
             moved_by: movedBy,
@@ -1448,10 +1917,15 @@
         }
 
         if (!Array.isArray(movements) || movements.length === 0) {
+            timelineEntriesCache = [];
             movementTimelineEl.innerHTML = '<p class="text-gray-400 italic">No movement records yet.</p>';
+            renderConditionHistory([]);
             setTimelinePager(1, 1);
             return;
         }
+
+        timelineEntriesCache = movements;
+        renderConditionHistory(timelineEntriesCache);
 
         movementTimelineEl.innerHTML = movements.map((movement) => {
             const fromDisplay = movement.from_display || 'Unspecified';
@@ -1854,6 +2328,12 @@
         });
     };
 
+    const todayInputValue = () => {
+        const now = new Date();
+        const timezoneOffsetMs = now.getTimezoneOffset() * 60000;
+        return new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, 10);
+    };
+
     const upsertLocationOption = (selectField, location, includePredicate = null) => {
         if (!selectField || !location) {
             return false;
@@ -1946,6 +2426,7 @@
     };
 
     const closeModal = () => {
+        closeConditionConfirmModal(false);
         modal.classList.add('opacity-0');
         if (modalPanel) {
             modalPanel.classList.add('opacity-0', 'scale-95', 'translate-y-2');
@@ -2066,7 +2547,9 @@
         setText(currentCustodianEl, '', 'Unassigned');
         setText(currentDivisionEl, '', 'Unassigned');
         setText(currentSectionEl, '', 'Unassigned');
+        setText(currentConditionEl, 'Serviceable', 'Serviceable');
         setText(lastMovementEl, '', '—');
+        renderConditionChip(statusActive);
         renderMovementTimeline([]);
         timelineRequestToken += 1;
 
@@ -2098,9 +2581,23 @@
 
         if (conditionForm) {
             conditionForm.reset();
+            if (conditionEffectiveAt) {
+                conditionEffectiveAt.value = todayInputValue();
+            }
             setConditionMessage(conditionSuccess, '', 'success');
             setConditionMessage(conditionError, '', 'error');
+            setConditionReasonError('');
+            setConditionExpectedFixDateError('');
+            setConditionRemarksError('');
+            syncExpectedFixDateVisibility('unserviceable');
         }
+
+        if (conditionHistoryEl) {
+            conditionHistoryEl.innerHTML = '<p class="text-gray-400 italic">No condition history yet.</p>';
+        }
+
+        updateConditionButtonsState(null);
+        updateTransferActionAvailability(null);
 
         setActionTab('details');
 
@@ -2263,7 +2760,27 @@
         setText(currentCustodianEl, record.current_custodian?.name || '', 'Unassigned');
         setText(currentDivisionEl, record.assigned_division || '', 'Unassigned');
         setText(currentSectionEl, record.assigned_section || '', 'Unassigned');
+        renderConditionChip(record.asset_status);
         setText(lastMovementEl, formatDate(record.last_movement_at), '—');
+
+        updateConditionButtonsState(record);
+        updateTransferActionAvailability(record);
+        setConditionReasonError('');
+        setConditionExpectedFixDateError('');
+        setConditionRemarksError('');
+
+        if (conditionReasonCode) {
+            conditionReasonCode.value = '';
+        }
+        if (conditionEffectiveAt && String(conditionEffectiveAt.value || '').trim() === '') {
+            conditionEffectiveAt.value = todayInputValue();
+        }
+        applyConditionReasonOptions('unserviceable');
+
+        const recentConditionEntries = Array.isArray(record.recent_movements)
+            ? record.recent_movements.map((entry) => mapTimelineItem(entry))
+            : [];
+        renderConditionHistory(recentConditionEntries);
 
         syncTransferKeepCurrentLabels(record);
 
@@ -2516,7 +3033,21 @@
     });
 
     window.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        if (conditionConfirmModal && !conditionConfirmModal.classList.contains('hidden')) {
+            closeConditionConfirmModal(false);
+            return;
+        }
+
+        if (bulkTurnoverModal && !bulkTurnoverModal.classList.contains('hidden')) {
+            closeBulkTurnoverModal();
+            return;
+        }
+
+        if (!modal.classList.contains('hidden')) {
             closeModal();
         }
     });
@@ -2545,6 +3076,9 @@
 
     actionTabButtons.forEach((button) => {
         button.addEventListener('click', () => {
+            if (button.disabled) {
+                return;
+            }
             const tabName = button.dataset.pqsActionTab || 'transfer';
             setActionTab(tabName);
         });
@@ -2621,7 +3155,11 @@
             return;
         }
 
-        const transferUpdated = upsertLocationOption(transferLocation, location);
+        const transferUpdated = upsertLocationOption(
+            transferLocation,
+            location,
+            (entry) => !Boolean(entry.is_storage)
+        );
         if (transferUpdated && transferLocation) {
             transferLocation.value = String(location.location_id);
             transferLocation.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2666,6 +3204,14 @@
 
     transferForm?.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+        const blockedMessage = getTransferBlockedMessage(currentRecord?.asset_status);
+        if (blockedMessage !== '') {
+            clearTransferFieldErrors();
+            setTransferError(blockedMessage);
+            notifyError(blockedMessage);
+            return;
+        }
 
         if (!currentRecord?.property_no) {
             clearTransferFieldErrors();
@@ -2721,7 +3267,9 @@
             }
 
             await window.pqsFetchRecords?.();
-            notifySuccess(data?.message || 'Asset movement has been recorded successfully.');
+            const successMessage = data?.message || 'Asset movement has been recorded successfully.';
+            notifySuccess(successMessage);
+            closeModal();
         } catch (error) {
             const message = error?.message || 'Unable to save movement right now.';
             setTransferError(message);
@@ -2735,6 +3283,10 @@
         event.preventDefault();
 
         clearTurnoverFieldErrors();
+
+        if (turnoverEffectiveAt && String(turnoverEffectiveAt.value || '').trim() === '') {
+            turnoverEffectiveAt.value = todayInputValue();
+        }
 
         if ((turnoverConfirm?.value || '').trim().toUpperCase() !== 'CONFIRM') {
             if (turnoverConfirm) {
@@ -2777,7 +3329,11 @@
                 throw new Error(validationMessage);
             }
 
-            const successMessage = data?.message || 'Employee asset turnover completed successfully.';
+            const baseSuccessMessage = data?.message || 'Employee asset turnover completed successfully.';
+            const batchReference = String(data?.data?.batch_reference || '').trim();
+            const successMessage = batchReference
+                ? `${baseSuccessMessage} Batch Reference: ${batchReference}`
+                : baseSuccessMessage;
             notifySuccess(successMessage);
             turnoverForm?.reset();
             setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
@@ -2808,6 +3364,34 @@
 
         setConditionMessage(conditionError, '', 'error');
         setConditionMessage(conditionSuccess, '', 'success');
+        setConditionRemarksError('');
+
+        if (conditionEffectiveAt && String(conditionEffectiveAt.value || '').trim() === '') {
+            conditionEffectiveAt.value = todayInputValue();
+        }
+
+        const remarksValue = String(conditionRemarks?.value || '').trim();
+        if (remarksValue === '') {
+            setConditionRemarksError('Remarks is required when marking an asset as unserviceable.');
+            setConditionMessage(conditionError, 'Provide remarks first.', 'error');
+            return;
+        }
+
+        const effectiveDateLabel = String(conditionEffectiveAt?.value || '').trim() || todayInputValue();
+        const confirmMessage = [
+            'You are about to mark this asset as UNSERVICEABLE.',
+            `Property No: ${currentRecord.property_no}`,
+            `Effective Date: ${effectiveDateLabel}`,
+            '',
+            'This action cannot be reverted from this screen.',
+            'Press Mark Unserviceable to continue or Cancel to review first.'
+        ].join('\n');
+
+        const isConfirmed = await openConditionConfirmModal(confirmMessage);
+        if (!isConfirmed) {
+            return;
+        }
+
         setConditionLoading(true);
 
         try {
@@ -2816,7 +3400,7 @@
             const payload = {
                 condition: conditionValue,
                 effective_at: conditionEffectiveAt?.value || null,
-                remarks: conditionRemarks?.value?.trim() || null,
+                remarks: remarksValue,
             };
 
             const response = await fetch(conditionUrl, {
@@ -2832,26 +3416,54 @@
 
             const data = await response.json().catch(() => ({}));
             if (!response.ok) {
+                if (data?.errors?.remarks?.length) {
+                    setConditionRemarksError(String(data.errors.remarks[0] || ''));
+                }
                 const message = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to update asset condition.';
                 throw new Error(message);
             }
 
-            setConditionMessage(conditionSuccess, data?.message || 'Asset condition updated successfully.', 'success');
+            const successMessage = data?.message || 'Asset condition updated successfully.';
+            setConditionMessage(conditionSuccess, successMessage, 'success');
+            notifySuccess(successMessage);
 
             if (currentShowUrl) {
                 await fetchAndPopulateRecord(currentShowUrl);
             }
 
             await window.pqsFetchRecords?.();
+            closeModal();
         } catch (error) {
-            setConditionMessage(conditionError, error?.message || 'Unable to update condition right now.', 'error');
+            const errorMessage = error?.message || 'Unable to update condition right now.';
+            setConditionMessage(conditionError, errorMessage, 'error');
+            notifyError(errorMessage);
         } finally {
             setConditionLoading(false);
         }
     };
 
-    conditionServiceableBtn?.addEventListener('click', () => submitConditionUpdate('serviceable'));
     conditionUnserviceableBtn?.addEventListener('click', () => submitConditionUpdate('unserviceable'));
+    conditionReasonCode?.addEventListener('change', () => {
+        setConditionReasonError('');
+        setConditionExpectedFixDateError('');
+
+        const selectedOption = conditionReasonCode.selectedOptions?.[0] || null;
+        const optionCondition = String(selectedOption?.dataset?.condition || 'unserviceable');
+        const inferredCondition = optionCondition === 'serviceable' ? 'serviceable' : 'unserviceable';
+        syncExpectedFixDateVisibility(inferredCondition);
+    });
+    conditionExpectedFixDate?.addEventListener('change', () => setConditionExpectedFixDateError(''));
+    conditionRemarks?.addEventListener('input', () => setConditionRemarksError(''));
+    conditionConfirmCloseEls.forEach((element) => {
+        element.addEventListener('click', (event) => {
+            event.preventDefault();
+            closeConditionConfirmModal(false);
+        });
+    });
+    conditionConfirmYesBtn?.addEventListener('click', (event) => {
+        event.preventDefault();
+        closeConditionConfirmModal(true);
+    });
 
     const loadReconciliationSummary = async () => {
         if (!reconcileEndpoint) {
@@ -2913,6 +3525,7 @@
             const search = document.getElementById('search')?.value || '';
             const category = document.getElementById('category')?.value || '';
             const assignment = document.getElementById('assignment')?.value || '';
+            const condition = document.getElementById('condition')?.value || '';
             const dateFrom = document.getElementById('date_from')?.value || '';
             const dateTo = document.getElementById('date_to')?.value || '';
 
@@ -2920,6 +3533,7 @@
             if (search) params.append('search', search);
             if (category) params.append('category', category);
             if (assignment) params.append('assignment', assignment);
+            if (condition) params.append('condition', condition);
             if (dateFrom) params.append('date_from', dateFrom);
             if (dateTo) params.append('date_to', dateTo);
 
@@ -2933,6 +3547,7 @@
             const search = document.getElementById('search')?.value || '';
             const category = document.getElementById('category')?.value || '';
             const assignment = document.getElementById('assignment')?.value || '';
+            const condition = document.getElementById('condition')?.value || '';
             const dateFrom = document.getElementById('date_from')?.value || '';
             const dateTo = document.getElementById('date_to')?.value || '';
 
@@ -2940,6 +3555,7 @@
             if (search) params.append('search', search);
             if (category) params.append('category', category);
             if (assignment) params.append('assignment', assignment);
+            if (condition) params.append('condition', condition);
             if (dateFrom) params.append('date_from', dateFrom);
             if (dateTo) params.append('date_to', dateTo);
 

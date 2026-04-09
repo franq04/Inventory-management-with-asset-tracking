@@ -145,7 +145,6 @@
                                             <label for="inventoryInitialLocationType" class="text-[11px] font-semibold uppercase tracking-wider text-emerald-800">Location Type</label>
                                             <select name="initial_location_type" id="inventoryInitialLocationType" class="w-full border border-emerald-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                                                 <option value="room">Room</option>
-                                                <option value="storage">Storage</option>
                                                 <option value="floor">Floor</option>
                                                 <option value="building">Building</option>
                                                 <option value="other" selected>Other</option>

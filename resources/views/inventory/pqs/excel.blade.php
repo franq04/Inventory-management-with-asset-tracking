@@ -51,6 +51,14 @@
         </thead>
         <tbody>
             @forelse($records as $record)
+            @php
+                $assetStatusLabel = match ((string) ($record->asset_status ?? \App\Models\PqsRecord::STATUS_ACTIVE)) {
+                    \App\Models\PqsRecord::STATUS_FOR_REPAIR,
+                    \App\Models\PqsRecord::STATUS_DISPOSED,
+                    \App\Models\PqsRecord::STATUS_LOST => 'Unserviceable',
+                    default => 'Serviceable',
+                };
+            @endphp
             <tr>
                 <td>{{ $record->property_no }}</td>
                 <td>{{ $record->article }}</td>
@@ -66,15 +74,7 @@
                 <td>{{ $record->icsRecord ? $record->icsRecord->ics_no : '—' }}</td>
                 <td>{{ $record->parRecord ? $record->parRecord->par_no : '—' }}</td>
                 <td>
-                    @if($record->icsRecord && $record->parRecord)
-                        ICS/PAR
-                    @elseif($record->icsRecord)
-                        ICS
-                    @elseif($record->parRecord)
-                        PAR
-                    @else
-                        Unassigned
-                    @endif
+                    {{ $assetStatusLabel }}
                 </td>
                 <td>{{ $record->remarks ?? '—' }}</td>
             </tr>

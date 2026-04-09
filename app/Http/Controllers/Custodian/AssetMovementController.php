@@ -132,7 +132,7 @@ class AssetMovementController extends Controller
                         'eligible_assets' => $assets->count() - $skippedAssets->count(),
                         'skipped_assets' => $skippedAssets->map(fn (PqsRecord $asset): array => [
                             'property_no' => $asset->property_no,
-                            'reason' => 'Asset is disposed or otherwise not transferable.',
+                            'reason' => 'Asset is unserviceable, disposed, lost, or otherwise not transferable.',
                         ])->all(),
                         'affected_assets' => [],
                         'failed_assets' => [],
@@ -270,6 +270,13 @@ class AssetMovementController extends Controller
                     'message' => 'Selected target location is inactive or unavailable.',
                 ], 422);
             }
+
+            if ($location->location_type === 'storage') {
+                return $this->jsonResponse([
+                    'status' => 'error',
+                    'message' => 'Storage locations are reserved for Bulk Turnover only.',
+                ], 422);
+            }
         }
 
         $targetLocationId = $validated['to_location_id'] ?? $pqsRecord->current_location_id;
@@ -320,10 +327,10 @@ class AssetMovementController extends Controller
             ], 422);
         }
 
-        if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST], true)) {
+        if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST, PqsRecord::STATUS_FOR_REPAIR], true)) {
             return $this->jsonResponse([
                 'status' => 'error',
-                'message' => 'Disposed or lost assets cannot be transferred.',
+                'message' => 'Unserviceable, disposed, or lost assets cannot be transferred.',
             ], 422);
         }
 
@@ -428,26 +435,41 @@ class AssetMovementController extends Controller
         if (in_array($pqsRecord->asset_status, [PqsRecord::STATUS_DISPOSED, PqsRecord::STATUS_LOST], true)) {
             return $this->jsonResponse([
                 'status' => 'error',
-                'message' => 'Disposed or lost assets cannot be updated to serviceable or unserviceable.',
+                'message' => 'Disposed or lost assets cannot be updated.',
             ], 422);
         }
 
         $validated = $request->validate([
-            'condition' => ['required', 'in:serviceable,unserviceable'],
+            'condition' => ['required', 'in:unserviceable'],
             'effective_at' => ['nullable', 'date'],
-            'remarks' => ['nullable', 'string', 'max:1000'],
+            'remarks' => ['required', 'string', 'max:1000'],
+        ], [
+            'remarks.required' => 'Remarks is required when marking an asset as unserviceable.',
         ]);
 
         $account = Auth::user();
         $condition = $validated['condition'];
         $effectiveAt = $validated['effective_at'] ?? now();
 
-        $movementType = $condition === 'unserviceable' ? 'maintenance_out' : 'maintenance_in';
-        $targetStatus = $condition === 'unserviceable'
-            ? PqsRecord::STATUS_FOR_REPAIR
-            : PqsRecord::STATUS_ACTIVE;
+        $movementType = 'maintenance_out';
+        $targetStatus = PqsRecord::STATUS_FOR_REPAIR;
 
-        $movement = DB::transaction(function () use ($pqsRecord, $account, $movementType, $targetStatus, $effectiveAt, $validated): AssetMovement {
+        if ($targetStatus === $pqsRecord->asset_status) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'Asset is already marked as unserviceable.',
+            ], 422);
+        }
+
+        $reasonCode = 'unserviceable';
+        $remarksValue = trim((string) ($validated['remarks'] ?? ''));
+        if ($remarksValue === '') {
+            throw ValidationException::withMessages([
+                'remarks' => 'Remarks is required when marking an asset as unserviceable.',
+            ]);
+        }
+
+        $movement = DB::transaction(function () use ($pqsRecord, $account, $movementType, $targetStatus, $effectiveAt, $remarksValue, $reasonCode): AssetMovement {
             $movement = AssetMovement::create([
                 'property_no' => $pqsRecord->property_no,
                 'from_location_id' => $pqsRecord->current_location_id,
@@ -459,12 +481,12 @@ class AssetMovementController extends Controller
                 'from_section_id' => $pqsRecord->assigned_section_id,
                 'to_section_id' => $pqsRecord->assigned_section_id,
                 'movement_type' => $movementType,
-                'reason_code' => 'condition_update',
+                'reason_code' => $reasonCode,
                 'effective_at' => $effectiveAt,
                 'recorded_by' => $account?->account_id,
                 'source_table' => 'pqs',
                 'source_record_id' => $pqsRecord->property_no,
-                'remarks' => $validated['remarks'] ?? null,
+                'remarks' => $remarksValue !== '' ? $remarksValue : null,
             ]);
 
             $pqsRecord->update([
@@ -495,9 +517,7 @@ class AssetMovementController extends Controller
 
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => $condition === 'unserviceable'
-                ? 'Asset marked as unserviceable successfully.'
-                : 'Asset marked as serviceable successfully.',
+            'message' => 'Asset marked as unserviceable successfully.',
             'data' => [
                 'movement' => $movement,
                 'asset' => $pqsRecord->fresh(['currentLocation', 'currentCustodian', 'assignedDivision', 'assignedSection']),

@@ -33,6 +33,7 @@ class InventoryAssignmentController extends Controller
         $categories = Category::parentsWithChildren();
         $locations = PhysicalLocation::query()
             ->where('is_active', true)
+            ->where('location_type', '!=', 'storage')
             ->orderBy('location_name')
             ->get()
             ->map(fn (PhysicalLocation $location) => $this->formatLocationOption($location))
@@ -73,7 +74,7 @@ class InventoryAssignmentController extends Controller
     {
         $validated = $request->validate([
             'location_name' => ['required', 'string', 'max:255'],
-            'location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'storage', 'other'])],
+            'location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'other'])],
             'parent_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
         ]);
 
@@ -93,10 +94,17 @@ class InventoryAssignmentController extends Controller
 
         $location = $existingQuery->first();
 
+        if ($location && $location->location_type === 'storage') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Storage locations are reserved for turnover only.',
+            ], 422);
+        }
+
         if (! $location) {
             $location = PhysicalLocation::query()->create([
                 'location_name' => $normalizedName,
-                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'storage', 'other'], true) ? $locationType : 'other',
+                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'other'], true) ? $locationType : 'other',
                 'parent_location_id' => $parentLocationId,
                 'is_active' => true,
                 'description' => 'Added from inventory assignment form.',
@@ -413,9 +421,9 @@ class InventoryAssignmentController extends Controller
             'unit_cost' => ['required', 'numeric', 'min:0'],
             'date_acquired' => ['required', 'date'],
             'estimated_useful_life' => ['nullable', 'string', 'max:100'],
-            'initial_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
+            'initial_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true)->where('location_type', '!=', 'storage'))],
             'initial_location_name' => ['nullable', 'string', 'max:255'],
-            'initial_location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'storage', 'other'])],
+            'initial_location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'other'])],
             'initial_location_parent_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
             'serial_numbers' => ['nullable', 'array'],
             'serial_numbers.*' => ['nullable', 'string', 'max:255'],
@@ -706,7 +714,7 @@ class InventoryAssignmentController extends Controller
 
             return PhysicalLocation::query()->create([
                 'location_name' => $normalizedName,
-                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'storage', 'other'], true) ? $locationType : 'other',
+                'location_type' => in_array($locationType, ['building', 'floor', 'room', 'other'], true) ? $locationType : 'other',
                 'parent_location_id' => $parentLocationId,
                 'division_id' => $divisionId,
                 'section_id' => $sectionId,
@@ -721,6 +729,7 @@ class InventoryAssignmentController extends Controller
 
         return PhysicalLocation::query()
             ->where('is_active', true)
+            ->where('location_type', '!=', 'storage')
             ->find($locationId);
     }
 
@@ -872,8 +881,9 @@ class InventoryAssignmentController extends Controller
 
         $baseQuery = PhysicalLocation::query()
             ->where('is_active', true)
+            ->where('location_type', '!=', 'storage')
             ->orderByRaw("CASE WHEN section_id IS NOT NULL THEN 0 WHEN division_id IS NOT NULL THEN 1 ELSE 2 END")
-            ->orderByRaw("CASE location_type WHEN 'room' THEN 0 WHEN 'storage' THEN 1 WHEN 'floor' THEN 2 WHEN 'building' THEN 3 ELSE 4 END")
+            ->orderByRaw("CASE location_type WHEN 'room' THEN 0 WHEN 'floor' THEN 1 WHEN 'building' THEN 2 ELSE 3 END")
             ->orderBy('location_name');
 
         if ($sectionId) {

@@ -24,6 +24,7 @@ class PqsController extends Controller
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        $conditionFilter = $request->input('condition');
         [$dateFrom, $dateTo] = $this->resolveDateRange($request);
 
         $query = $this->buildFilteredPqsQuery($request);
@@ -50,14 +51,19 @@ class PqsController extends Controller
             ->selectRaw('SUM(total_value) as total_value')
             ->selectRaw('SUM(CASE WHEN property_no IN (SELECT property_no FROM ics) THEN 1 ELSE 0 END) as with_ics')
             ->selectRaw('SUM(CASE WHEN property_no IN (SELECT property_no FROM par) THEN 1 ELSE 0 END) as with_par')
-            ->selectRaw('SUM(CASE WHEN property_no NOT IN (SELECT property_no FROM ics) AND property_no NOT IN (SELECT property_no FROM par) THEN 1 ELSE 0 END) as unassigned')
             ->first();
+
+        // Keep "unassigned" aligned with table display logic (no resolved employee owner).
+        $unassignedCount = PqsRecord::query()
+            ->whereDoesntHave('currentCustodian')
+            ->whereDoesntHave('accountableOfficer')
+            ->count();
 
         $stats = [
             'total' => (int) $agg->total,
             'withIcs' => (int) $agg->with_ics,
             'withPar' => (int) $agg->with_par,
-            'unassigned' => (int) $agg->unassigned,
+            'unassigned' => (int) $unassignedCount,
             'totalValue' => (float) $agg->total_value,
         ];
 
@@ -73,6 +79,7 @@ class PqsController extends Controller
 
         $transferLocations = PhysicalLocation::query()
             ->where('is_active', true)
+            ->where('location_type', '!=', 'storage')
             ->orderBy('location_name')
             ->get(['location_id', 'location_name', 'location_code', 'location_type', 'division_id', 'section_id']);
 
@@ -108,6 +115,7 @@ class PqsController extends Controller
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'assignmentFilter' => $assignmentFilter,
+            'conditionFilter' => $conditionFilter,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'categories' => $categories,
@@ -264,6 +272,7 @@ class PqsController extends Controller
                 return [
                     'movement_id' => $movement->movement_id,
                     'movement_type' => $movement->movement_type,
+                    'reason_code' => $movement->reason_code,
                     'from_location' => $movement->fromLocation?->location_name,
                     'to_location' => $movement->toLocation?->location_name,
                     'moved_by' => $movement->movedByAccount?->username,
@@ -296,6 +305,7 @@ class PqsController extends Controller
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        $conditionFilter = $request->input('condition');
         [$dateFrom, $dateTo] = $this->resolveDateRange($request);
         $generatedOnLabel = $this->buildGeneratedOnLabel($dateFrom, $dateTo);
 
@@ -319,6 +329,7 @@ class PqsController extends Controller
             'search' => $search,
             'categoryFilter' => $categoryFilter,
             'assignmentFilter' => $assignmentFilter,
+            'conditionFilter' => $conditionFilter,
             'generatedOnLabel' => $generatedOnLabel,
             'preparedByName' => $preparedByName,
             'preparedByRole' => $preparedByRole,
@@ -351,6 +362,7 @@ class PqsController extends Controller
         $search = trim((string) $request->input('search'));
         $categoryFilter = $request->input('category');
         $assignmentFilter = $request->input('assignment');
+        $conditionFilter = trim((string) $request->input('condition'));
         [$dateFrom, $dateTo] = $this->resolveDateRange($request);
 
         $query = PqsRecord::query()->with(['category.parent', 'accountableOfficer.section', 'accountableOfficer.position', 'currentLocation', 'currentCustodian.section', 'currentCustodian.position', 'icsRecord', 'parRecord']);
@@ -411,12 +423,27 @@ class PqsController extends Controller
             $query->where('cat_id', $categoryFilter);
         }
 
+        if ($conditionFilter === 'serviceable') {
+            $query->whereIn('asset_status', [
+                PqsRecord::STATUS_ACTIVE,
+                PqsRecord::STATUS_TRANSFERRED,
+            ]);
+        } elseif ($conditionFilter === 'unserviceable') {
+            $query->whereIn('asset_status', [
+                PqsRecord::STATUS_FOR_REPAIR,
+                PqsRecord::STATUS_DISPOSED,
+                PqsRecord::STATUS_LOST,
+            ]);
+        }
+
         if ($assignmentFilter === 'ics') {
             $query->whereHas('icsRecord');
         } elseif ($assignmentFilter === 'par') {
             $query->whereHas('parRecord');
         } elseif ($assignmentFilter === 'unassigned') {
-            $query->whereDoesntHave('icsRecord')->whereDoesntHave('parRecord');
+            // Match the visible table state: unassigned means no resolvable employee owner.
+            $query->whereDoesntHave('currentCustodian')
+                ->whereDoesntHave('accountableOfficer');
         }
 
         if ($dateFrom && $dateTo) {
