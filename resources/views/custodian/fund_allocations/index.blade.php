@@ -39,6 +39,22 @@
         background-size: 200% 100%;
         animation: fundShimmer 1.1s ease-in-out infinite;
     }
+
+    .fund-filter-row-two-wrap {
+        overflow-x: auto;
+    }
+
+    .fund-filter-row-two {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.75rem;
+        min-width: 960px;
+    }
+
+    .fund-filter-control {
+        height: 3rem;
+        width: 100%;
+    }
 </style>
 
 <div class="space-y-7">
@@ -79,6 +95,51 @@
                 <i class="fas fa-plus-circle"></i>
                 New Fund Allocation
             </button>
+        </div>
+
+        <div class="mb-4 rounded-2xl border border-emerald-950/8 bg-[#f8fbf9] p-4">
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.14em] text-[#1a3a2d]/75">Search and Filters</p>
+                <p class="text-xs text-gray-500">Row 1: search. Row 2: utilization, dates, and actions.</p>
+            </div>
+
+            <div class="grid gap-3">
+                <div class="relative">
+                    <i class="fas fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#2d5a4a]/45"></i>
+                    <input type="search" id="fundAllocationSearch" value="{{ $search ?? '' }}" class="w-full rounded-2xl border border-emerald-950/10 bg-white py-3 pl-11 pr-4 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" placeholder="Search cluster, creator, PO/PR no...">
+                </div>
+
+                <div class="fund-filter-row-two-wrap">
+                    <div class="fund-filter-row-two">
+                    <select id="fundAllocationUtilizationFilter" class="fund-filter-control rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15">
+                        <option value="all" @selected(($utilizationFilter ?? 'all') === 'all')>All Utilization</option>
+                        <option value="unused" @selected(($utilizationFilter ?? 'all') === 'unused')>Unused</option>
+                        <option value="partial" @selected(($utilizationFilter ?? 'all') === 'partial')>Partially Utilized</option>
+                        <option value="full" @selected(($utilizationFilter ?? 'all') === 'full')>Fully Utilized</option>
+                        <option value="over" @selected(($utilizationFilter ?? 'all') === 'over')>Over Utilized</option>
+                    </select>
+
+                    <input type="date" id="fundAllocationDateFrom" value="{{ $dateFrom ?? '' }}" class="fund-filter-control rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" title="Date from">
+
+                    <input type="date" id="fundAllocationDateTo" value="{{ $dateTo ?? '' }}" class="fund-filter-control rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15" title="Date to">
+
+                    <button type="button" id="fundAllocationPrintPdf" data-print-url="{{ route('custodian.fund_allocations.print.pdf') }}" class="fund-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                        <i class="fas fa-file-pdf text-rose-600"></i>
+                        <span>Print</span>
+                    </button>
+
+                    <button type="button" id="fundAllocationExportExcel" data-excel-url="{{ route('custodian.fund_allocations.export.excel') }}" class="fund-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                        <i class="fas fa-file-excel text-emerald-600"></i>
+                        <span>Excel</span>
+                    </button>
+
+                    <button type="button" id="fundAllocationResetFilters" class="fund-filter-control inline-flex items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:bg-gray-50">
+                        <i class="fas fa-rotate-left text-gray-500"></i>
+                        <span>Reset</span>
+                    </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="fundAllocationTable">
@@ -173,6 +234,63 @@
     </div>
 </div>
 
+<div id="viewAllocationModal" class="fixed inset-0 z-[70] hidden opacity-0 transition-opacity duration-300" aria-labelledby="viewAllocationTitle" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-view-modal></div>
+    <div class="relative flex min-h-screen items-center justify-center p-4">
+        <div class="view-modal-panel relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center justify-between border-b bg-gradient-to-r from-[#173628] to-[#2d5a4a] px-6 py-4 text-white">
+                <div>
+                    <h3 id="viewAllocationTitle" class="text-lg font-bold tracking-tight">Fund Allocation Details</h3>
+                    <p id="viewAllocationSubtitle" class="mt-1 text-xs text-white/80">Utilization summary and linked purchase orders</p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition hover:bg-white/10 hover:text-white" data-close-view-modal data-view-focus>
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-6">
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Total Budget</p>
+                        <p id="viewAllocationTotal" class="mt-1 text-lg font-bold text-gray-900">₱0.00</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Allocated</p>
+                        <p id="viewAllocationAllocated" class="mt-1 text-lg font-bold text-amber-700">₱0.00</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Remaining</p>
+                        <p id="viewAllocationRemaining" class="mt-1 text-lg font-bold text-emerald-700">₱0.00</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Utilization</p>
+                        <p id="viewAllocationRate" class="mt-1 text-lg font-bold text-sky-700">0.0%</p>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid gap-3 rounded-xl border border-gray-200 bg-[#f9fbfa] p-4 sm:grid-cols-2">
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Created By</p>
+                        <p id="viewAllocationCreatedBy" class="mt-1 text-sm font-semibold text-gray-800">—</p>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Created At</p>
+                        <p id="viewAllocationCreatedAt" class="mt-1 text-sm font-semibold text-gray-800">—</p>
+                    </div>
+                </div>
+
+                <div class="mt-6">
+                    <div class="mb-3 flex items-center justify-between">
+                        <h4 class="text-sm font-bold uppercase tracking-[0.14em] text-[#1a3a2d]">Utilization Details</h4>
+                        <span id="viewAllocationRequestCount" class="rounded-full bg-[#e9f5ef] px-3 py-1 text-xs font-semibold text-[#1a3a2d]">0 linked PO</span>
+                    </div>
+                    <div id="viewAllocationRows" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 (() => {
@@ -200,6 +318,25 @@
     const $deleteClusterName = $('#deleteAllocationClusterName');
     const $confirmDeleteBtn = $('#confirmDeleteAllocationBtn');
     const $deleteFocusTarget = $deleteModal.find('[data-delete-focus]').first();
+    const $viewModal = $('#viewAllocationModal');
+    const $viewModalPanel = $viewModal.find('.view-modal-panel').first();
+    const $viewFocusTarget = $viewModal.find('[data-view-focus]').first();
+    const $viewSubtitle = $('#viewAllocationSubtitle');
+    const $viewTotal = $('#viewAllocationTotal');
+    const $viewAllocated = $('#viewAllocationAllocated');
+    const $viewRemaining = $('#viewAllocationRemaining');
+    const $viewRate = $('#viewAllocationRate');
+    const $viewCreatedBy = $('#viewAllocationCreatedBy');
+    const $viewCreatedAt = $('#viewAllocationCreatedAt');
+    const $viewRows = $('#viewAllocationRows');
+    const $viewRequestCount = $('#viewAllocationRequestCount');
+    const $searchInput = $('#fundAllocationSearch');
+    const $utilizationFilter = $('#fundAllocationUtilizationFilter');
+    const $dateFromInput = $('#fundAllocationDateFrom');
+    const $dateToInput = $('#fundAllocationDateTo');
+    const $resetFiltersBtn = $('#fundAllocationResetFilters');
+    const $printBtn = $('#fundAllocationPrintPdf');
+    const $excelBtn = $('#fundAllocationExportExcel');
     const $fundCluster = $('#fundCluster');
     const $fundClusterError = $('#fundClusterError');
     const $totalAmount = $('#totalAmount');
@@ -207,6 +344,7 @@
     const tableLoadingOverlayId = 'fundTableLoadingOverlay';
     let pendingDelete = null;
     let activeEditId = null;
+    let filterDebounceTimer = null;
 
     $.ajaxSetup({
         headers: {
@@ -223,6 +361,43 @@
             .addClass(type === 'error' ? 'bg-red-600' : 'bg-[#1a3a2d]')
             .text(message);
         setTimeout(() => $toast.addClass('hidden'), 3000);
+    };
+
+    const getFilterParams = () => {
+        const params = new URLSearchParams();
+
+        const searchValue = String($searchInput.val() || '').trim();
+        const utilizationValue = String($utilizationFilter.val() || 'all').trim();
+        const dateFromValue = String($dateFromInput.val() || '').trim();
+        const dateToValue = String($dateToInput.val() || '').trim();
+
+        if (searchValue !== '') {
+            params.set('search', searchValue);
+        }
+
+        if (utilizationValue !== '' && utilizationValue !== 'all') {
+            params.set('utilization', utilizationValue);
+        }
+
+        if (dateFromValue !== '') {
+            params.set('date_from', dateFromValue);
+        }
+
+        if (dateToValue !== '') {
+            params.set('date_to', dateToValue);
+        }
+
+        return params;
+    };
+
+    const buildUrlWithFilters = (baseUrl) => {
+        const target = new URL(baseUrl || indexEndpoint, window.location.origin);
+        const params = getFilterParams();
+
+        ['search', 'utilization', 'date_from', 'date_to'].forEach((key) => target.searchParams.delete(key));
+        params.forEach((value, key) => target.searchParams.set(key, value));
+
+        return target;
     };
 
     const buildTableLoadingOverlay = () => `
@@ -283,7 +458,17 @@
     };
 
     const fetchFundAllocations = (url = null) => {
-        const target = new URL(url || window.location.href || indexEndpoint, window.location.origin);
+        const target = new URL(url || indexEndpoint, window.location.origin);
+        const activeFilters = getFilterParams();
+
+        ['search', 'utilization', 'date_from', 'date_to'].forEach((key) => {
+            target.searchParams.delete(key);
+        });
+
+        activeFilters.forEach((value, key) => {
+            target.searchParams.set(key, value);
+        });
+
         target.searchParams.set('ajax', '1');
 
         setTableLoading(true);
@@ -383,6 +568,90 @@
         if ($modal.hasClass('hidden')) {
             document.body.classList.remove('overflow-hidden');
         }
+    };
+
+    const toggleViewModal = (show) => {
+        if (show) {
+            $viewModal.removeClass('hidden');
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    $viewModal.removeClass('opacity-0').addClass('opacity-100');
+                    $viewModalPanel.removeClass('opacity-0 scale-95 translate-y-2');
+                });
+            });
+            setTimeout(() => {
+                const focusEl = $viewFocusTarget.get(0);
+                if (focusEl) {
+                    try {
+                        focusEl.focus({ preventScroll: true });
+                    } catch (error) {
+                        focusEl.focus();
+                    }
+                }
+            }, 280);
+            document.body.classList.add('overflow-hidden');
+            return;
+        }
+
+        $viewModal.removeClass('opacity-100').addClass('opacity-0');
+        $viewModalPanel.addClass('opacity-0 scale-95 translate-y-2');
+        setTimeout(() => $viewModal.addClass('hidden'), 300);
+        if ($modal.hasClass('hidden') && $deleteModal.hasClass('hidden')) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    };
+
+    const formatMoney = (value) => `₱${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const renderUtilizationRows = (rows = []) => {
+        $viewRows.empty();
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            $viewRows.append('<div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">No purchase orders currently utilizing this fund allocation.</div>');
+            return;
+        }
+
+        rows.forEach((row) => {
+            const properties = Array.isArray(row?.properties) ? row.properties : [];
+            const propertiesHtml = properties.length
+                ? properties.map((property) => {
+                    const description = String(property?.description || '—');
+                    const qty = Number(property?.quantity || 0);
+                    const unit = String(property?.unit || '').trim();
+                    const unitLabel = unit !== '' ? unit : 'unit';
+                    const totalCost = Number(property?.ordered_total_cost || 0);
+                    return `
+                        <li class="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-sm font-semibold text-gray-800">${description}</p>
+                                <span class="text-xs font-semibold text-gray-600">${qty} ${unitLabel}</span>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">Ordered total: ${formatMoney(totalCost)}</p>
+                        </li>
+                    `;
+                }).join('')
+                : '<li class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-500">No property/item details available.</li>';
+
+            const card = `
+                <article class="rounded-xl border border-emerald-950/10 bg-[#fbfdfc] p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                            <p class="text-sm font-bold text-[#1a3a2d]">${String(row?.po_no || '—')}</p>
+                            <p class="text-xs text-gray-500">PR: ${String(row?.pr_no || '—')} | Requester: ${String(row?.requester || '—')}</p>
+                            <p class="text-xs text-gray-500">Supplier: ${String(row?.supplier || '—')} | Status: ${String(row?.status || 'Unknown')}</p>
+                            <p class="text-xs text-gray-500">Ordered: ${String(row?.ordered_at || '—')}</p>
+                        </div>
+                        <p class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">${formatMoney(row?.ordered_amount || 0)}</p>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Ordered Properties/Items</p>
+                        <ul class="mt-2 space-y-2">${propertiesHtml}</ul>
+                    </div>
+                </article>
+            `;
+
+            $viewRows.append(card);
+        });
     };
 
     const clearFieldError = ($field, $error) => {
@@ -494,11 +763,106 @@
         });
     });
 
+    const scheduleFilterFetch = (delay = 280) => {
+        if (filterDebounceTimer) {
+            clearTimeout(filterDebounceTimer);
+        }
+
+        filterDebounceTimer = setTimeout(() => {
+            fetchFundAllocations(indexEndpoint);
+        }, delay);
+    };
+
+    $searchInput.on('input', () => scheduleFilterFetch(320));
+    $searchInput.on('keydown', (event) => {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        event.preventDefault();
+        if (filterDebounceTimer) {
+            clearTimeout(filterDebounceTimer);
+        }
+        fetchFundAllocations(indexEndpoint);
+    });
+
+    $utilizationFilter.on('change', () => fetchFundAllocations(indexEndpoint));
+    $dateFromInput.on('change', () => fetchFundAllocations(indexEndpoint));
+    $dateToInput.on('change', () => fetchFundAllocations(indexEndpoint));
+
+    $resetFiltersBtn.on('click', () => {
+        $searchInput.val('');
+        $utilizationFilter.val('all');
+        $dateFromInput.val('');
+        $dateToInput.val('');
+        fetchFundAllocations(indexEndpoint);
+    });
+
+    $printBtn.on('click', () => {
+        const base = $printBtn.data('print-url');
+        const target = buildUrlWithFilters(base);
+        window.open(target.toString(), '_blank');
+    });
+
+    $excelBtn.on('click', () => {
+        const base = $excelBtn.data('excel-url');
+        const target = buildUrlWithFilters(base);
+        window.location.href = target.toString();
+    });
+
     $modal.on('click', '[data-close-modal]', () => toggleModal($modal, false));
     $deleteModal.on('click', '[data-close-delete-modal]', () => toggleDeleteModal(false));
+    $viewModal.on('click', '[data-close-view-modal]', () => toggleViewModal(false));
+
+    $(document)
+        .off('click.fundView', '.view-allocation')
+        .on('click.fundView', '.view-allocation', function () {
+            const id = String($(this).data('id') || '').trim();
+            if (!id) {
+                showToast('Unable to open details: missing allocation reference.', 'error');
+                return;
+            }
+
+            $viewSubtitle.text('Loading utilization details...');
+            $viewTotal.text('₱0.00');
+            $viewAllocated.text('₱0.00');
+            $viewRemaining.text('₱0.00');
+            $viewRate.text('0.0%');
+            $viewCreatedBy.text('—');
+            $viewCreatedAt.text('—');
+            $viewRequestCount.text('0 linked PO');
+            $viewRows.html('<div class="rounded-xl border border-gray-200 bg-gray-50 px-4 py-5 text-sm text-gray-500">Loading...</div>');
+            toggleViewModal(true);
+
+            $.ajax({
+                method: 'GET',
+                url: `/custodian/fund-allocations/${id}`,
+                success: (response) => {
+                    const data = response?.data || {};
+                    $viewSubtitle.text(`Fund Cluster: ${String(data.fund_cluster || '—')}`);
+                    $viewTotal.text(formatMoney(data.total_amount || 0));
+                    $viewAllocated.text(formatMoney(data.allocated_amount || 0));
+                    $viewRemaining.text(formatMoney(data.remaining_amount || 0));
+                    $viewRate.text(`${Number(data.utilization_rate || 0).toLocaleString('en-PH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`);
+                    $viewCreatedBy.text(String(data.created_by || '—'));
+                    $viewCreatedAt.text(String(data.created_at || '—'));
+                    $viewRequestCount.text(`${Number(data.po_count || 0).toLocaleString('en-PH')} linked PO`);
+                    renderUtilizationRows(data.utilization_rows || []);
+                },
+                error: (xhr) => {
+                    toggleViewModal(false);
+                    showToast(xhr.responseJSON?.message || 'Unable to load fund allocation details.', 'error');
+                },
+            });
+        });
 
     $(document).on('keydown', (event) => {
         if (event.key !== 'Escape') {
+            return;
+        }
+
+        if (!$viewModal.hasClass('hidden')) {
+            toggleViewModal(false);
             return;
         }
 

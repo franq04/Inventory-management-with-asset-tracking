@@ -29,6 +29,8 @@ return new class extends Migration
   ADD KEY `fund_allocations_created_by_foreign` (`created_by`),
   ADD KEY `fund_allocations_fund_cluster_index` (`fund_cluster`);');
           DB::statement('ALTER TABLE `fund_allocations`
+      MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;');
+          DB::statement('ALTER TABLE `fund_allocations`
       ADD CONSTRAINT `fund_allocations_created_by_foreign`
       FOREIGN KEY (`created_by`) REFERENCES `accounts` (`account_id`) ON DELETE SET NULL;');
     }

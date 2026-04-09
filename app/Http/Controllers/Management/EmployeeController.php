@@ -25,9 +25,9 @@ class EmployeeController extends Controller
     private const ACCOUNT_ROLE_LABELS = [
         'employee' => 'Employee',
         'custodian' => 'Custodian',
-        'iac' => 'IAC',
+        'iac' => 'Inspection and Acceptance Officer',
         'division_head' => 'Division Head',
-        'bac' => 'BAC Officer',
+        'bac' => 'Bids and Awards Committee',
     ];
 
     public function index(Request $request)
@@ -147,7 +147,7 @@ class EmployeeController extends Controller
 
         $positions = Position::query()
             ->orderBy('position_title')
-            ->get(['position_id', 'position_title']);
+            ->get(['position_id', 'position_title', 'section_id']);
 
         $accounts = Account::query()
             ->with('employee:employee_id,account_id')

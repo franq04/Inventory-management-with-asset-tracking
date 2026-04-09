@@ -181,11 +181,8 @@
                 </div>
                 <div>
                     <label for="position_id" class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500">Position</label>
-                    <select id="position_id" name="position_id" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
+                    <select id="position_id" name="position_id" data-selected="{{ old('position_id', $employee->position_id) }}" class="mt-1 h-12 w-full rounded-xl border-gray-200 bg-[#f8faf9] px-4 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/15 shadow-sm">
                         <option value="">Unassigned</option>
-                        @foreach ($positions as $position)
-                            <option value="{{ $position->position_id }}" @selected(old('position_id', $employee->position_id) == $position->position_id)>{{ $position->position_title }}</option>
-                        @endforeach
                     </select>
                     @error('position_id')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
                 </div>
@@ -283,15 +280,32 @@
     foreach ($divisions as $division) {
         $sectionsByDivision[$division->division_id] = $division->sections->map(fn ($section) => ['id' => $section->section_id, 'name' => $section->section_name])->values()->toArray();
     }
+
+    $positionsBySection = [];
+    foreach ($positions as $position) {
+        $sectionId = $position->section_id;
+        if ($sectionId === null) {
+            continue;
+        }
+
+        $positionsBySection[$sectionId] ??= [];
+        $positionsBySection[$sectionId][] = [
+            'id' => (string) $position->position_id,
+            'title' => (string) $position->position_title,
+        ];
+    }
 @endphp
 <script>
     (function () {
         // Your existing section population script
         const sectionsByDivision = @json($sectionsByDivision);
+        const positionsBySection = @json($positionsBySection);
         const allSections = Object.values(sectionsByDivision).flat();
         const divisionSelect = document.getElementById('division_id');
         const sectionSelect = document.getElementById('section_id');
+        const positionSelect = document.getElementById('position_id');
         const initialSection = sectionSelect.getAttribute('data-selected');
+        const initialPosition = positionSelect?.getAttribute('data-selected') || '';
         const renderSections = (divisionId, selectedValue) => {
             const rows = (divisionId && sectionsByDivision[divisionId]) ? sectionsByDivision[divisionId] : allSections;
             sectionSelect.innerHTML = '<option value="">Unassigned</option>';
@@ -305,11 +319,37 @@
                 sectionSelect.appendChild(option);
             });
         };
+
+        const renderPositions = (sectionId, selectedValue) => {
+            if (!positionSelect) return;
+
+            const normalizedSection = sectionId ? String(sectionId) : '';
+            const rows = normalizedSection && positionsBySection[normalizedSection]
+                ? positionsBySection[normalizedSection]
+                : [];
+
+            positionSelect.innerHTML = '<option value="">Unassigned</option>';
+            rows.forEach((position) => {
+                const option = document.createElement('option');
+                option.value = String(position.id);
+                option.textContent = position.title;
+                if (selectedValue && String(selectedValue) === String(position.id)) {
+                    option.selected = true;
+                }
+                positionSelect.appendChild(option);
+            });
+        };
+
         divisionSelect.addEventListener('change', () => {
             sectionSelect.setAttribute('data-selected', '');
             renderSections(divisionSelect.value, null);
+            renderPositions('', null);
+        });
+        sectionSelect.addEventListener('change', () => {
+            renderPositions(sectionSelect.value, null);
         });
         renderSections(divisionSelect.value, initialSection);
+        renderPositions(initialSection || sectionSelect.value, initialPosition);
 
         // Account creation toggle
         const createAccountChk = document.getElementById('create_account');

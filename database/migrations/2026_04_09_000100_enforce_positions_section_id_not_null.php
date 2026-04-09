@@ -22,7 +22,10 @@ return new class extends Migration
         $fallbackSectionId = DB::table('sections')->min('section_id');
 
         if ($fallbackSectionId === null) {
-            $fallbackSectionId = DB::table('sections')->insertGetId([
+            $fallbackSectionId = ((int) DB::table('sections')->max('section_id')) + 1;
+
+            DB::table('sections')->insert([
+                'section_id' => $fallbackSectionId,
                 'section_name' => 'Unassigned Section',
                 'section_code' => 'UNASSIGNED',
                 'division_id' => null,
