@@ -367,16 +367,35 @@
 
                     <div>
                         <label for="pqsTurnoverLocation" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Stockroom Location</label>
-                        <select id="pqsTurnoverLocation" name="stockroom_location_id" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                        <div class="relative mt-1">
+                            <button id="pqsTurnoverLocationToggle" type="button" class="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                                <span id="pqsTurnoverLocationLabel">Select stockroom</span>
+                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                            </button>
+                            <div id="pqsTurnoverLocationPanel" class="absolute z-30 mt-1 hidden w-full rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                                <input id="pqsTurnoverLocationSearch" type="text" class="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm" placeholder="Search stockroom...">
+                                <ul id="pqsTurnoverLocationList" class="mt-2 max-h-44 overflow-y-auto rounded-lg border border-gray-100"></ul>
+                            </div>
+                        </div>
+                        <select id="pqsTurnoverLocation" name="stockroom_location_id" class="hidden">
                             <option value="">Select stockroom</option>
-                            @forelse($turnoverLocations as $location)
+                            @foreach($turnoverLocations as $location)
                                 <option value="{{ $location->location_id }}">
                                     {{ $location->location_name }}{{ $location->location_code ? ' ('.$location->location_code.')' : '' }}
                                 </option>
-                            @empty
-                                <option value="" disabled>No active stockroom locations found</option>
-                            @endforelse
+                            @endforeach
                         </select>
+                        <button
+                            id="pqsTurnoverAddStockroom"
+                            type="button"
+                            data-open-location-registry-modal
+                            data-location-registry-type="storage"
+                            data-location-registry-lock-type="1"
+                            class="mt-2 inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                            <i class="fas fa-plus text-[10px]"></i>
+                            Add Stockroom
+                        </button>
                         @if($turnoverLocations->isEmpty())
                             <p id="pqsTurnoverStockroomHint" class="mt-1 text-xs font-medium text-amber-700">No active stockroom locations are available yet. Create one first in location management.</p>
                         @endif
@@ -838,7 +857,13 @@
     const turnoverEmployeePanel = document.getElementById('pqsTurnoverEmployeePanel');
     const turnoverEmployeeSearch = document.getElementById('pqsTurnoverEmployeeSearch');
     const turnoverEmployeeList = document.getElementById('pqsTurnoverEmployeeList');
+    const turnoverLocationToggle = document.getElementById('pqsTurnoverLocationToggle');
+    const turnoverLocationLabel = document.getElementById('pqsTurnoverLocationLabel');
+    const turnoverLocationPanel = document.getElementById('pqsTurnoverLocationPanel');
+    const turnoverLocationSearch = document.getElementById('pqsTurnoverLocationSearch');
+    const turnoverLocationList = document.getElementById('pqsTurnoverLocationList');
     const turnoverLocation = document.getElementById('pqsTurnoverLocation');
+    const turnoverAddStockroomBtn = document.getElementById('pqsTurnoverAddStockroom');
     const turnoverStockroomHint = document.getElementById('pqsTurnoverStockroomHint');
     const turnoverEffectiveAt = document.getElementById('pqsTurnoverEffectiveAt');
     const turnoverRemarks = document.getElementById('pqsTurnoverRemarks');
@@ -859,6 +884,7 @@
     let restoreBulkTurnoverBodyOverflowOnClose = false;
     let restoreConditionConfirmBodyOverflowOnClose = false;
     let conditionConfirmResolver = null;
+    let pendingTurnoverStockroomSelection = false;
     const actionTabButtons = Array.from(document.querySelectorAll('[data-pqs-action-tab]'));
     const detailSections = Array.from(document.querySelectorAll('.pqs-detail-section'));
     const actionWorkspace = document.getElementById('pqsActionWorkspace');
@@ -889,7 +915,7 @@
     const turnoverFieldErrors = Array.from(document.querySelectorAll('[data-turnover-error-for]'));
     const turnoverInputMap = {
         employee_id: turnoverEmployeeToggle,
-        stockroom_location_id: turnoverLocation,
+        stockroom_location_id: turnoverLocationToggle,
         effective_at: turnoverEffectiveAt,
         remarks: turnoverRemarks,
     };
@@ -1473,6 +1499,7 @@
         }
         closeTurnoverSearchPanels();
         setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
+        setSelectLabel(turnoverLocation, turnoverLocationLabel);
 
         setTimeout(() => {
             const focusTarget = turnoverEmployeeToggle || turnoverEmployee || turnoverLocation;
@@ -2092,6 +2119,7 @@
 
     const closeTurnoverSearchPanels = () => {
         turnoverEmployeePanel?.classList.add('hidden');
+        turnoverLocationPanel?.classList.add('hidden');
     };
 
     const renderSearchableList = ({ selectField, listField, queryText, onSelect }) => {
@@ -2206,6 +2234,7 @@
         toggleField.addEventListener('click', () => {
             const willOpen = panelField.classList.contains('hidden');
             closeTransferSearchPanels();
+            closeTurnoverSearchPanels();
             if (willOpen) {
                 panelField.classList.remove('hidden');
                 render();
@@ -2272,6 +2301,7 @@
             event.preventDefault();
             const willOpen = panelField.classList.contains('hidden');
             closeTransferSearchPanels();
+            closeTurnoverSearchPanels();
             if (willOpen) {
                 panelField.classList.remove('hidden');
                 render();
@@ -2577,6 +2607,7 @@
             }
             closeTurnoverSearchPanels();
             setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
+            setSelectLabel(turnoverLocation, turnoverLocationLabel);
         }
 
         if (conditionForm) {
@@ -3149,6 +3180,18 @@
         },
     });
 
+    setupSearchableControl({
+        selectField: turnoverLocation,
+        toggleField: turnoverLocationToggle,
+        panelField: turnoverLocationPanel,
+        searchField: turnoverLocationSearch,
+        listField: turnoverLocationList,
+        labelField: turnoverLocationLabel,
+        onSelect: () => {
+            clearTurnoverFieldError('stockroom_location_id');
+        },
+    });
+
     document.addEventListener('location-registry:created', (event) => {
         const location = event?.detail?.location;
         if (!location) {
@@ -3175,14 +3218,28 @@
             (entry) => Boolean(entry.is_storage)
         );
 
-        if (turnoverUpdated && turnoverLocation && !turnoverLocation.value) {
+        const shouldPreferCreatedStockroom = pendingTurnoverStockroomSelection
+            || Boolean(bulkTurnoverModal && !bulkTurnoverModal.classList.contains('hidden'));
+
+        if (turnoverUpdated && turnoverLocation && (shouldPreferCreatedStockroom || !turnoverLocation.value)) {
             turnoverLocation.value = String(location.location_id);
             turnoverLocation.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        if (turnoverUpdated && !turnoverLocationPanel?.classList.contains('hidden')) {
+            turnoverLocationSearch?.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
         if (turnoverUpdated && turnoverStockroomHint) {
             turnoverStockroomHint.classList.add('hidden');
         }
+
+        pendingTurnoverStockroomSelection = false;
+    });
+
+    turnoverAddStockroomBtn?.addEventListener('click', () => {
+        pendingTurnoverStockroomSelection = true;
+        clearTurnoverFieldError('stockroom_location_id');
     });
 
     document.addEventListener('click', (event) => {
@@ -3194,10 +3251,11 @@
         const clickedInLocation = target.closest('#pqsTransferLocationPanel') || target.closest('#pqsTransferLocationToggle');
         const clickedInCustodian = target.closest('#pqsTransferCustodianPanel') || target.closest('#pqsTransferCustodianToggle');
         const clickedInTurnoverEmployee = target.closest('#pqsTurnoverEmployeePanel') || target.closest('#pqsTurnoverEmployeeToggle');
+        const clickedInTurnoverLocation = target.closest('#pqsTurnoverLocationPanel') || target.closest('#pqsTurnoverLocationToggle');
         if (!clickedInLocation && !clickedInCustodian) {
             closeTransferSearchPanels();
         }
-        if (!clickedInTurnoverEmployee) {
+        if (!clickedInTurnoverEmployee && !clickedInTurnoverLocation) {
             closeTurnoverSearchPanels();
         }
     });
@@ -3337,6 +3395,7 @@
             notifySuccess(successMessage);
             turnoverForm?.reset();
             setSelectLabel(turnoverEmployee, turnoverEmployeeLabel);
+            setSelectLabel(turnoverLocation, turnoverLocationLabel);
             if (turnoverConfirm) {
                 turnoverConfirm.value = '';
             }
