@@ -388,6 +388,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->load([
             'items',
             'status',
+            'fundAllocation',
             'requester.employee',
             'division',
             'section',
@@ -417,8 +418,8 @@ class PurchaseRequestController extends Controller
                     'purpose' => $purchaseRequest->purpose,
                     'sai_no' => $purchaseRequest->sai_no,
                     'alobs_no' => $purchaseRequest->alobs_no,
-                    'fund_cluster' => $purchaseRequest->fund_cluster,
-                    'funds_available' => $purchaseRequest->funds_available,
+                    'fund_cluster' => $purchaseRequest->fund_cluster ?: $purchaseRequest->fundAllocation?->fund_cluster,
+                    'funds_available' => $purchaseRequest->fundAllocation?->syncRemainingAmount() ?? $purchaseRequest->funds_available,
                     'division' => $purchaseRequest->division?->division_name,
                     'section' => $purchaseRequest->section?->section_name,
                     'requester' => $purchaseRequest->requester->employee ? collect([

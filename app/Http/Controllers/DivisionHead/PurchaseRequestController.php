@@ -138,6 +138,7 @@ class PurchaseRequestController extends Controller
         $purchaseRequest->load([
             'items',
             'status',
+            'fundAllocation',
             'requester.employee',
             'division',
             'section',
@@ -275,16 +276,6 @@ class PurchaseRequestController extends Controller
             $accountId = Auth::id();
             $now = now();
 
-            // Release reserved funds back to allocation
-            if ($purchaseRequest->fundAllocation && $purchaseRequest->total_estimated_cost > 0) {
-                $fundService = new \App\Services\FundAllocationService();
-                $fundService->release(
-                    $purchaseRequest->fundAllocation, 
-                    $purchaseRequest->total_estimated_cost, 
-                    $purchaseRequest->pr_no
-                );
-            }
-
             $purchaseRequest->update([
                 'status_id' => Status::PR_CANCELLED,
                 'approval_remarks' => $validated['remarks'],
@@ -335,13 +326,15 @@ class PurchaseRequestController extends Controller
      */
     protected function transformPurchaseRequest(PurchaseRequest $pr): array
     {
+        $liveFundsAvailable = $pr->fundAllocation?->syncRemainingAmount();
+
         return [
             'pr_no' => $pr->pr_no,
             'status' => $pr->status?->status_name,
             'status_id' => $pr->status_id,
             'purpose' => $pr->purpose,
-            'fund_cluster' => $pr->fund_cluster,
-            'funds_available' => $pr->funds_available,
+            'fund_cluster' => $pr->fund_cluster ?: $pr->fundAllocation?->fund_cluster,
+            'funds_available' => $liveFundsAvailable ?? $pr->funds_available,
             'total_estimated_cost' => $pr->total_estimated_cost,
             'division' => $pr->division?->division_name,
             'section' => $pr->section?->section_name,

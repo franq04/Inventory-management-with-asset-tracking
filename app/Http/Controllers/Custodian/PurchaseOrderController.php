@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\Notification;
 use App\Models\InspectionReport;
 use App\Models\InspectionReportItem;
+use App\Models\FundAllocation;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseRequest;
@@ -15,6 +16,7 @@ use App\Models\PurchaseRequestItem;
 use App\Models\Status;
 use App\Models\Supplier;
 use App\Models\StatusHistory;
+use App\Services\FundAllocationService;
 use App\Support\PurchaseRequestStatusSynchronizer;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
@@ -331,7 +333,7 @@ class PurchaseOrderController extends Controller
 
     public function create(Request $request)
     {
-        $requests = PurchaseRequest::with(['items', 'status'])
+        $requests = PurchaseRequest::with(['items', 'status', 'fundAllocation'])
             ->whereIn('status_id', $this->convertiblePurchaseRequestStatuses())
             ->whereDoesntHave('purchaseOrder')
             ->orderByDesc('created_at')
@@ -423,6 +425,19 @@ class PurchaseOrderController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            $fundAllocation = $purchaseRequest->fund_allocation_id
+                ? FundAllocation::query()
+                    ->whereKey($purchaseRequest->fund_allocation_id)
+                    ->lockForUpdate()
+                    ->first()
+                : null;
+
+            if (! $fundAllocation) {
+                throw ValidationException::withMessages([
+                    'pr_no' => 'The selected purchase request has no valid fund allocation.',
+                ]);
+            }
+
             if ((int) $purchaseRequest->status_id !== Status::PR_APPROVED) {
                 throw ValidationException::withMessages([
                     'pr_no' => 'The selected purchase request must be approved before generating a purchase order.',
@@ -434,6 +449,27 @@ class PurchaseOrderController extends Controller
                     'pr_no' => 'The approved purchase request does not have any items to convert.',
                 ]);
             }
+
+            // Self-heal stale remaining values (legacy PR-time reservations)
+            // before validating/deducting for PO generation.
+            $liveFundsBeforeDeduction = $fundAllocation->syncRemainingAmount();
+
+            $requiredAmount = (float) $purchaseRequest->total_estimated_cost;
+            if ($liveFundsBeforeDeduction < $requiredAmount) {
+                throw ValidationException::withMessages([
+                    'pr_no' => 'Funds available must cover the total estimated cost before generating a purchase order.',
+                ]);
+            }
+
+            $fundService = new FundAllocationService();
+            if (! $fundService->reserve($fundAllocation, $requiredAmount, $purchaseRequest->pr_no)) {
+                throw ValidationException::withMessages([
+                    'pr_no' => 'Unable to reserve funds for this purchase order. Please try again.',
+                ]);
+            }
+
+            $fundAllocation->refresh();
+            $postDeductionRemaining = (float) $fundAllocation->remaining_amount;
 
             $hasAttentionItems = $purchaseRequest->items->contains(function (PurchaseRequestItem $item) {
                 return in_array($item->fulfillment_status, ['alternative', 'unavailable'], true);
@@ -453,8 +489,8 @@ class PurchaseOrderController extends Controller
                 'place_of_delivery' => $validated['place_of_delivery'] ?? null,
                 'delivery_term' => $validated['delivery_term'] ?? null,
                 'payment_term' => $validated['payment_term'] ?? null,
-                'fund_cluster' => $validated['fund_cluster'] ?? null,
-                'funds_available' => $validated['funds_available'] ?? null,
+                'fund_cluster' => $validated['fund_cluster'] ?? $purchaseRequest->fund_cluster ?? $fundAllocation->fund_cluster,
+                'funds_available' => $postDeductionRemaining,
                 'ors_burs_no' => $validated['ors_burs_no'] ?? null,
                 'ors_burs_date' => $validated['ors_burs_date'] ?? null,
                 'ors_burs_amount' => $validated['ors_burs_amount'] ?? null,
@@ -487,15 +523,10 @@ class PurchaseOrderController extends Controller
                 ]);
             });
 
-            $effectiveFunds = $purchaseRequest->funds_available;
-
-            if ($effectiveFunds === null || (float) $effectiveFunds < (float) $purchaseRequest->total_estimated_cost) {
-                throw ValidationException::withMessages([
-                    'pr_no' => 'Funds available must cover the total estimated cost before generating a purchase order.',
-                ]);
-            }
-
             $now = now();
+
+            $purchaseRequest->fund_cluster = $purchaseRequest->fund_cluster ?: $fundAllocation->fund_cluster;
+            $purchaseRequest->funds_available = $postDeductionRemaining;
 
             $purchaseRequest->approved_by = $purchaseRequest->approved_by ?: $account->account_id;
             $purchaseRequest->approved_at = $purchaseRequest->approved_at ?: $now;
@@ -571,7 +602,8 @@ class PurchaseOrderController extends Controller
 
         $effectiveFundsAvailable = $purchaseOrder->funds_available;
         if ($effectiveFundsAvailable === null) {
-            $effectiveFundsAvailable = $purchaseOrder->purchaseRequest?->funds_available;
+            $effectiveFundsAvailable = $purchaseOrder->purchaseRequest?->fundAllocation?->syncRemainingAmount()
+                ?? $purchaseOrder->purchaseRequest?->funds_available;
         }
 
         // Get status history for this PO

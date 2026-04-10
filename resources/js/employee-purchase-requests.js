@@ -580,6 +580,7 @@ const initEmployeePurchaseRequests = () => {
         // Build Annex G-6 HTML
         const itemsHtml = (data.items || []).map((item) => {
             item.request_status_id = requestStatusId;
+            item.request_cancelled_by_role = data.latest_status_changed_by_role || '';
             const statusHtml = renderItemStatus(item, requestStatusId);
             const actionHtml = renderItemActions(item);
             
