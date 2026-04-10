@@ -12,7 +12,6 @@ use App\Models\PurchaseRequestItem;
 use App\Models\Section;
 use App\Models\Status;
 use App\Models\StatusHistory;
-use App\Services\FundAllocationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -78,10 +77,16 @@ class PurchaseRequestController extends Controller
         $divisionName = $employeeDivision?->division_name;
         $sectionName = $employeeSection?->section_name;
 
-        // Get available fund allocations
-        $fundAllocations = FundAllocation::where('remaining_amount', '>', 0)
+        // Get available fund allocations using live balance (PO-based utilization).
+        $fundAllocations = FundAllocation::query()
             ->orderBy('fund_cluster')
-            ->get(['id', 'fund_cluster', 'total_amount', 'remaining_amount']);
+            ->get(['id', 'fund_cluster', 'total_amount', 'remaining_amount'])
+            ->map(function (FundAllocation $allocation) {
+                $allocation->remaining_amount = $allocation->syncRemainingAmount();
+                return $allocation;
+            })
+            ->filter(fn (FundAllocation $allocation) => (float) $allocation->remaining_amount > 0)
+            ->values();
 
         return view('employee.purchase_requests.index', [
             'purchaseRequests' => $purchaseRequests,
@@ -134,17 +139,16 @@ class PurchaseRequestController extends Controller
 
         // Check fund allocation availability
         $fundAllocation = FundAllocation::findOrFail($validated['fund_allocation_id']);
-        $fundService = new FundAllocationService();
-        
-        if (!$fundService->hasSufficientFunds($fundAllocation, $totalEstimated)) {
-            $shortfall = $fundService->getShortfall($fundAllocation, $totalEstimated);
+        $liveFundsAvailable = $fundAllocation->syncRemainingAmount();
+        if ($liveFundsAvailable < $totalEstimated) {
+            $shortfall = max(0, $totalEstimated - $liveFundsAvailable);
             return response()->json([
                 'status' => 'error',
                 'errors' => [
                     'fund_allocation_id' => [
                         sprintf(
                             'Selected fund cluster does not have sufficient balance. Available: ₱%s, Required: ₱%s, Shortfall: ₱%s',
-                            number_format($fundAllocation->remaining_amount, 2),
+                            number_format($liveFundsAvailable, 2),
                             number_format($totalEstimated, 2),
                             number_format($shortfall, 2)
                         )
@@ -154,15 +158,8 @@ class PurchaseRequestController extends Controller
             ], 422);
         }
 
-        $purchaseRequest = DB::transaction(function () use ($validated, $account, $items, $totalEstimated, $fundAllocation, $fundService) {
+        $purchaseRequest = DB::transaction(function () use ($validated, $account, $items, $totalEstimated, $liveFundsAvailable) {
             $prNumber = $this->generatePrNumber();
-            
-            // Atomically reserve funds
-            if (!$fundService->reserve($fundAllocation, $totalEstimated, $prNumber)) {
-                throw ValidationException::withMessages([
-                    'fund_allocation_id' => ['Failed to reserve funds. The fund allocation may have been modified by another transaction.']
-                ]);
-            }
 
             $purchaseRequest = PurchaseRequest::create([
                 'pr_no' => $prNumber,
@@ -175,7 +172,8 @@ class PurchaseRequestController extends Controller
                 'purpose' => $validated['purpose'],
                 'recommending_officer_id' => $validated['recommending_officer_id'] ?? null,
                 'fund_allocation_id' => $validated['fund_allocation_id'],
-                'funds_available' => $fundAllocation->fresh()->remaining_amount,
+                // Keep a snapshot for audit/reference; deduction happens on PO creation.
+                'funds_available' => $liveFundsAvailable,
                 'total_estimated_cost' => $totalEstimated,
                 'printed' => false,
             ]);
@@ -228,11 +226,14 @@ class PurchaseRequestController extends Controller
         $account = Auth::user();
         abort_unless($purchaseRequest->account_id === $account->account_id, 403);
 
-        $purchaseRequest->load(['items', 'status', 'division', 'section', 'requester.employee', 'approver.employee', 'statusHistory' => function ($query) {
-            $query->orderByDesc('changed_at')->limit(1);
+        $purchaseRequest->load(['items', 'status', 'division', 'section', 'fundAllocation', 'requester.employee', 'approver.employee', 'statusHistory' => function ($query) {
+            $query->with(['account.employee'])->orderByDesc('changed_at')->limit(1);
         }]);
 
         $latestHistory = $purchaseRequest->statusHistory->first();
+        $liveFundsAvailable = $purchaseRequest->fundAllocation
+            ? $purchaseRequest->fundAllocation->syncRemainingAmount()
+            : null;
         $requesterName = $purchaseRequest->requester?->employee
             ? collect([
                 $purchaseRequest->requester->employee->first_name,
@@ -254,9 +255,20 @@ class PurchaseRequestController extends Controller
                     'can_edit' => $this->canDeletePurchaseRequest($purchaseRequest),
                     'latest_status_remarks' => $latestHistory?->remarks,
                     'latest_status_changed_at' => optional($latestHistory?->changed_at)->toDateTimeString(),
+                    'latest_status_changed_by_role' => $latestHistory?->account?->role,
+                    'latest_status_changed_by_name' => $latestHistory?->account?->employee
+                        ? collect([
+                            $latestHistory->account->employee->first_name,
+                            $latestHistory->account->employee->middle_name,
+                            $latestHistory->account->employee->last_name,
+                            $latestHistory->account->employee->suffix,
+                        ])->filter()->implode(' ')
+                        : $latestHistory?->account?->username,
                     'purpose' => $purchaseRequest->purpose,
                     'sai_no' => $purchaseRequest->sai_no,
                     'alobs_no' => $purchaseRequest->alobs_no,
+                    'fund_cluster' => $purchaseRequest->fund_cluster ?: $purchaseRequest->fundAllocation?->fund_cluster,
+                    'funds_available' => $liveFundsAvailable ?? $purchaseRequest->funds_available,
                     'recommending_officer_id' => $purchaseRequest->recommending_officer_id,
                     'fund_allocation_id' => $purchaseRequest->fund_allocation_id,
                     'division' => $purchaseRequest->division?->division_name,
@@ -323,45 +335,23 @@ class PurchaseRequestController extends Controller
         });
 
         DB::transaction(function () use ($validated, $purchaseRequest, $items, $newTotal, $account) {
-            $fundService = new FundAllocationService();
-
-            $originalFundAllocationId = (int) $purchaseRequest->fund_allocation_id;
             $targetFundAllocationId = (int) $validated['fund_allocation_id'];
-            $originalTotal = (float) $purchaseRequest->total_estimated_cost;
-
             $targetFundAllocation = FundAllocation::findOrFail($targetFundAllocationId);
+            $liveFundsAvailable = $targetFundAllocation->syncRemainingAmount();
 
-            if ($targetFundAllocationId !== $originalFundAllocationId) {
-                if ($purchaseRequest->fundAllocation && $originalTotal > 0) {
-                    $fundService->release($purchaseRequest->fundAllocation, $originalTotal, $purchaseRequest->pr_no);
-                }
+            if ($liveFundsAvailable < $newTotal) {
+                $shortfall = max(0, $newTotal - $liveFundsAvailable);
 
-                if (! $fundService->hasSufficientFunds($targetFundAllocation, $newTotal)) {
-                    $shortfall = $fundService->getShortfall($targetFundAllocation, $newTotal);
-
-                    throw ValidationException::withMessages([
-                        'fund_allocation_id' => [
-                            sprintf(
-                                'Selected fund cluster does not have sufficient balance. Available: ₱%s, Required: ₱%s, Shortfall: ₱%s',
-                                number_format($targetFundAllocation->remaining_amount, 2),
-                                number_format($newTotal, 2),
-                                number_format($shortfall, 2)
-                            ),
-                        ],
-                    ]);
-                }
-
-                if (! $fundService->reserve($targetFundAllocation, $newTotal, $purchaseRequest->pr_no)) {
-                    throw ValidationException::withMessages([
-                        'fund_allocation_id' => ['Failed to reserve funds on the selected fund allocation. Please try again.'],
-                    ]);
-                }
-            } else {
-                if (! $fundService->applyDelta($purchaseRequest, $newTotal)) {
-                    throw ValidationException::withMessages([
-                        'fund_allocation_id' => ['Unable to adjust reserved funds for this purchase request.'],
-                    ]);
-                }
+                throw ValidationException::withMessages([
+                    'fund_allocation_id' => [
+                        sprintf(
+                            'Selected fund cluster does not have sufficient balance. Available: ₱%s, Required: ₱%s, Shortfall: ₱%s',
+                            number_format($liveFundsAvailable, 2),
+                            number_format($newTotal, 2),
+                            number_format($shortfall, 2)
+                        ),
+                    ],
+                ]);
             }
 
             $purchaseRequest->update([
@@ -372,7 +362,8 @@ class PurchaseRequestController extends Controller
                 'purpose' => $validated['purpose'],
                 'recommending_officer_id' => $validated['recommending_officer_id'] ?? null,
                 'fund_allocation_id' => $targetFundAllocationId,
-                'funds_available' => $targetFundAllocation->fresh()->remaining_amount,
+                // Keep live snapshot only; actual deduction occurs when PO is created.
+                'funds_available' => $liveFundsAvailable,
                 'total_estimated_cost' => $newTotal,
             ]);
 
@@ -422,17 +413,6 @@ class PurchaseRequestController extends Controller
         }
 
         DB::transaction(function () use ($purchaseRequest, $account) {
-            $purchaseRequest->loadMissing('fundAllocation');
-
-            if ($purchaseRequest->fundAllocation && (float) $purchaseRequest->total_estimated_cost > 0) {
-                $fundService = new FundAllocationService();
-                $fundService->release(
-                    $purchaseRequest->fundAllocation,
-                    (float) $purchaseRequest->total_estimated_cost,
-                    $purchaseRequest->pr_no
-                );
-            }
-
             PurchaseRequestItem::query()->where('pr_no', $purchaseRequest->pr_no)->delete();
             StatusHistory::query()
                 ->where('table_name', 'purchase_requests')

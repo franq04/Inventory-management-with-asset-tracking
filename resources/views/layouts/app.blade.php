@@ -68,9 +68,23 @@
                         <div class="relative">
                             <button id="user-menu-button" class="flex items-center space-x-3 group transition-all duration-200 hover:scale-[1.03] focus:outline-none">
                                 @php
-                                    $profileImg = session('profile_img')
-                                        ? asset('storage/' . session('profile_img'))
-                                        : asset('images/default-avatar.png');
+                                    $sessionProfileImg = session('profile_img');
+                                    if (! $sessionProfileImg) {
+                                        $profileImg = asset('images/default-avatar.png');
+                                    } else {
+                                        $normalizedProfileImg = ltrim($sessionProfileImg, '/');
+                                        if (
+                                            str_starts_with($normalizedProfileImg, 'http://')
+                                            || str_starts_with($normalizedProfileImg, 'https://')
+                                            || str_starts_with($normalizedProfileImg, 'data:')
+                                        ) {
+                                            $profileImg = $sessionProfileImg;
+                                        } elseif (str_starts_with($normalizedProfileImg, 'images/') || str_starts_with($normalizedProfileImg, 'storage/')) {
+                                            $profileImg = asset($normalizedProfileImg);
+                                        } else {
+                                            $profileImg = asset('storage/' . $normalizedProfileImg);
+                                        }
+                                    }
                                 @endphp
                                 <div class="relative">
                                     <img id="header-avatar" src="{{ $profileImg }}" alt="User Avatar" class="rounded-full w-10 h-10 border-2 border-emerald-500 shadow-md object-cover ring-2 ring-emerald-100 group-hover:ring-emerald-200 transition-all duration-200">

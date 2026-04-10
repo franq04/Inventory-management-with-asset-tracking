@@ -153,8 +153,25 @@ const renderItemActions = (item) => {
     const declinedId = statuses.declined != null ? String(statuses.declined) : '';
     const forApprovalId = statuses.forApproval != null ? String(statuses.forApproval) : '';
 
+    const cancelRoleLabel = (() => {
+        const role = String(item.request_cancelled_by_role || '').toLowerCase();
+        if (role === 'bac') {
+            return 'BAC';
+        }
+        if (role === 'division_head') {
+            return 'Division Head';
+        }
+        if (role === 'custodian') {
+            return 'Custodian';
+        }
+        if (role === 'employee') {
+            return 'Requester';
+        }
+        return 'staff';
+    })();
+
     if (requestStatusId && declinedId && requestStatusId === declinedId) {
-        return '<span class="text-xs font-semibold text-rose-700">Request cancelled by custodian.</span>';
+        return `<span class="text-xs font-semibold text-rose-700">Request cancelled by ${cancelRoleLabel}.</span>`;
     }
 
     const fulfillment = item.fulfillment_status;
@@ -773,6 +790,7 @@ const initEmployeePurchaseRequests = () => {
         // Build Annex G-6 HTML
         const itemsHtml = (data.items || []).map((item) => {
             item.request_status_id = requestStatusId;
+            item.request_cancelled_by_role = data.latest_status_changed_by_role || '';
             const statusHtml = renderItemStatus(item, requestStatusId);
             const actionHtml = renderItemActions(item);
             

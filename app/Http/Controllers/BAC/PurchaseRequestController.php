@@ -152,7 +152,6 @@ class PurchaseRequestController extends Controller
         $validated = $request->validate([
             'remarks' => 'nullable|string|max:1000',
             'fund_cluster' => 'nullable|string|max:50',
-            'funds_available' => 'nullable|numeric|min:0',
         ]);
 
         $currentStatus = (int) $purchaseRequest->status_id;
@@ -174,6 +173,14 @@ class PurchaseRequestController extends Controller
         DB::transaction(function () use ($purchaseRequest, $validated, $currentStatus) {
             $accountId = Auth::id();
             $now = now();
+            $purchaseRequest->loadMissing('fundAllocation');
+
+            $liveFundsAvailable = $purchaseRequest->fundAllocation?->syncRemainingAmount();
+            if ($liveFundsAvailable !== null && (float) $liveFundsAvailable < (float) $purchaseRequest->total_estimated_cost) {
+                throw ValidationException::withMessages([
+                    'funds_available' => 'Funds available must cover the total estimated cost.',
+                ]);
+            }
 
             // Update PR to Approved status
             $purchaseRequest->update([
@@ -181,8 +188,8 @@ class PurchaseRequestController extends Controller
                 'approved_by' => $accountId,
                 'approved_at' => $now,
                 'approval_remarks' => $validated['remarks'] ?? null,
-                'fund_cluster' => $validated['fund_cluster'] ?? $purchaseRequest->fund_cluster,
-                'funds_available' => $validated['funds_available'] ?? $purchaseRequest->funds_available,
+                'fund_cluster' => $validated['fund_cluster'] ?? $purchaseRequest->fund_cluster ?? $purchaseRequest->fundAllocation?->fund_cluster,
+                'funds_available' => $liveFundsAvailable ?? $purchaseRequest->funds_available,
             ]);
 
             // Record status history
@@ -333,16 +340,6 @@ class PurchaseRequestController extends Controller
             $accountId = Auth::id();
             $now = now();
 
-            // Release reserved funds back to allocation
-            if ($purchaseRequest->fundAllocation && $purchaseRequest->total_estimated_cost > 0) {
-                $fundService = new \App\Services\FundAllocationService();
-                $fundService->release(
-                    $purchaseRequest->fundAllocation, 
-                    $purchaseRequest->total_estimated_cost, 
-                    $purchaseRequest->pr_no
-                );
-            }
-
             $purchaseRequest->update([
                 'status_id' => Status::PR_CANCELLED,
                 'approval_remarks' => $validated['remarks'],
@@ -394,6 +391,8 @@ class PurchaseRequestController extends Controller
      */
     protected function transformPurchaseRequest(PurchaseRequest $pr): array
     {
+        $liveFundsAvailable = $pr->fundAllocation?->syncRemainingAmount();
+
         $approvalHistory = $pr->statusHistory
             ->first(fn ($history) => (int) $history->new_status_id === Status::PR_APPROVED);
 
@@ -426,7 +425,7 @@ class PurchaseRequestController extends Controller
             'sai_no' => $pr->sai_no,
             'alobs_no' => $pr->alobs_no,
             'fund_cluster' => $pr->fund_cluster ?: $pr->fundAllocation?->fund_cluster,
-            'funds_available' => $pr->funds_available,
+            'funds_available' => $liveFundsAvailable ?? $pr->funds_available,
             'total_estimated_cost' => $pr->total_estimated_cost,
             'division' => $pr->division?->division_name,
             'section' => $pr->section?->section_name,

@@ -103,7 +103,7 @@
             </div>
             <div class="mt-3 text-right text-sm text-gray-700">
                 <span class="mr-4">Selected Cluster: <span class="font-semibold">{{ $purchaseRequest->fundAllocation?->fund_cluster ?? '—' }}</span></span>
-                <span>Remaining: <span class="font-bold">₱{{ number_format($purchaseRequest->funds_available ?? ($purchaseRequest->fundAllocation?->remaining_amount ?? 0), 2) }}</span></span>
+                <span>Remaining: <span class="font-bold">₱{{ number_format($purchaseRequest->fundAllocation?->remaining_amount ?? ($purchaseRequest->funds_available ?? 0), 2) }}</span></span>
             </div>
         </div>
 

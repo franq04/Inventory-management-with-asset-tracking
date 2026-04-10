@@ -317,7 +317,7 @@
 $purchaseRequestsData = $requests->mapWithKeys(function ($request) {
     return [$request->pr_no => [
         'purpose' => $request->purpose,
-        'funds_available' => $request->funds_available,
+        'funds_available' => $request->fundAllocation?->remaining_amount ?? $request->funds_available,
         'total_estimated_cost' => $request->total_estimated_cost,
         'items' => $request->items->map(function ($item) {
             return [

@@ -38,6 +38,14 @@ Route::middleware(['auth.session'])->group(function () {
         }
 
         $normalized = ltrim($path, '/');
+        if (str_starts_with($normalized, 'http://') || str_starts_with($normalized, 'https://') || str_starts_with($normalized, 'data:')) {
+            return $path;
+        }
+
+        if (str_starts_with($normalized, 'images/')) {
+            return asset($normalized);
+        }
+
         if (str_starts_with($normalized, 'storage/')) {
             return asset($normalized);
         }

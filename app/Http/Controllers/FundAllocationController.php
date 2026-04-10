@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\FundAllocation;
-use Illuminate\Http\Request;
 
 class FundAllocationController extends Controller
 {
@@ -15,11 +14,13 @@ class FundAllocationController extends Controller
             return response()->json(['message' => 'Not found'], 404);
         }
 
+        $remainingAmount = $allocation->syncRemainingAmount();
+
         return response()->json([
             'id' => $allocation->id,
             'fund_cluster' => $allocation->fund_cluster,
             'total_amount' => (float) $allocation->total_amount,
-            'remaining_amount' => (float) $allocation->remaining_amount,
+            'remaining_amount' => $remainingAmount,
         ]);
     }
 }
