@@ -118,42 +118,40 @@ class AssetMovementController extends Controller
             ], 422);
         }
 
-        $skippedAssets = $assets
-            ->filter(fn (PqsRecord $asset): bool => ! $asset->canBeTurnedOver())
-            ->values();
-
-        if ($skippedAssets->isNotEmpty()) {
-            return $this->jsonResponse([
-                'status' => 'error',
-                'message' => 'Some selected assets cannot be turned over because they are no longer transferable.',
-                'data' => [
-                    'summary' => [
-                        'total_assets' => $assets->count(),
-                        'eligible_assets' => $assets->count() - $skippedAssets->count(),
-                        'skipped_assets' => $skippedAssets->map(fn (PqsRecord $asset): array => [
-                            'property_no' => $asset->property_no,
-                            'reason' => 'Asset is unserviceable, disposed, lost, or otherwise not transferable.',
-                        ])->all(),
-                        'affected_assets' => [],
-                        'failed_assets' => [],
-                    ],
-                ],
-            ], 422);
-        }
-
         $effectiveAt = $validated['effective_at'] ?? now();
         $recordedBy = Auth::user()?->account_id;
         $affectedAssets = [];
+        $skippedAssets = [];
+        $eligibleAssetCount = 0;
         $batchReference = (string) Str::uuid();
 
-        DB::transaction(function () use ($assets, $employee, $location, $validated, $effectiveAt, $recordedBy, $batchReference, &$affectedAssets): void {
+        DB::transaction(function () use ($assets, $employee, $location, $validated, $effectiveAt, $recordedBy, $batchReference, &$affectedAssets, &$skippedAssets, &$eligibleAssetCount): void {
             $assets = PqsRecord::query()
                 ->whereIn('property_no', $assets->pluck('property_no'))
                 ->lockForUpdate()
                 ->orderBy('property_no')
                 ->get();
 
-            foreach ($assets as $asset) {
+            $eligibleAssets = $assets
+                ->filter(fn (PqsRecord $asset): bool => $asset->canBeTurnedOver())
+                ->values();
+
+            $skippedAssets = $assets
+                ->reject(fn (PqsRecord $asset): bool => $asset->canBeTurnedOver())
+                ->map(fn (PqsRecord $asset): array => [
+                    'property_no' => $asset->property_no,
+                    'reason' => 'Asset is unserviceable, disposed, lost, or otherwise not transferable.',
+                ])
+                ->values()
+                ->all();
+
+            $eligibleAssetCount = $eligibleAssets->count();
+
+            if ($eligibleAssets->isEmpty()) {
+                return;
+            }
+
+            foreach ($eligibleAssets as $asset) {
                 $fromLocationId = $asset->current_location_id;
                 $fromCustodianId = $asset->current_custodian_employee_id ?: $asset->accountable_officer_id;
                 $targetDivisionId = $location->division_id ?? $asset->assigned_division_id;
@@ -169,7 +167,7 @@ class AssetMovementController extends Controller
                     'to_division_id' => $targetDivisionId,
                     'from_section_id' => $asset->assigned_section_id,
                     'to_section_id' => $targetSectionId,
-                    'movement_type' => 'transfer',
+                    'movement_type' => 'turnover',
                     'reason_code' => 'employee_turnover',
                     'effective_at' => $effectiveAt,
                     'recorded_by' => $recordedBy,
@@ -209,7 +207,7 @@ class AssetMovementController extends Controller
                     'message' => sprintf(
                         'Employee turnover batch %s moved %d asset(s) to %s.',
                         $batchReference,
-                        $assets->count(),
+                        $eligibleAssetCount,
                         $location->location_name
                     ),
                     'type' => 'task',
@@ -219,14 +217,39 @@ class AssetMovementController extends Controller
             }
         });
 
+        if ($eligibleAssetCount === 0) {
+            return $this->jsonResponse([
+                'status' => 'error',
+                'message' => 'No transferable assets are currently available for turnover.',
+                'data' => [
+                    'summary' => [
+                        'total_assets' => $assets->count(),
+                        'eligible_assets' => 0,
+                        'skipped_assets' => $skippedAssets,
+                        'affected_assets' => [],
+                        'failed_assets' => [],
+                    ],
+                ],
+            ], 422);
+        }
+
+        $successMessage = 'Employee asset turnover completed successfully.';
+        if (! empty($skippedAssets)) {
+            $successMessage = sprintf(
+                'Employee asset turnover completed. %d asset(s) moved; %d non-transferable asset(s) were skipped.',
+                $eligibleAssetCount,
+                count($skippedAssets)
+            );
+        }
+
         return $this->jsonResponse([
             'status' => 'success',
-            'message' => 'Employee asset turnover completed successfully.',
+            'message' => $successMessage,
             'data' => [
                 'summary' => [
                     'total_assets' => $assets->count(),
-                    'eligible_assets' => $assets->count(),
-                    'skipped_assets' => [],
+                    'eligible_assets' => $eligibleAssetCount,
+                    'skipped_assets' => $skippedAssets,
                     'affected_assets' => $affectedAssets,
                     'failed_assets' => [],
                 ],
@@ -832,7 +855,7 @@ class AssetMovementController extends Controller
             $request->all(),
             [
                 'search' => ['nullable', 'string', 'max:255'],
-                'movement_type' => ['nullable', 'in:initial_assignment,transfer,relocation,inventory_correction,maintenance_out,maintenance_in,disposal,write_off'],
+                'movement_type' => ['nullable', 'in:initial_assignment,transfer,turnover,relocation,inventory_correction,maintenance_out,maintenance_in,disposal,write_off'],
                 'division_id' => ['nullable', 'exists:divisions,division_id'],
                 'section_id' => ['nullable', 'exists:sections,section_id'],
                 'location_id' => ['nullable', 'exists:physical_locations,location_id'],

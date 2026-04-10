@@ -237,13 +237,19 @@
                 </thead>
                 <tbody>
                     @foreach ($movements as $movement)
+                        @php
+                            $movementType = (string) $movement->movement_type;
+                            $movementLabel = ($movementType === 'turnover' || ($movementType === 'transfer' && (string) $movement->reason_code === 'employee_turnover'))
+                                ? 'Turnover'
+                                : ucwords(str_replace('_', ' ', $movementType));
+                        @endphp
                         <tr>
                             <td>{{ optional($movement->effective_at)->format('m/d/Y h:i A') }}</td>
                             <td>
                                 <div><strong>{{ $movement->property_no }}</strong></div>
                                 <div>{{ $movement->property?->article ?: '' }}</div>
                             </td>
-                            <td>{{ ucwords(str_replace('_', ' ', (string) $movement->movement_type)) }}</td>
+                            <td>{{ $movementLabel }}</td>
                             <td>
                                 <div><strong>From:</strong> {{ $movement->from_endpoint_display ?: 'Unspecified' }}</div>
                                 <div><strong>To:</strong> {{ $movement->to_endpoint_display ?: 'Unspecified' }}</div>

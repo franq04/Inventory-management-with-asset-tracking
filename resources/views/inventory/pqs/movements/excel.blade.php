@@ -176,11 +176,17 @@
         </thead>
         <tbody>
             @forelse ($movements as $movement)
+                @php
+                    $movementType = (string) $movement->movement_type;
+                    $movementLabel = ($movementType === 'turnover' || ($movementType === 'transfer' && (string) $movement->reason_code === 'employee_turnover'))
+                        ? 'TURNOVER'
+                        : strtoupper($movementType);
+                @endphp
                 <tr>
                     <td>{{ optional($movement->effective_at)->format('Y-m-d H:i') }}</td>
                     <td>{{ $movement->property_no }}</td>
                     <td>{{ $movement->property?->article ?: '' }}</td>
-                    <td>{{ strtoupper((string) $movement->movement_type) }}</td>
+                    <td>{{ $movementLabel }}</td>
                     <td>{{ $movement->from_endpoint_display ?: '' }}</td>
                     <td>{{ $movement->to_endpoint_display ?: '' }}</td>
                     <td>{{ $movement->from_custodian_display ?: '' }}</td>

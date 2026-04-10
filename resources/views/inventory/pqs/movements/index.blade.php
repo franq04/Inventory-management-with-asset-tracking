@@ -294,11 +294,17 @@
                     @forelse ($movements as $movement)
                         @php
                             $movementType = (string) $movement->movement_type;
+                            $isTurnoverMovement = $movementType === 'turnover'
+                                || ($movementType === 'transfer' && (string) $movement->reason_code === 'employee_turnover');
                             $movementLabel = match ($movementType) {
+                                'turnover' => 'Turnover',
                                 'maintenance_out' => 'Unserviceable',
                                 'maintenance_in' => 'Serviceable',
                                 default => ucwords(str_replace('_', ' ', $movementType)),
                             };
+                            if ($isTurnoverMovement) {
+                                $movementLabel = 'Turnover';
+                            }
                             $movementBadgeClass = match ($movementType) {
                                 'maintenance_out' => 'border-rose-200 bg-rose-50 text-rose-700',
                                 'maintenance_in' => 'border-emerald-200 bg-emerald-50 text-emerald-700',

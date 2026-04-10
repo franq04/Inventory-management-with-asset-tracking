@@ -10,6 +10,82 @@ const formatCurrency = (value) => {
     return `₱${number.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
+const integerToWords = (value) => {
+    const ones = [
+        'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine',
+        'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen',
+    ];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+    const toChunkWords = (n) => {
+        if (n < 20) {
+            return ones[n];
+        }
+
+        if (n < 100) {
+            const ten = Math.floor(n / 10);
+            const rem = n % 10;
+            return rem ? `${tens[ten]}-${ones[rem]}` : tens[ten];
+        }
+
+        const hundred = Math.floor(n / 100);
+        const rem = n % 100;
+        return rem ? `${ones[hundred]} Hundred ${toChunkWords(rem)}` : `${ones[hundred]} Hundred`;
+    };
+
+    if (!Number.isFinite(value) || value < 0) {
+        return '';
+    }
+
+    if (value === 0) {
+        return ones[0];
+    }
+
+    const scales = [
+        [1000000000, 'Billion'],
+        [1000000, 'Million'],
+        [1000, 'Thousand'],
+        [1, ''],
+    ];
+
+    let remaining = Math.floor(value);
+    const words = [];
+
+    scales.forEach(([size, label]) => {
+        if (remaining < size) {
+            return;
+        }
+
+        const chunk = Math.floor(remaining / size);
+        remaining %= size;
+        if (chunk > 0) {
+            const chunkWords = toChunkWords(chunk);
+            words.push(label ? `${chunkWords} ${label}` : chunkWords);
+        }
+    });
+
+    return words.join(' ').trim();
+};
+
+const currencyToWords = (value) => {
+    const amount = Number(value ?? 0);
+    if (!Number.isFinite(amount) || amount < 0) {
+        return '';
+    }
+
+    const roundedAmountInCents = Math.round(amount * 100);
+    const pesos = Math.floor(roundedAmountInCents / 100);
+    const cents = roundedAmountInCents % 100;
+    const pesoWords = integerToWords(pesos) || 'Zero';
+    const centPart = String(cents).padStart(2, '0');
+
+    if (cents === 0) {
+        return `${pesoWords} Pesos Only`.toUpperCase();
+    }
+
+    return `${pesoWords} Pesos and ${centPart}/100 Only`.toUpperCase();
+};
+
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (char) => {
     const map = {
         '&': '&amp;',
@@ -333,6 +409,7 @@ const bindPurchaseOrderForm = () => {
     const $orsDate = $('#poOrsDate');
     const $orsAmount = $('#poOrsAmount');
     const $fundsAvailable = $('#poFundsAvailable');
+    const $amountWords = $('#poAmountWords');
 
     let currentItems = [];
 
@@ -475,6 +552,9 @@ const bindPurchaseOrderForm = () => {
             $summaryItems.text('0');
             $summaryTotal.text(formatCurrency(0));
             setNumericField($orsAmount, 0);
+            if ($amountWords.length) {
+                $amountWords.val(currencyToWords(0));
+            }
             return;
         }
 
@@ -509,6 +589,9 @@ const bindPurchaseOrderForm = () => {
         $summaryItems.text(totalQuantity);
         $summaryTotal.text(formatCurrency(grandTotal));
         setNumericField($orsAmount, grandTotal);
+        if ($amountWords.length) {
+            $amountWords.val(currencyToWords(grandTotal));
+        }
     };
 
     const populateFromRequest = (requestId) => {
