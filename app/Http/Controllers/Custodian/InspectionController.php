@@ -162,6 +162,7 @@ class InspectionController extends Controller
             'items',
             'supplier',
             'inspectionReports.items.status',
+            'inspectionReports.inspector.employee',
         ]);
 
         $selectedIaNo = $request->string('report')->toString();
@@ -215,6 +216,8 @@ class InspectionController extends Controller
             ->orderBy('status_code')
             ->get(['status_id', 'status_name', 'status_code']);
 
+        $currentInspectorName = $this->accountDisplayName(Auth::user());
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -245,9 +248,12 @@ class InspectionController extends Controller
                     'invoice_date' => optional($activeReport->invoice_date)->toDateString(),
                     'remarks' => $activeReport->remarks,
                     'overall_status_id' => $activeReport->overall_status_id,
+                    'inspected_by' => $activeReport->inspected_by,
+                    'inspected_by_name' => $this->resolveReportInspectorName($activeReport),
                 ] : null,
                 'items' => $items,
                 'statuses' => $statuses,
+                'current_inspector_name' => $currentInspectorName,
             ],
         ]);
     }
@@ -618,5 +624,50 @@ class InspectionController extends Controller
         }
 
         return Status::PO_PARTIALLY_DELIVERED;
+    }
+
+    protected function accountDisplayName($account): ?string
+    {
+        if (! $account) {
+            return null;
+        }
+
+        $employee = $account->employee;
+        if ($employee) {
+            $fullName = trim((string) $employee->full_name);
+            if ($fullName !== '') {
+                return $fullName;
+            }
+
+            $composed = collect([
+                $employee->first_name,
+                $employee->middle_name,
+                $employee->last_name,
+                $employee->suffix,
+            ])->filter()->implode(' ');
+
+            if (trim($composed) !== '') {
+                return trim($composed);
+            }
+        }
+
+        return $account->username ?? null;
+    }
+
+    protected function resolveReportInspectorName(InspectionReport $report): ?string
+    {
+        $directInspector = $this->accountDisplayName($report->inspector);
+        if ($directInspector) {
+            return $directInspector;
+        }
+
+        $latestHistory = StatusHistory::query()
+            ->with(['account.employee'])
+            ->where('table_name', 'inspection_acceptance')
+            ->where('record_id', $report->ia_no)
+            ->orderByDesc('changed_at')
+            ->first();
+
+        return $this->accountDisplayName($latestHistory?->account);
     }
 }

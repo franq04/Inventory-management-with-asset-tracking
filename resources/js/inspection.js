@@ -483,6 +483,7 @@ const initInspectionModal = () => {
         storeUrl: null,
         statuses: [],
         statusCodeById: {},
+        fallbackInspectorName: '',
     };
 
     const statusCodePriority = {
@@ -523,6 +524,39 @@ const initInspectionModal = () => {
 
     const getStatusCodeById = (statusId) => state.statusCodeById[String(statusId ?? '')] || null;
 
+    const setInspectorName = (name = '') => {
+        const resolved = String(name || '').trim();
+        $('#inspectionInspectorName').text(resolved || '—');
+    };
+
+    const resolveCurrentInspectorName = (apiName = '') => {
+        const fromApi = String(apiName || '').trim();
+        if (fromApi) {
+            return fromApi;
+        }
+
+        if (state.fallbackInspectorName) {
+            return state.fallbackInspectorName;
+        }
+
+        const fromModalData = String($modal.data('currentInspectorName') || '').trim();
+        if (fromModalData) {
+            state.fallbackInspectorName = fromModalData;
+            return fromModalData;
+        }
+
+        return '';
+    };
+
+    const ensureInspectorNameVisible = () => {
+        const current = String($('#inspectionInspectorName').text() || '').trim();
+        if (current && current !== '—') {
+            return;
+        }
+
+        setInspectorName(resolveCurrentInspectorName());
+    };
+
     const setLoading = (loading) => {
         if (loading) {
             $loader.removeClass('hidden').addClass('flex');
@@ -545,6 +579,7 @@ const initInspectionModal = () => {
             $form.trigger('reset');
             $itemsContainer.empty();
             $errorBox.addClass('hidden').empty();
+            setInspectorName('');
             state.storeUrl = null;
             syncStatuses([]);
             // Ensure form inputs are enabled again and submit button visible for next open
@@ -729,7 +764,8 @@ const initInspectionModal = () => {
     });
 
     const populateForm = (payload) => {
-        const { po = {}, report = null, items = [] } = payload;
+        const { po = {}, active_report = null, items = [], current_inspector_name = '' } = payload;
+        const report = active_report;
 
         $('#inspectionPoNumber').text(po.po_no ?? '—');
         $('#inspectionPrNumber').text(po.pr_no ?? '—');
@@ -745,6 +781,9 @@ const initInspectionModal = () => {
         $('#invoiceDate').val(report?.invoice_date ?? '');
         $('#inspectionRemarks').val(report?.remarks ?? '');
 
+        const inspectorName = (report?.inspected_by_name || resolveCurrentInspectorName(current_inspector_name) || '').trim();
+        setInspectorName(inspectorName);
+
         renderItems(items);
     };
 
@@ -759,6 +798,7 @@ const initInspectionModal = () => {
 
         state.storeUrl = storeUrl;
         $errorBox.addClass('hidden').empty();
+        setInspectorName(resolveCurrentInspectorName());
         setLoading(true);
         toggleModal(true);
 
@@ -846,6 +886,10 @@ const initInspectionModal = () => {
                 $submitBtn.prop('disabled', false).removeClass('opacity-75 cursor-not-allowed');
             },
         });
+    });
+
+    $form.on('input change', '#inspectionDate, #inspectionRemarks, #inspectionItems input, #inspectionItems select, #inspectionItems textarea', () => {
+        ensureInspectorNameVisible();
     });
 };
 

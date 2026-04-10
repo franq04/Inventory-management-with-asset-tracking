@@ -1,4 +1,23 @@
-<div id="inspectionModal" class="fixed inset-0 z-50 hidden">
+@php
+    $inspectionViewer = auth()->user();
+    $inspectionViewerEmployee = $inspectionViewer?->employee;
+    $inspectionViewerName = trim((string) ($inspectionViewerEmployee->full_name ?? ''));
+
+    if ($inspectionViewerName === '' && $inspectionViewerEmployee) {
+        $inspectionViewerName = trim(collect([
+            $inspectionViewerEmployee->first_name,
+            $inspectionViewerEmployee->middle_name,
+            $inspectionViewerEmployee->last_name,
+            $inspectionViewerEmployee->suffix,
+        ])->filter()->implode(' '));
+    }
+
+    if ($inspectionViewerName === '') {
+        $inspectionViewerName = trim((string) ($inspectionViewer?->username ?? $inspectionViewer?->name ?? ''));
+    }
+@endphp
+
+<div id="inspectionModal" class="fixed inset-0 z-50 hidden" data-current-inspector-name="{{ $inspectionViewerName }}">
     <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" data-close-modal></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
         <div class="relative bg-white w-full max-w-6xl rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] overflow-hidden">
@@ -122,7 +141,7 @@
                                     <p class="flex-1 text-xs">Inspected, verified and found in order as to quantity and specifications</p>
                                 </div>
                                 <div class="pt-12 text-center">
-                                    <div class="w-full border-b border-gray-500"></div>
+                                    <div id="inspectionInspectorName" class="w-full border-b border-gray-500 pb-1 text-sm font-semibold text-gray-800">&mdash;</div>
                                     <label class="mt-1 block text-xs">Inspection Officer/Inspection Committee</label>
                                 </div>
                             </div>
