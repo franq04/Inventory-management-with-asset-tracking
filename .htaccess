@@ -5,8 +5,10 @@
     # Keep old /public URLs working but canonicalize to root URL.
     RewriteRule ^public/(.*)$ $1 [R=302,L]
 
-    # Expose static assets from /public at the app root URL.
-    RewriteRule ^(build|images)/(.*)$ public/$1/$2 [L]
+    # Expose common static assets from /public at the app root URL.
+    RewriteRule ^(build|images|storage)/(.*)$ public/$1/$2 [L]
+
+    # Serve root-level static files from /public.
     RewriteRule ^(favicon\.ico|robots\.txt)$ public/$1 [L]
 
     # Send all app routes to the root front controller.

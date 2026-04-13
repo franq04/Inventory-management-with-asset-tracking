@@ -177,8 +177,12 @@ $(document).ready(function () {
 
         setSubmitLoading(true);
 
+        const actionUrl = loginForm.attr("action");
+        const fallbackBase = window.location.pathname.replace(/\/[^/]*$/, "");
+        const submitUrl = actionUrl || `${window.location.origin}${fallbackBase}/login`;
+
         $.ajax({
-            url: "/login",
+            url: submitUrl,
             method: "POST",
             data: $(this).serialize(),
             success: function (response) {
