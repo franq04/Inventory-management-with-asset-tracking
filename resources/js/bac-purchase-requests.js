@@ -72,6 +72,38 @@ const initBacPurchaseRequestPage = function () {
     let activeQueueRequestController = null;
     let queueRequestToken = 0;
 
+    const resolveBacUrl = (path = '') => {
+        if (!path) {
+            return window.location.href;
+        }
+
+        if (/^https?:\/\//i.test(path)) {
+            return path;
+        }
+
+        const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+        const baseMatch = window.location.pathname.match(/^(.*?)(?=\/bac(?:\/|$))/i);
+        const basePath = baseMatch?.[1] ?? '';
+
+        return `${window.location.origin}${basePath}${normalizedPath}`;
+    };
+
+    const parseJsonSafely = async (response) => {
+        const text = await response.text();
+
+        if (!text) {
+            return {};
+        }
+
+        try {
+            return JSON.parse(text);
+        } catch {
+            return {
+                message: text,
+            };
+        }
+    };
+
     function renderSignature(signatureDataUrl) {
         if (!signatureDataUrl) {
             return '';
@@ -972,7 +1004,7 @@ const initBacPurchaseRequestPage = function () {
         });
         
         try {
-            const response = await fetch(`/bac/purchase-requests/${prNo}/update-item-costs`, {
+            const response = await fetch(resolveBacUrl(`/bac/purchase-requests/${prNo}/update-item-costs`), {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -982,7 +1014,7 @@ const initBacPurchaseRequestPage = function () {
             });
             
             if (!response.ok) {
-                const result = await response.json();
+                const result = await parseJsonSafely(response);
                 throw new Error(result.message || 'Failed to save item costs');
             }
             
@@ -1074,9 +1106,9 @@ const initBacPurchaseRequestPage = function () {
         }
 
         const routes = {
-            review: `/bac/purchase-requests/${prNo}/review`,
-            approve: `/bac/purchase-requests/${prNo}/approve`,
-            cancel: `/bac/purchase-requests/${prNo}/cancel`
+            review: resolveBacUrl(`/bac/purchase-requests/${prNo}/review`),
+            approve: resolveBacUrl(`/bac/purchase-requests/${prNo}/approve`),
+            cancel: resolveBacUrl(`/bac/purchase-requests/${prNo}/cancel`)
         };
 
         const formData = new FormData();
@@ -1104,7 +1136,7 @@ const initBacPurchaseRequestPage = function () {
                 body: formData
             });
 
-            const result = await response.json();
+            const result = await parseJsonSafely(response);
 
             if (response.ok) {
                 const nextStatusId = Number(result?.data?.status_id || actionTargetStatusId[actionType] || previousStatusId);
@@ -1324,7 +1356,7 @@ const initBacPurchaseRequestPage = function () {
                 formData.append('unit_cost', unitCost);
                 if (remarks) formData.append('remarks', remarks);
                 
-                const response = await fetch(`/bac/purchase-requests/${currentPrData.pr_no}/suggest-alternative`, {
+                const response = await fetch(resolveBacUrl(`/bac/purchase-requests/${currentPrData.pr_no}/suggest-alternative`), {
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -1332,8 +1364,8 @@ const initBacPurchaseRequestPage = function () {
                     },
                     body: formData
                 });
-                
-                const result = await response.json();
+
+                const result = await parseJsonSafely(response);
                 
                 if (response.ok && result.success) {
                     hideAlternativeModal();

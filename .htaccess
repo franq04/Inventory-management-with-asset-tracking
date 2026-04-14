@@ -6,7 +6,7 @@
     RewriteRule ^public/(.*)$ $1 [R=302,L]
 
     # Expose common static assets from /public at the app root URL.
-    RewriteRule ^(build|images|storage)/(.*)$ public/$1/$2 [L]
+    RewriteRule ^(build|images|storage|user-manual-images)/(.*)$ public/$1/$2 [L]
 
     # Serve root-level static files from /public.
     RewriteRule ^(favicon\.ico|robots\.txt)$ public/$1 [L]

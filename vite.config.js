@@ -2,7 +2,15 @@ import { defineConfig, loadEnv } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 
-const resolveBasePath = (appUrl) => {
+const resolveBasePath = (appUrl, explicitBasePath) => {
+    if (explicitBasePath) {
+        const trimmedBase = String(explicitBasePath).trim().replace(/\/+$/, '');
+        if (trimmedBase && trimmedBase !== '/') {
+            const normalized = trimmedBase.startsWith('/') ? trimmedBase : `/${trimmedBase}`;
+            return `${normalized}/build/`;
+        }
+    }
+
     if (!appUrl) {
         return '/build/';
     }
@@ -23,7 +31,7 @@ const resolveBasePath = (appUrl) => {
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd(), '');
-    const basePath = resolveBasePath(env.APP_URL);
+    const basePath = resolveBasePath(env.APP_URL, env.VITE_APP_BASE_PATH);
 
     return {
         base: basePath,

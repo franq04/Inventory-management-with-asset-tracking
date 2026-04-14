@@ -755,14 +755,14 @@
                     <div class="relative border-b-2 border-gray-400 px-6 pt-6 pb-4">
                         <span class="absolute top-4 right-6 text-xs font-semibold uppercase tracking-wide text-gray-500">APPENDIX 01</span>
                         <div class="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
-                            <img src="/images/bpi-logo.png" alt="BPI Logo" class="h-16 w-auto object-contain" />
+                            <img src="{{ asset('images/bpi-logo.png') }}" alt="BPI Logo" class="h-16 w-auto object-contain" />
                             <div class="text-center">
                                 <p class="text-[11px] uppercase tracking-[0.35em] text-gray-600">Department of Agriculture</p>
                                 <h2 class="mt-2 text-2xl font-black uppercase tracking-[0.35em] text-gray-900">PURCHASE ORDER</h2>
                                 <p class="mt-2 text-sm font-semibold uppercase text-gray-700">Bureau of Plant Industry</p>
                                 <p class="text-xs italic text-gray-500">(Agency)</p>
                             </div>
-                            <img src="/images/pqslogo.png" alt="PQS Logo" class="h-16 w-auto object-contain" />
+                            <img src="{{ asset('images/pqslogo.png') }}" alt="PQS Logo" class="h-16 w-auto object-contain" />
                         </div>
                     </div>
 
