@@ -346,6 +346,23 @@
     let activeEditId = null;
     let filterDebounceTimer = null;
 
+    const resolveFundUrl = (pathOrUrl = '') => {
+        if (!pathOrUrl) {
+            return indexEndpoint;
+        }
+
+        const raw = String(pathOrUrl).trim();
+        if (/^https?:\/\//i.test(raw)) {
+            return raw;
+        }
+
+        const normalizedPath = raw.startsWith('/') ? raw : `/${raw}`;
+        const baseMatch = window.location.pathname.match(/^(.*?)(?=\/custodian(?:\/|$))/i);
+        const basePath = baseMatch?.[1] ?? '';
+
+        return `${window.location.origin}${basePath}${normalizedPath}`;
+    };
+
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': csrfToken,
@@ -391,7 +408,7 @@
     };
 
     const buildUrlWithFilters = (baseUrl) => {
-        const target = new URL(baseUrl || indexEndpoint, window.location.origin);
+        const target = new URL(resolveFundUrl(baseUrl || indexEndpoint));
         const params = getFilterParams();
 
         ['search', 'utilization', 'date_from', 'date_to'].forEach((key) => target.searchParams.delete(key));
@@ -458,7 +475,7 @@
     };
 
     const fetchFundAllocations = (url = null) => {
-        const target = new URL(url || indexEndpoint, window.location.origin);
+        const target = new URL(resolveFundUrl(url || indexEndpoint));
         const activeFilters = getFilterParams();
 
         ['search', 'utilization', 'date_from', 'date_to'].forEach((key) => {
@@ -750,7 +767,7 @@
         // Fetch suggested fund cluster code and prefill
         $.ajax({
             method: 'GET',
-            url: '/custodian/fund-allocations/suggest',
+            url: resolveFundUrl('/custodian/fund-allocations/suggest'),
             success: (resp) => {
                 if (resp && resp.suggested_code) {
                     $('#fundCluster').val(resp.suggested_code);
@@ -836,7 +853,7 @@
 
             $.ajax({
                 method: 'GET',
-                url: `/custodian/fund-allocations/${id}`,
+                url: resolveFundUrl(`/custodian/fund-allocations/${id}`),
                 success: (response) => {
                     const data = response?.data || {};
                     $viewSubtitle.text(`Fund Cluster: ${String(data.fund_cluster || '—')}`);
@@ -921,7 +938,7 @@
 
         $.ajax({
             method: 'DELETE',
-            url: `/custodian/fund-allocations/${pendingDelete.id}`,
+            url: resolveFundUrl(`/custodian/fund-allocations/${pendingDelete.id}`),
             success: (response) => {
                 toggleDeleteModal(false);
                 showToast(response.message ?? 'Fund allocation deleted successfully.');
@@ -964,7 +981,9 @@
             return;
         }
 
-        const url = method === 'PUT' ? `/custodian/fund-allocations/${id}` : '/custodian/fund-allocations';
+        const url = method === 'PUT'
+            ? resolveFundUrl(`/custodian/fund-allocations/${id}`)
+            : resolveFundUrl('/custodian/fund-allocations');
 
         const submitBtn = $form.find('button[type="submit"]');
         const originalText = submitBtn.html();

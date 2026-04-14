@@ -9,6 +9,7 @@ use App\Http\Controllers\Custodian\InventoryAssignmentController;
 use App\Http\Controllers\Custodian\PhysicalLocationController;
 use App\Http\Controllers\Custodian\PurchaseOrderController;
 use App\Http\Controllers\Custodian\PurchaseRequestController as CustodianPurchaseRequestController;
+use App\Http\Controllers\Custodian\UserManualController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Employee\PurchaseRequestController as EmployeePurchaseRequestController;
 use App\Http\Controllers\EmployeeDashboardController;
@@ -212,6 +213,11 @@ Route::middleware('role:custodian')->group(function () {
             ->name('fund_allocations.update');
         Route::delete('fund-allocations/{fundAllocation}', [App\Http\Controllers\Custodian\FundAllocationController::class, 'destroy'])
             ->name('fund_allocations.destroy');
+
+        Route::get('user-manual', [UserManualController::class, 'index'])
+            ->name('user_manual.index');
+        Route::get('user-manual/export', [UserManualController::class, 'export'])
+            ->name('user_manual.export');
 
         Route::get('purchase-requests', [CustodianPurchaseRequestController::class, 'index'])
             ->name('requests.index');

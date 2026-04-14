@@ -1,4 +1,21 @@
 <nav role="navigation" aria-label="{{ __('Pagination Navigation') }}" class="w-full">
+    @php
+        $normalizePaginationUrl = static function (?string $rawUrl): ?string {
+            if (! $rawUrl) {
+                return null;
+            }
+
+            if (str_starts_with($rawUrl, 'http://') || str_starts_with($rawUrl, 'https://')) {
+                return $rawUrl;
+            }
+
+            return url($rawUrl);
+        };
+
+        $previousUrl = $normalizePaginationUrl($paginator->previousPageUrl());
+        $nextUrl = $normalizePaginationUrl($paginator->nextPageUrl());
+    @endphp
+
     <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <p class="text-sm font-medium text-gray-600">
             Showing page {{ number_format($paginator->currentPage()) }} of {{ number_format(max($paginator->lastPage(), 1)) }}
@@ -11,7 +28,7 @@
                     &laquo; Prev
                 </span>
             @else
-                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
+                <a href="{{ $previousUrl }}" rel="prev" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
                     &laquo; Prev
                 </a>
             @endif
@@ -25,12 +42,13 @@
 
                 @if (is_array($element))
                     @foreach ($element as $page => $url)
+                        @php($pageUrl = $normalizePaginationUrl($url))
                         @if ($page == $paginator->currentPage())
                             <span aria-current="page" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-[#1a3a2d] bg-[#1a3a2d] px-3 text-sm font-semibold text-white shadow-[0_12px_24px_-14px_rgba(26,58,45,0.8)]">
                                 {{ $page }}
                             </span>
                         @else
-                            <a href="{{ $url }}" aria-label="{{ __('Go to page :page', ['page' => $page]) }}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 shadow-sm transition hover:border-[#1a3a2d]/25 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
+                            <a href="{{ $pageUrl }}" aria-label="{{ __('Go to page :page', ['page' => $page]) }}" class="inline-flex h-10 min-w-10 items-center justify-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-medium text-gray-600 shadow-sm transition hover:border-[#1a3a2d]/25 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
                                 {{ $page }}
                             </a>
                         @endif
@@ -39,7 +57,7 @@
             @endforeach
 
             @if ($paginator->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
+                <a href="{{ $nextUrl }}" rel="next" class="inline-flex h-10 items-center rounded-xl border border-[#1a3a2d]/15 bg-white px-4 text-sm font-medium text-[#496255] shadow-sm transition hover:border-[#1a3a2d]/30 hover:bg-[#f5faf7] hover:text-[#1a3a2d]">
                     Next &raquo;
                 </a>
             @else
