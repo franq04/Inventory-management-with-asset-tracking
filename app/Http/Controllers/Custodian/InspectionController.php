@@ -149,7 +149,7 @@ class InspectionController extends Controller
      */
     public function form(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
     {
-        if (! $this->userIsIac()) {
+        if (! $this->userCanInspect()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Only Inspection & Acceptance Committee members may access inspection records.',
@@ -263,7 +263,7 @@ class InspectionController extends Controller
      */
     public function store(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
     {
-        if (! $this->userIsIac()) {
+        if (! $this->userCanInspect()) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Only Inspection & Acceptance Committee members may record inspection results.',
@@ -434,11 +434,11 @@ class InspectionController extends Controller
         ]);
     }
 
-    protected function userIsIac(): bool
+    protected function userCanInspect(): bool
     {
         $user = Auth::user();
 
-        return $user && $user->role === 'iac';
+        return $user && in_array($user->role, ['iac', 'admin'], true);
     }
 
     protected function backfillPendingInspectionItems(): void

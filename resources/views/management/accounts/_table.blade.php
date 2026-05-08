@@ -22,6 +22,7 @@
                             'iac' => 'bg-purple-100 text-purple-700',
                             'employee' => 'bg-emerald-100 text-emerald-700',
                             'division_head' => 'bg-indigo-100 text-indigo-700',
+                            'admin' => 'bg-rose-100 text-rose-700',
                             default => 'bg-gray-100 text-gray-700',
                         };
                     @endphp

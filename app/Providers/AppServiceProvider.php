@@ -40,7 +40,7 @@ class AppServiceProvider extends ServiceProvider
          * This is the strictest gate - prevents any other role from approving.
          */
         Gate::define('bac-approve', function (Account $user) {
-            return $user->role === 'bac';
+            return in_array($user->role, ['bac', 'admin'], true);
         });
 
         /**
@@ -48,7 +48,7 @@ class AppServiceProvider extends ServiceProvider
          * Only Division Heads can provide recommendations on PRs.
          */
         Gate::define('division-head-recommend', function (Account $user) {
-            return $user->role === 'division_head';
+            return in_array($user->role, ['division_head', 'admin'], true);
         });
 
         /**
@@ -56,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
          * Only IAC (Inspection and Acceptance Committee) can inspect items.
          */
         Gate::define('inspect-items', function (Account $user) {
-            return in_array($user->role, ['iac', 'custodian'], true);
+            return in_array($user->role, ['iac', 'custodian', 'admin'], true);
         });
 
         /**
@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
          * Only Custodians can create PQS records from accepted items.
          */
         Gate::define('create-pqs', function (Account $user) {
-            return $user->role === 'custodian';
+            return in_array($user->role, ['custodian', 'admin'], true);
         });
 
         /**
@@ -72,7 +72,7 @@ class AppServiceProvider extends ServiceProvider
          * BAC and Custodians can access the main procurement dashboard.
          */
         Gate::define('view-procurement-dashboard', function (Account $user) {
-            return in_array($user->role, ['bac', 'custodian'], true);
+            return in_array($user->role, ['bac', 'custodian', 'admin'], true);
         });
 
         /**
@@ -80,7 +80,7 @@ class AppServiceProvider extends ServiceProvider
          * BAC and Custodians can manage purchase orders.
          */
         Gate::define('manage-purchase-orders', function (Account $user) {
-            return in_array($user->role, ['bac', 'custodian'], true);
+            return in_array($user->role, ['bac', 'custodian', 'admin'], true);
         });
     }
 }

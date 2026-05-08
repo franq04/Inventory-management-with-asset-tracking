@@ -21,7 +21,7 @@ class InspectionReportPolicy
      */
     public function viewAny(Account $user): bool
     {
-        return in_array($user->role, ['iac', 'custodian', 'bac'], true);
+        return in_array($user->role, ['iac', 'custodian', 'bac', 'admin'], true);
     }
 
     /**
@@ -29,7 +29,7 @@ class InspectionReportPolicy
      */
     public function view(Account $user, InspectionReport $inspectionReport): bool
     {
-        return in_array($user->role, ['iac', 'custodian', 'bac'], true);
+        return in_array($user->role, ['iac', 'custodian', 'bac', 'admin'], true);
     }
 
     /**
@@ -38,7 +38,7 @@ class InspectionReportPolicy
      */
     public function create(Account $user): bool
     {
-        return in_array($user->role, ['iac', 'custodian'], true);
+        return in_array($user->role, ['iac', 'custodian', 'admin'], true);
     }
 
     /**
@@ -47,7 +47,7 @@ class InspectionReportPolicy
      */
     public function inspect(Account $user, InspectionReport $inspectionReport): bool
     {
-        if (!in_array($user->role, ['iac', 'custodian'], true)) {
+        if (!in_array($user->role, ['iac', 'custodian', 'admin'], true)) {
             return false;
         }
 
@@ -60,7 +60,7 @@ class InspectionReportPolicy
      */
     public function acceptItems(Account $user): bool
     {
-        return in_array($user->role, ['iac', 'custodian'], true);
+        return in_array($user->role, ['iac', 'custodian', 'admin'], true);
     }
 
     /**
@@ -68,6 +68,6 @@ class InspectionReportPolicy
      */
     public function rejectItems(Account $user): bool
     {
-        return in_array($user->role, ['iac', 'custodian'], true);
+        return in_array($user->role, ['iac', 'custodian', 'admin'], true);
     }
 }

@@ -126,7 +126,7 @@
                                         <svg class="w-4 h-4 ml-auto text-gray-300 group-hover/item:text-emerald-400 group-hover/item:translate-x-0.5 transition-all duration-150" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                                     </a>
 
-                                    @if(strtolower(session('role') ?? '') === 'custodian')
+                                    @if(in_array(strtolower(session('role') ?? ''), ['custodian', 'admin'], true))
                                         <a href="{{ route('custodian.user_manual.index') }}" class="group/item mt-1 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 transition-all duration-150">
                                             <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 group-hover/item:bg-emerald-100 group-hover/item:text-emerald-700 transition-colors duration-150">
                                                 <i class="fas fa-book-open text-sm"></i>

@@ -144,6 +144,7 @@
                                 'iac' => 'bg-purple-500',
                                 'employee' => 'bg-emerald-500',
                                 'division_head' => 'bg-indigo-500',
+                                'admin' => 'bg-rose-500',
                                 default => 'bg-gray-500',
                             };
                         @endphp
@@ -175,6 +176,7 @@
                                 'iac' => 'bg-purple-100 text-purple-700',
                                 'employee' => 'bg-emerald-100 text-emerald-700',
                                 'division_head' => 'bg-indigo-100 text-indigo-700',
+                                'admin' => 'bg-rose-100 text-rose-700',
                                 default => 'bg-gray-100 text-gray-700',
                             };
                         @endphp
@@ -392,6 +394,7 @@
             iac: 'bg-purple-100 text-purple-700',
             employee: 'bg-emerald-100 text-emerald-700',
             division_head: 'bg-indigo-100 text-indigo-700',
+            admin: 'bg-rose-100 text-rose-700',
         };
 
         const applyRoleToRow = (accountId, role, pending = false) => {

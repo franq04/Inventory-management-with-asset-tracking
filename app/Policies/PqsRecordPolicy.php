@@ -21,7 +21,7 @@ class PqsRecordPolicy
      */
     public function viewAny(Account $user): bool
     {
-        return in_array($user->role, ['custodian', 'bac', 'iac'], true);
+        return in_array($user->role, ['custodian', 'bac', 'iac', 'admin'], true);
     }
 
     /**
@@ -29,7 +29,7 @@ class PqsRecordPolicy
      */
     public function view(Account $user, PqsRecord $pqsRecord): bool
     {
-        return in_array($user->role, ['custodian', 'bac', 'iac'], true);
+        return in_array($user->role, ['custodian', 'bac', 'iac', 'admin'], true);
     }
 
     /**
@@ -38,7 +38,7 @@ class PqsRecordPolicy
      */
     public function create(Account $user): bool
     {
-        return $user->role === 'custodian';
+        return in_array($user->role, ['custodian', 'admin'], true);
     }
 
     /**
@@ -47,7 +47,7 @@ class PqsRecordPolicy
      */
     public function createFromInspection(Account $user, InspectionReportItem $inspectionItem): bool
     {
-        if ($user->role !== 'custodian') {
+        if (! in_array($user->role, ['custodian', 'admin'], true)) {
             return false;
         }
 
@@ -60,7 +60,7 @@ class PqsRecordPolicy
      */
     public function transfer(Account $user, PqsRecord $pqsRecord): bool
     {
-        if ($user->role !== 'custodian') {
+        if (! in_array($user->role, ['custodian', 'admin'], true)) {
             return false;
         }
 
@@ -72,6 +72,6 @@ class PqsRecordPolicy
      */
     public function turnover(Account $user): bool
     {
-        return $user->role === 'custodian';
+        return in_array($user->role, ['custodian', 'admin'], true);
     }
 }

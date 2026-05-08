@@ -61,6 +61,7 @@ class AuthController extends Controller
             // Decide redirect per role. BAC should be routed to the BAC purchase requests queue
             $redirectUrl = match ($role) {
                 'custodian' => route('dashboard'),
+                'admin' => route('dashboard'),
                 'bac' => route('bac.requests.index'),
                 'employee' => route('employee.dashboard'),
                 'division_head' => route('division.requests.index'),

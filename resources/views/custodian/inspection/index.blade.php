@@ -207,7 +207,7 @@
                                             <span class="block max-w-[160px] truncate" title="{{ $latestInspection?->inspection_remarks }}">{{ $latestInspection?->inspection_remarks ?? '—' }}</span>
                                         </td>
                                         <td class="px-5 py-4 align-top text-center">
-                                            @if ($purchaseOrder && in_array($viewerRole, ['custodian', 'iac'], true))
+                                            @if ($purchaseOrder && in_array($viewerRole, ['custodian', 'iac', 'admin'], true))
                                                 <button type="button"
                                                     class="js-open-inspection inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:-translate-y-0.5 hover:shadow-lg"
                                                     data-form-url="{{ route('custodian.inspection.form', $purchaseOrder) }}"
