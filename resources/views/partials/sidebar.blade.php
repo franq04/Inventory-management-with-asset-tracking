@@ -56,7 +56,7 @@
                             <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Inspection Queue</div>
                         </a>
                     </li>
-                @elseif($role === 'custodian')
+                @elseif(in_array($role, ['custodian', 'admin'], true))
                     <li>
                         <a href="{{ route('dashboard') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('dashboard') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <i class="fas fa-chart-line text-lg w-6 text-center"></i>
@@ -66,7 +66,7 @@
                     </li>
                 @endif
 
-                @if(in_array($role, ['custodian', 'employee']))
+                @if(in_array($role, ['custodian', 'employee', 'admin'], true))
                     <li>
                         <a href="{{ route('employee.purchase-requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ $isEmployeeRequestsActive ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <i class="fas fa-file-lines text-lg w-6 text-center"></i>
@@ -79,13 +79,13 @@
         </div>
 
         <!-- SECTION: PROCUREMENT -->
-        @if(in_array($role, ['custodian', 'bac']))
+        @if(in_array($role, ['custodian', 'bac', 'admin'], true))
         <div>
             <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-wider text-gray-400 [.w-20_&]:hidden">
                 Procurement
             </div>
             <ul class="space-y-1">
-                @if($role === 'custodian')
+                @if(in_array($role, ['custodian', 'admin'], true))
                     <li>
                         <a href="{{ route('custodian.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <i class="fas fa-shopping-cart text-lg w-6 text-center"></i>
@@ -116,12 +116,28 @@
                         </a>
                     </li>
                 @endif
+                @if($role === 'admin')
+                    <li>
+                        <a href="{{ route('division_head.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('division_head.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-check text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Division Recommendation</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Division Recommendation</div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('bac.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('bac.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-gavel text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">BAC Approval Queue</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">BAC Approval Queue</div>
+                        </a>
+                    </li>
+                @endif
             </ul>
         </div>
         @endif
 
         <!-- SECTION: INVENTORY -->
-        @if($role === 'custodian')
+        @if(in_array($role, ['custodian', 'admin'], true))
         <div>
             <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-wider text-gray-400 [.w-20_&]:hidden">
                 Inventory
@@ -150,7 +166,7 @@
         @endif
 
         <!-- SECTION: ADMINISTRATION -->
-        @if($role === 'custodian')
+        @if(in_array($role, ['custodian', 'admin'], true))
         <div>
             <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-wider text-gray-400 [.w-20_&]:hidden">
                 Administration
@@ -197,7 +213,7 @@
         @endif
 
         <!-- SECTION: LOGS & REPORTS -->
-        @if($role === 'custodian')
+        @if(in_array($role, ['custodian', 'admin'], true))
         <div>
             <div class="mb-2 px-3 text-[11px] font-extrabold uppercase tracking-wider text-gray-400 [.w-20_&]:hidden">
                 Logs &amp; Reports

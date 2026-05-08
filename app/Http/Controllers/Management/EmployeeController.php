@@ -21,13 +21,14 @@ class EmployeeController extends Controller
     private const DEFAULT_PROFILE_IMG = 'images/default-avatar.png';
     private const MARITAL_STATUSES = ['single', 'married', 'widowed', 'divorced', 'separated'];
     private const GENDERS = ['male', 'female', 'other'];
-    private const ACCOUNT_ROLES = ['employee', 'custodian', 'iac', 'division_head', 'bac'];
+    private const ACCOUNT_ROLES = ['employee', 'custodian', 'iac', 'division_head', 'bac', 'admin'];
     private const ACCOUNT_ROLE_LABELS = [
         'employee' => 'Employee',
         'custodian' => 'Custodian',
         'iac' => 'Inspection and Acceptance Officer',
         'division_head' => 'Division Head',
         'bac' => 'Bids and Awards Committee',
+        'admin' => 'Administrator',
     ];
 
     public function index(Request $request)

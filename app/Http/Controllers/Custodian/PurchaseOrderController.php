@@ -1251,7 +1251,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->loadMissing(['purchaseRequest', 'purchaseRequest.requester']);
 
         $requesterId = $purchaseOrder->purchaseRequest?->account_id;
-        $stakeholderIds = Account::whereIn('role', ['custodian', 'bac', 'iac'])->pluck('account_id');
+        $stakeholderIds = Account::whereIn('role', ['custodian', 'bac', 'iac', 'admin'])->pluck('account_id');
         $senderId = Auth::id();
 
         if (! $senderId) {

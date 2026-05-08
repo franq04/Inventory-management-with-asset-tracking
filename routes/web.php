@@ -173,7 +173,7 @@ Route::middleware(['auth.session'])->group(function () {
     })->name('my-profile.update');
 });
 
-    Route::middleware(['auth.session', 'role:division_head'])->group(function () {
+    Route::middleware(['auth.session', 'role:division_head,admin'])->group(function () {
         Route::prefix('division')->name('division.')->group(function () {
             Route::get('purchase-requests', [CustodianPurchaseRequestController::class, 'index'])
                 ->name('requests.index');
@@ -190,11 +190,11 @@ Route::middleware(['auth.session'])->group(function () {
 // 🧾 DASHBOARD (Custodian)
 // ==========================
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth.session', 'role:custodian'])
+    ->middleware(['auth.session', 'role:custodian,admin'])
     ->name('dashboard');
 
 Route::prefix('custodian')->name('custodian.')->middleware(['auth.session'])->group(function () {
-Route::middleware('role:custodian')->group(function () {
+Route::middleware('role:custodian,admin')->group(function () {
         Route::get('fund-allocations', [App\Http\Controllers\Custodian\FundAllocationController::class, 'index'])
             ->name('fund_allocations.index');
         Route::get('fund-allocations/suggest', [App\Http\Controllers\Custodian\FundAllocationController::class, 'suggest'])
@@ -295,7 +295,7 @@ Route::middleware('role:custodian')->group(function () {
             ->name('audit_logs.export.excel');
     });
 
-    Route::middleware('role:custodian,iac')->group(function () {
+    Route::middleware('role:custodian,iac,admin')->group(function () {
         Route::get('inspection-acceptance', [
             InspectionController::class,
             'index',
@@ -359,7 +359,7 @@ Route::middleware('role:custodian')->group(function () {
 });
 
 // Lightweight management placeholders so sidebar links render even if full modules
-Route::middleware(['auth.session', 'role:custodian'])->group(function () {
+Route::middleware(['auth.session', 'role:custodian,admin'])->group(function () {
     Route::prefix('management')->group(function () {
     Route::get('accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::put('accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
@@ -406,7 +406,7 @@ Route::middleware(['auth.session', 'role:custodian'])->group(function () {
 // 🏛️ BAC (Bids and Awards Committee) ROUTES
 // ==========================
 // STRICT: Only BAC role can access these routes
-Route::middleware(['auth.session', 'role:bac'])->prefix('bac')->name('bac.')->group(function () {
+Route::middleware(['auth.session', 'role:bac,admin'])->prefix('bac')->name('bac.')->group(function () {
     // BAC Purchase Request Management - Final Approval Authority
     Route::get('purchase-requests', [App\Http\Controllers\BAC\PurchaseRequestController::class, 'index'])
         ->name('requests.index');
@@ -436,7 +436,7 @@ Route::middleware(['auth.session', 'role:bac'])->prefix('bac')->name('bac.')->gr
 // ==========================
 // 🏢 DIVISION HEAD ROUTES
 // ==========================
-Route::middleware(['auth.session', 'role:division_head'])->prefix('division-head')->name('division_head.')->group(function () {
+Route::middleware(['auth.session', 'role:division_head,admin'])->prefix('division-head')->name('division_head.')->group(function () {
     // Division Head Purchase Request Recommendation
     Route::get('purchase-requests', [App\Http\Controllers\DivisionHead\PurchaseRequestController::class, 'index'])
         ->name('requests.index');
@@ -454,7 +454,7 @@ Route::middleware(['auth.session', 'role:division_head'])->prefix('division-head
 // ==========================
 // 🔍 INSPECTOR (IAC) ROUTES
 // ==========================
-Route::middleware(['auth.session', 'role:iac,custodian'])->prefix('inspector')->name('inspector.')->group(function () {
+Route::middleware(['auth.session', 'role:iac,custodian,admin'])->prefix('inspector')->name('inspector.')->group(function () {
     Route::get('inspections', [App\Http\Controllers\Inspector\InspectionController::class, 'index'])
         ->name('inspection.index');
 
@@ -476,10 +476,10 @@ Route::middleware(['auth.session', 'role:iac,custodian'])->prefix('inspector')->
 // 👤 DASHBOARD (Employee)
 // ==========================
 Route::get('/employee/dashboard', [EmployeeDashboardController::class, 'index'])
-    ->middleware(['auth.session', 'role:employee'])
+    ->middleware(['auth.session', 'role:employee,admin'])
     ->name('employee.dashboard');
 
-Route::middleware(['auth.session', 'role:employee,custodian'])->group(function () {
+Route::middleware(['auth.session', 'role:employee,custodian,admin'])->group(function () {
     Route::prefix('employee')->name('employee.')->group(function () {
         Route::get('purchase-requests', [EmployeePurchaseRequestController::class, 'index'])
             ->name('purchase-requests.index');
@@ -502,7 +502,7 @@ Route::middleware(['auth.session', 'role:employee,custodian'])->group(function (
 });
 
 // Fund allocation lookup used by frontend to fetch live remaining_amount
-Route::middleware(['auth.session', 'role:employee,custodian'])->group(function () {
+Route::middleware(['auth.session', 'role:employee,custodian,admin'])->group(function () {
     Route::get('employee/fund-allocations/{id}', [App\Http\Controllers\FundAllocationController::class, 'show'])
         ->name('employee.fund-allocations.show');
 });

@@ -23,6 +23,7 @@ class AccountController extends Controller
         'employee',
         'division_head',
         'iac',
+        'admin',
     ];
 
     public function index(Request $request)

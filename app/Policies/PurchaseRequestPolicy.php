@@ -43,7 +43,7 @@ class PurchaseRequestPolicy
      */
     public function viewAny(Account $user): bool
     {
-        return in_array($user->role, ['employee', 'division_head', 'bac', 'custodian', 'iac'], true);
+        return in_array($user->role, ['employee', 'division_head', 'bac', 'custodian', 'iac', 'admin'], true);
     }
 
     /**
@@ -61,8 +61,8 @@ class PurchaseRequestPolicy
             return $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest);
         }
 
-        // BAC, custodians, and inspectors can view all
-        return in_array($user->role, ['bac', 'custodian', 'iac'], true);
+        // BAC, custodians, inspectors, and admins can view all
+        return in_array($user->role, ['bac', 'custodian', 'iac', 'admin'], true);
     }
 
     /**
@@ -70,7 +70,7 @@ class PurchaseRequestPolicy
      */
     public function create(Account $user): bool
     {
-        return $user->role === 'employee';
+        return in_array($user->role, ['employee', 'admin'], true);
     }
 
     /**
@@ -79,11 +79,11 @@ class PurchaseRequestPolicy
      */
     public function recommend(Account $user, PurchaseRequest $purchaseRequest): bool
     {
-        if ($user->role !== 'division_head') {
+        if (! in_array($user->role, ['division_head', 'admin'], true)) {
             return false;
         }
 
-        if (! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
+        if ($user->role !== 'admin' && ! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
             return false;
         }
 
@@ -98,7 +98,7 @@ class PurchaseRequestPolicy
     public function approve(Account $user, PurchaseRequest $purchaseRequest): bool
     {
         // STRICT: Only BAC can approve
-        if ($user->role !== 'bac') {
+        if (! in_array($user->role, ['bac', 'admin'], true)) {
             return false;
         }
 
@@ -115,8 +115,8 @@ class PurchaseRequestPolicy
     public function cancel(Account $user, PurchaseRequest $purchaseRequest): bool
     {
         // Division heads can cancel during recommendation phase
-        if ($user->role === 'division_head') {
-            if (! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
+        if (in_array($user->role, ['division_head', 'admin'], true)) {
+            if ($user->role !== 'admin' && ! $this->canDivisionHeadAccessPurchaseRequest($user, $purchaseRequest)) {
                 return false;
             }
 
@@ -124,7 +124,7 @@ class PurchaseRequestPolicy
         }
 
         // BAC can cancel during approval phase
-        if ($user->role === 'bac') {
+        if (in_array($user->role, ['bac', 'admin'], true)) {
             return in_array((int) $purchaseRequest->status_id, [
                 Status::PR_RECOMMENDED,
                 Status::PR_FOR_APPROVAL,

@@ -64,6 +64,7 @@
         .badge-iac { background-color: #8b5cf6; color: white; }
         .badge-employee { background-color: #10b981; color: white; }
         .badge-division-head { background-color: #6366f1; color: white; }
+        .badge-admin { background-color: #e11d48; color: white; }
         .page-break { page-break-after: always; }
     </style>
 </head>
