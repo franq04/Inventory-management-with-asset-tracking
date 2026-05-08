@@ -21,18 +21,13 @@ use Illuminate\Validation\ValidationException;
 
 class PurchaseRequestController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $account = Auth::user();
 
         $baseQuery = PurchaseRequest::query()
             ->where('account_id', $account->account_id)
             ->orderByDesc('created_at');
-
-        $purchaseRequests = (clone $baseQuery)
-            ->with(['status'])
-            ->paginate(5)
-            ->withQueryString();
 
         $statusCounts = (clone $baseQuery)
             ->select('status_id', DB::raw('COUNT(*) as total'))
@@ -63,7 +58,27 @@ class PurchaseRequestController extends Controller
                 ]];
             });
 
-        $totalRequests = (int) $purchaseRequests->total();
+        $requestedStatusSlug = strtolower(trim((string) $request->query('status', '')));
+        $activeStatusFilter = $requestedStatusSlug !== '' && $statusSummary->has($requestedStatusSlug)
+            ? $requestedStatusSlug
+            : '';
+
+        $filteredQuery = clone $baseQuery;
+        if ($activeStatusFilter !== '') {
+            $statusName = (string) ($statusSummary[$activeStatusFilter]['name'] ?? '');
+            if ($statusName !== '') {
+                $filteredQuery->whereHas('status', function ($query) use ($statusName) {
+                    $query->where('status_name', $statusName);
+                });
+            }
+        }
+
+        $purchaseRequests = $filteredQuery
+            ->with(['status'])
+            ->paginate(5)
+            ->withQueryString();
+
+        $totalRequests = (int) (clone $baseQuery)->count();
 
         $accountProfile = Account::query()
             ->with('employee.section.division')
@@ -92,6 +107,7 @@ class PurchaseRequestController extends Controller
             'purchaseRequests' => $purchaseRequests,
             'statusSummary' => $statusSummary,
             'totalRequests' => $totalRequests,
+            'activeStatusFilter' => $activeStatusFilter,
             'defaultDivision' => $defaultDivision,
             'defaultSection' => $defaultSection,
             'divisionName' => $divisionName,

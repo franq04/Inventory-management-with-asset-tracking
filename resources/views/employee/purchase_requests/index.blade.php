@@ -146,6 +146,7 @@
                 <button type="button"
                     class="employee-status-btn group inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition {{ $allDesign['button_inactive'] }}"
                     data-status-btn=""
+                    data-status-target-url="{{ route('employee.purchase-requests.index') }}"
                     data-inactive-class="{{ $allDesign['button_inactive'] }}"
                     data-active-class="{{ $allDesign['button_active'] }}">
                     <span class="flex h-2.5 w-2.5 rounded-full {{ $allDesign['dot'] }} group-[.is-active]:bg-white"></span>
@@ -159,6 +160,7 @@
                     <button type="button"
                         class="employee-status-btn group inline-flex cursor-pointer items-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold transition {{ $design['button_inactive'] }}"
                         data-status-btn="{{ $statusSlug }}"
+                        data-status-target-url="{{ route('employee.purchase-requests.index', ['status' => $statusSlug]) }}"
                         data-inactive-class="{{ $design['button_inactive'] }}"
                         data-active-class="{{ $design['button_active'] }}">
                         <i class="fa-solid {{ $design['icon'] }} text-sm group-[.is-active]:text-white/90"></i>
@@ -170,7 +172,7 @@
             <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <span class="inline-flex items-center gap-2 text-sm text-gray-600">
                     <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                    <span>Showing <span id="employeePrResultCount">{{ $purchaseRequests->count() }}</span> of <span id="employeePrTotalCount">{{ $totalRequests }}</span> requests</span>
+                    <span>Showing <span id="employeePrResultCount">{{ $purchaseRequests->total() > 0 ? ($purchaseRequests->firstItem() ?? 0) : 0 }}</span> of <span id="employeePrTotalCount">{{ $purchaseRequests->total() }}</span> requests</span>
                 </span>
                 <span class="text-xs font-medium uppercase tracking-[0.18em] text-gray-400">Filters update instantly as you type</span>
             </div>
@@ -537,11 +539,16 @@
 <script>
     // JavaScript configuration for the employee purchase request screens
     window.employeePrConfig = {
+        indexUrl: '{{ route('employee.purchase-requests.index') }}',
         storeUrl: '{{ route('employee.purchase-requests.store') }}',
         updateUrlTemplate: '{{ route('employee.purchase-requests.update', ['purchase_request' => '__PR__']) }}',
         showUrlTemplate: '{{ route('employee.purchase-requests.show', ['purchase_request' => '__PR__']) }}',
         destroyUrlTemplate: '{{ route('employee.purchase-requests.destroy', ['purchase_request' => '__PR__']) }}',
         decisionUrlTemplate: '{{ route('employee.purchase-requests.items.decision', ['purchase_request_item' => '__PRI__']) }}',
+        logos: {
+            bpi: '{{ asset('images/bpi-logo.png') }}',
+            pqs: '{{ asset('images/pqslogo.png') }}',
+        },
         canSubmit: {{ ($defaultDivision && $defaultSection) ? 'true' : 'false' }},
         statuses: {
             pending: {{ \App\Models\Status::PR_FOR_RECOMMENDATION }},
@@ -549,6 +556,7 @@
             approved: {{ \App\Models\Status::PR_APPROVED }},
             declined: {{ \App\Models\Status::PR_CANCELLED }},
         },
+        activeStatusFilter: @json($activeStatusFilter ?? ''),
     };
 </script>
 @vite('resources/js/employee-purchase-requests.js')

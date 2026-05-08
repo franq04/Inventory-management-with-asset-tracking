@@ -211,7 +211,6 @@ class InspectionController extends Controller
                 Status::ITEM_DEFECTIVE,
                 Status::ITEM_RETURNED,
                 Status::ITEM_REPLACED,
-                Status::ITEM_RECORDED,
             ])
             ->orderBy('status_code')
             ->get(['status_id', 'status_name', 'status_code']);

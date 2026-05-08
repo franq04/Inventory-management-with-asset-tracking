@@ -612,7 +612,8 @@ class PurchaseRequestController extends Controller
                 'table_name' => 'purchase_requests',
                 'record_id' => $purchaseRequest->pr_no,
                 'message' => $message,
-                'type' => 'action_required',
+                // Use a schema-compatible enum value across imported SQL snapshots.
+                'type' => 'task',
                 'is_read' => false,
                 'created_at' => $now,
             ]);

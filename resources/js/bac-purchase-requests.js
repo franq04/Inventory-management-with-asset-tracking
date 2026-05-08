@@ -1369,7 +1369,12 @@ const initBacPurchaseRequestPage = function () {
                 
                 if (response.ok && result.success) {
                     hideAlternativeModal();
-                    showToast(result.message || 'Alternative suggestion sent successfully.', 'success');
+                    const successMessage = result.message || 'Alternative suggestion sent successfully.';
+                    if (typeof window.pqsShowToast === 'function') {
+                        window.pqsShowToast(successMessage, 'success');
+                    } else {
+                        showToast(successMessage, 'success');
+                    }
                     
                     // Reload PR data to refresh items
                     if (currentPrData) {

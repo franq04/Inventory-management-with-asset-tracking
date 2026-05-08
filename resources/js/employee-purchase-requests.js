@@ -42,6 +42,8 @@ const initEmployeePurchaseRequests = () => {
 
     const config = window.employeePrConfig;
     const hasEmployeeConfig = Boolean(config);
+    const bpiLogoUrl = config?.logos?.bpi || '/images/bpi-logo.png';
+    const pqsLogoUrl = config?.logos?.pqs || '/images/pqslogo.png';
 
     const $employeeTable = $('#employeePurchaseRequestsTable');
     if ($employeeTable.length) {
@@ -55,7 +57,7 @@ const initEmployeePurchaseRequests = () => {
         const $resultCount = $('#employeePrResultCount');
         const $totalCount = $('#employeePrTotalCount');
         const totalRows = $employeeRows.length;
-        let activeStatus = '';
+        let activeStatus = String(config?.activeStatusFilter || '').trim();
 
         const setStatusButtonState = (targetStatus) => {
             if (!$statusButtons.length) {
@@ -137,25 +139,38 @@ const initEmployeePurchaseRequests = () => {
                 event.preventDefault();
 
                 const buttonStatus = String($(this).data('status-btn') ?? '');
-                if (buttonStatus === activeStatus) {
-                    activeStatus = '';
-                } else {
-                    activeStatus = buttonStatus;
+                const targetUrl = String($(this).data('status-target-url') ?? '').trim();
+                const nextStatus = buttonStatus === activeStatus ? '' : buttonStatus;
+
+                if (targetUrl) {
+                    softNavigate(targetUrl);
+                    return;
                 }
-                setStatusButtonState(activeStatus);
-                applyEmployeeFilters();
+
+                const baseIndexUrl = config?.indexUrl || window.location.pathname;
+                if (nextStatus) {
+                    const separator = baseIndexUrl.includes('?') ? '&' : '?';
+                    softNavigate(`${baseIndexUrl}${separator}status=${encodeURIComponent(nextStatus)}`);
+                } else {
+                    softNavigate(baseIndexUrl);
+                }
             });
         }
 
         if ($resetFilters.length) {
             $resetFilters.on('click', (event) => {
                 event.preventDefault();
-                if ($searchInput.length) {
+
+                const hasSearchTerm = String($searchInput.val() || '').trim() !== '';
+                if (hasSearchTerm) {
                     $searchInput.val('');
+                    applyEmployeeFilters();
+                    return;
                 }
-                activeStatus = '';
-                setStatusButtonState(activeStatus);
-                applyEmployeeFilters();
+
+                if (activeStatus) {
+                    softNavigate(config?.indexUrl || window.location.pathname);
+                }
             });
         }
 
@@ -612,14 +627,14 @@ const initEmployeePurchaseRequests = () => {
                 <div class="relative border-b border-gray-400 px-6 pt-6 pb-4">
                     <span class="absolute top-4 right-6 text-xs font-semibold uppercase tracking-wide text-gray-500">Annex G-6</span>
                     <div class="flex flex-col items-center gap-4 md:flex-row md:items-center md:justify-between">
-                        <img src="/images/bpi-logo.png" alt="BPI Logo" class="h-16 w-auto object-contain">
+                        <img src="${bpiLogoUrl}" alt="BPI Logo" class="h-16 w-auto object-contain">
                         <div class="text-center">
                             <p class="text-[11px] uppercase tracking-[0.35em] text-gray-600">Department of Agriculture</p>
                             <h2 class="mt-2 text-2xl font-black uppercase tracking-[0.35em] text-gray-900">Purchase Request</h2>
                             <p class="mt-2 text-sm font-semibold uppercase text-gray-700">Bureau of Plant Industry</p>
                             <p class="text-xs italic text-gray-500">(Agency)</p>
                         </div>
-                        <img src="/images/pqslogo.png" alt="PQS Logo" class="h-16 w-auto object-contain">
+                        <img src="${pqsLogoUrl}" alt="PQS Logo" class="h-16 w-auto object-contain">
                     </div>
                 </div>
 
