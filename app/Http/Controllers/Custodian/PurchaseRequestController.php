@@ -68,6 +68,9 @@ class PurchaseRequestController extends Controller
     protected function workflowContext(): array
     {
         $role = strtolower(Auth::user()?->role ?? session('role', 'custodian'));
+        if ($role === 'admin' && request()->routeIs('division.*')) {
+            $role = 'division_head';
+        }
         $systemManagedStatuses = Status::purchaseRequestLifecycleStatuses();
 
         $configs = [
@@ -416,6 +419,9 @@ class PurchaseRequestController extends Controller
                     'status' => $purchaseRequest->status?->status_name,
                     'status_id' => $purchaseRequest->status_id,
                     'purpose' => $purchaseRequest->purpose,
+                    'requested_delivery_date' => optional($purchaseRequest->requested_delivery_date)->toDateString(),
+                    'requested_delivery_term' => $purchaseRequest->requested_delivery_term,
+                    'requested_payment_term' => $purchaseRequest->requested_payment_term,
                     'sai_no' => $purchaseRequest->sai_no,
                     'alobs_no' => $purchaseRequest->alobs_no,
                     'fund_cluster' => $purchaseRequest->fund_cluster ?: $purchaseRequest->fundAllocation?->fund_cluster,

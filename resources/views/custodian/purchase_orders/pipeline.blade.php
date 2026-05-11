@@ -416,7 +416,7 @@
                                         <div class="px-5 py-3 border-t border-gray-100">
                                             <div class="flex items-center justify-between mb-2">
                                                 <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                                                    <i class="fas fa-box-open mr-1"></i> Receiving Progress
+                                                    <i class="fas fa-box-open mr-1"></i> Receipt Status (after inspection)
                                                 </span>
                                                 <span class="text-[10px] font-medium text-gray-400">{{ $receivedCount }} of {{ $totals['items'] }} items</span>
                                             </div>
@@ -425,6 +425,11 @@
                                                     @php
                                                         $trackingReceived = !empty($trackingItem->received_at);
                                                         $trackingReceivable = $trackingItem->fulfillment_status !== 'unavailable';
+                                                        $latestInspection = $trackingItem->latestInspectionItem;
+                                                        $inspectionStatusId = (int) ($latestInspection?->inspection_status_id ?? 0);
+                                                        $inspectionAccepted = in_array($inspectionStatusId, [\App\Models\Status::ITEM_ACCEPTED, \App\Models\Status::ITEM_RECORDED], true);
+                                                        $inspectionIssue = in_array($inspectionStatusId, [\App\Models\Status::ITEM_DEFECTIVE, \App\Models\Status::ITEM_RETURNED, \App\Models\Status::ITEM_REPLACED], true);
+                                                        $canReceive = $trackingReceivable && ! $trackingReceived && $inspectionAccepted;
                                                         $receivedStamp = $trackingItem->received_at ? optional($trackingItem->received_at)->format('M d, Y') : null;
                                                         $receiverName = $trackingItem->receivedBy?->employee
                                                             ? collect([$trackingItem->receivedBy->employee->first_name, $trackingItem->receivedBy->employee->last_name])->filter()->implode(' ')
@@ -440,15 +445,19 @@
                                                                 <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
                                                                     <i class="fas fa-check"></i> Received
                                                                 </span>
-                                                            @elseif ($trackingReceivable)
+                                                            @elseif (! $trackingReceivable)
+                                                                <span class="text-[11px] font-medium text-amber-600">Unavailable</span>
+                                                            @elseif ($canReceive)
                                                                 <form class="js-receive-item" data-receive-url="{{ route('custodian.orders.items.receive', $trackingItem) }}">
                                                                     @csrf
-                                                                    <button type="submit" data-no-global-loading="true" class="inline-flex items-center gap-1.5 rounded-lg bg-[#1a3a2d] px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-opacity-90 transition cursor-pointer ">
-                                                                        <i class="fas fa-box-open"></i> Mark Received
+                                                                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-semibold text-white shadow-sm transition hover:bg-emerald-700">
+                                                                        <i class="fas fa-inbox"></i> Mark as received
                                                                     </button>
                                                                 </form>
+                                                            @elseif ($inspectionIssue)
+                                                                <span class="text-[11px] font-medium text-rose-600">Inspection issue</span>
                                                             @else
-                                                                <span class="text-[11px] font-medium text-amber-600">Unavailable</span>
+                                                                <span class="text-[11px] font-medium text-gray-500">Inspect before receiving</span>
                                                             @endif
                                                         </div>
                                                     </div>

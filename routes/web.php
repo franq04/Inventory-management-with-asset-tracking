@@ -438,11 +438,15 @@ Route::middleware(['auth.session', 'role:bac,admin'])->prefix('bac')->name('bac.
 // ==========================
 Route::middleware(['auth.session', 'role:division_head,admin'])->prefix('division-head')->name('division_head.')->group(function () {
     // Division Head Purchase Request Recommendation
-    Route::get('purchase-requests', [App\Http\Controllers\DivisionHead\PurchaseRequestController::class, 'index'])
-        ->name('requests.index');
+    Route::get('purchase-requests', function (Request $request) {
+        return redirect()->route('division.requests.index', $request->query());
+    })->name('requests.index');
 
-    Route::get('purchase-requests/{purchase_request}', [App\Http\Controllers\DivisionHead\PurchaseRequestController::class, 'show'])
-        ->name('requests.show');
+    Route::get('purchase-requests/{purchase_request}', function (Request $request, $purchase_request) {
+        return redirect()->route('division.requests.show', array_merge([
+            'purchase_request' => $purchase_request,
+        ], $request->query()));
+    })->name('requests.show');
 
     Route::post('purchase-requests/{purchase_request}/recommend', [App\Http\Controllers\DivisionHead\PurchaseRequestController::class, 'recommend'])
         ->name('requests.recommend');

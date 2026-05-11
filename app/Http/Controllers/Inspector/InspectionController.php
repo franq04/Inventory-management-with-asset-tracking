@@ -347,7 +347,7 @@ class InspectionController extends Controller
             } elseif ($normalizedStatuses->contains(Status::ITEM_PENDING_INSPECTION)) {
                 $orderStatus = Status::PO_DELIVERED_PENDING_INSPECTION;
             } elseif ($normalizedStatuses->every(fn ($status) => in_array($status, [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED], true))) {
-                $orderStatus = Status::PO_CLOSED;
+                $orderStatus = Status::PO_PARTIALLY_DELIVERED;
             } else {
                 $orderStatus = Status::PO_PARTIALLY_DELIVERED;
             }

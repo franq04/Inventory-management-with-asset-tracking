@@ -455,6 +455,20 @@
                                 <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-gray-700" for="purpose">Purpose :</label>
                                 <textarea id="purpose" name="purpose" rows="3" data-focus class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the purpose and justification for this purchase request..."></textarea>
                             </div>
+                            <div class="grid gap-4 md:grid-cols-3">
+                                <div>
+                                    <label for="requestedDeliveryDate" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-700">Requested Delivery Date</label>
+                                    <input type="date" id="requestedDeliveryDate" name="requested_delivery_date" class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" />
+                                </div>
+                                <div>
+                                    <label for="requestedDeliveryTerm" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-700">Requested Delivery Term</label>
+                                    <input type="text" id="requestedDeliveryTerm" name="requested_delivery_term" class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" placeholder="e.g., Complete delivery within 30 days" />
+                                </div>
+                                <div>
+                                    <label for="requestedPaymentTerm" class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-700">Requested Payment Term</label>
+                                    <input type="text" id="requestedPaymentTerm" name="requested_payment_term" class="w-full border border-gray-500 px-3 py-2 text-sm text-gray-800 focus:border-[#1a3a2d] focus:ring-0" placeholder="e.g., Payment upon complete delivery" />
+                                </div>
+                            </div>
                         </div>
 
                         <div class="px-6 py-6">

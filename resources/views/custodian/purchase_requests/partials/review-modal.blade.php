@@ -69,7 +69,20 @@
                                 <span class="font-bold uppercase tracking-wider whitespace-nowrap">Date:</span>
                                 <span class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900">—</span>
                             </div>
-                            {{-- Row 4: Fund Cluster | Funds Available --}}
+                            {{-- Row 4: Requested Delivery --}}
+                            <div class="flex items-end gap-2">
+                                <span class="font-bold uppercase tracking-wider whitespace-nowrap">Req. Delivery Date:</span>
+                                <span id="custodianPrRequestedDeliveryDate" class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900"></span>
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <span class="font-bold uppercase tracking-wider whitespace-nowrap">Req. Delivery Term:</span>
+                                <span id="custodianPrRequestedDeliveryTerm" class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900"></span>
+                            </div>
+                            <div class="flex items-end gap-2">
+                                <span class="font-bold uppercase tracking-wider whitespace-nowrap">Req. Payment Term:</span>
+                                <span id="custodianPrRequestedPaymentTerm" class="flex-1 border-b border-gray-500 pb-0.5 text-right text-sm text-gray-900"></span>
+                            </div>
+                            {{-- Row 5: Fund Cluster | Funds Available --}}
                             <div></div>
                             <div class="flex items-end gap-2">
                                 <span class="font-bold uppercase tracking-wider whitespace-nowrap">Fund Cluster:</span>

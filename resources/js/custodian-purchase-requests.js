@@ -96,6 +96,9 @@ const initPurchaseRequestWorkflow = () => {
         $('#custodianPrSectionInput').text('—');
         $('#custodianPrSaiInput').text('—');
         $('#custodianPrAlobsInput').text('—');
+        $('#custodianPrRequestedDeliveryDate').text('—');
+        $('#custodianPrRequestedDeliveryTerm').text('—');
+        $('#custodianPrRequestedPaymentTerm').text('—');
         $('#custodianPrFundClusterInput').text('—');
         $('#custodianPrFundsAvailableInput').text('—');
         $('#custodianFundCluster').val('');
@@ -394,6 +397,12 @@ const initPurchaseRequestWorkflow = () => {
         $('#custodianPrSectionInput').text(data.section ?? '');
         $('#custodianPrSaiInput').text(data.sai_no ?? '');
         $('#custodianPrAlobsInput').text(data.alobs_no ?? '');
+        const requestedDeliveryDateLabel = data.requested_delivery_date
+            ? new Date(`${data.requested_delivery_date}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+            : '—';
+        $('#custodianPrRequestedDeliveryDate').text(requestedDeliveryDateLabel);
+        $('#custodianPrRequestedDeliveryTerm').text(data.requested_delivery_term || '—');
+        $('#custodianPrRequestedPaymentTerm').text(data.requested_payment_term || '—');
         $('#custodianPrFundClusterInput').text(data.fund_cluster ?? '');
         const formattedFunds = data.funds_available != null ? formatCurrency(data.funds_available) : '';
         $('#custodianPrFundsAvailableInput').text(formattedFunds);

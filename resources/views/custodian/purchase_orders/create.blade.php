@@ -184,21 +184,21 @@
                 <div class="space-y-3">
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poPlace" class="font-semibold">Place of Delivery <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poPlace" name="place_of_delivery" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poPlace" name="place_of_delivery" value="{{ old('place_of_delivery', $poDefaults['place_of_delivery'] ?? '') }}" readonly class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-600 focus:ring-0 cursor-not-allowed">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poDeliveryDate" class="font-semibold">Date of Delivery <span class="text-rose-500">*</span>:</label>
-                        <input type="date" id="poDeliveryDate" name="delivery_date" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
+                        <input type="date" id="poDeliveryDate" name="delivery_date" value="{{ old('delivery_date', $poDefaults['delivery_date'] ?? '') }}" class="w-full rounded border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]">
                     </div>
                 </div>
                 <div class="space-y-3">
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poDeliveryTerm" class="font-semibold">Delivery Term <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poDeliveryTerm" name="delivery_term" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poDeliveryTerm" name="delivery_term" value="{{ old('delivery_term', $poDefaults['delivery_term'] ?? '') }}" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poPaymentTerm" class="font-semibold">Payment Term <span class="text-rose-500">*</span>:</label>
-                        <input type="text" id="poPaymentTerm" name="payment_term" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poPaymentTerm" name="payment_term" value="{{ old('payment_term', $poDefaults['payment_term'] ?? '') }}" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
                     </div>
                 </div>
             </div>
@@ -273,7 +273,7 @@
                 <div class="space-y-3 border-r-2 border-gray-400 p-4">
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poFundCluster" class="font-semibold">Fund Cluster :</label>
-                        <input type="text" id="poFundCluster" name="fund_cluster" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm focus:ring-0">
+                        <input type="text" id="poFundCluster" name="fund_cluster" readonly class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-600 focus:ring-0 cursor-not-allowed">
                     </div>
                     <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poFundsAvailable" class="font-semibold">Funds Available :</label>
@@ -317,6 +317,10 @@
 $purchaseRequestsData = $requests->mapWithKeys(function ($request) {
     return [$request->pr_no => [
         'purpose' => $request->purpose,
+        'requested_delivery_date' => optional($request->requested_delivery_date)->toDateString(),
+        'requested_delivery_term' => $request->requested_delivery_term,
+        'requested_payment_term' => $request->requested_payment_term,
+        'fund_cluster' => $request->fund_cluster ?: $request->fundAllocation?->fund_cluster,
         'funds_available' => $request->fundAllocation?->remaining_amount ?? $request->funds_available,
         'total_estimated_cost' => $request->total_estimated_cost,
         'items' => $request->items->map(function ($item) {
@@ -359,6 +363,7 @@ $suppliersData = $suppliers->mapWithKeys(function ($supplier) {
         purchaseRequests: @json($purchaseRequestsData),
         suppliers: @json($suppliersData),
         initialPrNo: '{{ $initialPr }}',
+        purchaseOrderDefaults: @json($poDefaults),
     };
 </script>
 @vite('resources/js/purchase-orders.js')

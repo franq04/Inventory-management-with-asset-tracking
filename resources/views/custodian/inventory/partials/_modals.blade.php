@@ -63,11 +63,33 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Category *</label>
-                                    <select name="category_id" id="inventoryCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"></select>
+                                    <input type="hidden" name="category_id" id="inventoryCategoryId">
+                                    <div class="relative">
+                                        <input type="text" id="inventoryCategoryInput" list="inventoryCategoryList" class="w-full rounded-xl border border-emerald-900/15 bg-white px-3 py-2.5 pr-10 text-sm shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500" placeholder="Search and select category..." autocomplete="off">
+                                        <button type="button" id="inventoryClearCategoryBtn" class="absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md px-2 py-1 text-[11px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700">
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <datalist id="inventoryCategoryList"></datalist>
+                                    <div id="inventoryCategorySuggestions" class="hidden rounded-xl border border-emerald-900/10 bg-emerald-50/40 p-2.5">
+                                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/60">Matching Categories</div>
+                                        <div id="inventoryCategorySuggestionsList" class="flex flex-wrap gap-2"></div>
+                                    </div>
                                 </div>
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Sub-category *</label>
-                                    <select name="sub_category_id" id="inventorySubCategory" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400"></select>
+                                    <input type="hidden" name="sub_category_id" id="inventorySubCategoryId">
+                                    <div class="relative">
+                                        <input type="text" id="inventorySubCategoryInput" list="inventorySubCategoryList" class="w-full rounded-xl border border-emerald-900/15 bg-gray-100 px-3 py-2.5 pr-10 text-sm text-gray-600 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500" placeholder="Select category first" autocomplete="off" disabled>
+                                        <button type="button" id="inventoryClearSubCategoryBtn" class="absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded-md px-2 py-1 text-[11px] font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-gray-700">
+                                            Clear
+                                        </button>
+                                    </div>
+                                    <datalist id="inventorySubCategoryList"></datalist>
+                                    <div id="inventorySubCategorySuggestions" class="hidden rounded-xl border border-emerald-900/10 bg-emerald-50/40 p-2.5">
+                                        <div class="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-900/60">Matching Sub-categories</div>
+                                        <div id="inventorySubCategorySuggestionsList" class="flex flex-wrap gap-2"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -77,11 +99,11 @@
                             </div>
 
                             <div class="flex flex-col gap-1.5" id="inventorySerialsSection">
-                                <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Serial Numbers</label>
+                                <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Serial Numbers (from inspection)</label>
                                 <div class="rounded border border-dashed border-gray-300 bg-gray-50 px-3 py-3">
-                                    <div id="inventorySerialsContainer" class="flex flex-col gap-2"></div>
+                                    <ul id="inventorySerialsList" class="flex flex-col gap-2 text-sm text-gray-700"></ul>
                                 </div>
-                                <p class="text-xs text-gray-500">Provide one serial number per unit. Leave blank if a unit does not have a serial.</p>
+                                <p class="text-xs text-gray-500">Serial numbers are captured during inspection and acceptance.</p>
                             </div>
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">

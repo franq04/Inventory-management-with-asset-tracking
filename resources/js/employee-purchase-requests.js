@@ -458,6 +458,9 @@ const initEmployeePurchaseRequests = () => {
         $('#alobsNo').val(data.alobs_no || '');
         $('#recommendingOfficer').val(data.recommending_officer_id || '');
         $('#purpose').val(data.purpose || '');
+        $('#requestedDeliveryDate').val(data.requested_delivery_date || '');
+        $('#requestedDeliveryTerm').val(data.requested_delivery_term || '');
+        $('#requestedPaymentTerm').val(data.requested_payment_term || '');
 
         const fundAllocationId = data.fund_allocation_id || '';
         $('#fundAllocation').val(fundAllocationId).trigger('change');
@@ -621,6 +624,11 @@ const initEmployeePurchaseRequests = () => {
             : '';
         
         const createdDate = data.created_at ? new Date(data.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : '—';
+        const requestedDeliveryDate = data.requested_delivery_date
+            ? new Date(`${data.requested_delivery_date}T00:00:00`).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })
+            : '—';
+        const requestedDeliveryTerm = data.requested_delivery_term || '—';
+        const requestedPaymentTerm = data.requested_payment_term || '—';
         
         const annexHtml = `
             <div class="bg-white">
@@ -713,6 +721,23 @@ const initEmployeePurchaseRequests = () => {
                     <div>
                         <span class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Purpose</span>
                         <p class="text-sm text-gray-800 leading-relaxed">${data.purpose ?? '—'}</p>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-3">Requested Delivery</span>
+                        <div class="grid gap-4 md:grid-cols-3 text-sm text-gray-800">
+                            <div>
+                                <span class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Delivery Date</span>
+                                <span class="mt-1 block">${requestedDeliveryDate}</span>
+                            </div>
+                            <div>
+                                <span class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Delivery Term</span>
+                                <span class="mt-1 block">${requestedDeliveryTerm}</span>
+                            </div>
+                            <div>
+                                <span class="block text-[11px] font-semibold uppercase tracking-wide text-gray-500">Payment Term</span>
+                                <span class="mt-1 block">${requestedPaymentTerm}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

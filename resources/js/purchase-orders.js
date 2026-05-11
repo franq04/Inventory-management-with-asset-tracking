@@ -214,6 +214,17 @@ const bindPoDetailsModal = () => {
         }
     };
 
+    const closeInspectionModalIfOpen = () => {
+        const $inspectionModal = $('#inspectionModal');
+        if (!$inspectionModal.length || $inspectionModal.hasClass('hidden')) {
+            return;
+        }
+
+        $inspectionModal.addClass('opacity-0');
+        window.setTimeout(() => $inspectionModal.addClass('hidden'), 200);
+        document.body.classList.remove('overflow-hidden');
+    };
+
     $modal.on('click', (event) => {
         if (event.target.dataset.closeModal !== undefined) {
             toggleModal(false);
@@ -228,6 +239,8 @@ const bindPoDetailsModal = () => {
         if (!url) {
             return;
         }
+
+        closeInspectionModalIfOpen();
 
         $.ajax({
             method: 'GET',
@@ -410,8 +423,48 @@ const bindPurchaseOrderForm = () => {
     const $orsAmount = $('#poOrsAmount');
     const $fundsAvailable = $('#poFundsAvailable');
     const $amountWords = $('#poAmountWords');
+    const $placeOfDelivery = $('#poPlace');
+    const $deliveryDate = $('#poDeliveryDate');
+    const $deliveryTerm = $('#poDeliveryTerm');
+    const $paymentTerm = $('#poPaymentTerm');
+    const $fundCluster = $('#poFundCluster');
+    const defaults = config.purchaseOrderDefaults || {};
+    const deliveryDays = Number(defaults.delivery_days ?? 0);
+
+    let deliveryDateSource = 'auto';
 
     let currentItems = [];
+
+    const computeDeliveryDate = (orderDateValue) => {
+        if (!orderDateValue || !deliveryDays) {
+            return '';
+        }
+
+        const parsed = new Date(`${orderDateValue}T00:00:00`);
+        if (Number.isNaN(parsed.getTime())) {
+            return '';
+        }
+
+        parsed.setDate(parsed.getDate() + deliveryDays);
+        return parsed.toISOString().split('T')[0];
+    };
+
+    const applyPurchaseOrderDefaults = () => {
+        if ($placeOfDelivery.length && !$placeOfDelivery.val()) {
+            $placeOfDelivery.val(defaults.place_of_delivery || '');
+        }
+        if ($deliveryTerm.length && !$deliveryTerm.val()) {
+            $deliveryTerm.val(defaults.delivery_term || '');
+        }
+        if ($paymentTerm.length && !$paymentTerm.val()) {
+            $paymentTerm.val(defaults.payment_term || '');
+        }
+        if ($deliveryDate.length && !$deliveryDate.val()) {
+            const orderDateValue = $orderDate.val();
+            const computed = computeDeliveryDate(orderDateValue);
+            $deliveryDate.val(computed || defaults.delivery_date || '');
+        }
+    };
 
     const todayIso = new Date().toISOString().split('T')[0];
     if ($orderDate.length && !$orderDate.val()) {
@@ -423,6 +476,8 @@ const bindPurchaseOrderForm = () => {
     if ($orsDate.length && !$orsDate.val()) {
         $orsDate.val(todayIso);
     }
+
+    applyPurchaseOrderDefaults();
 
     const clearExistingSupplierDisplay = () => {
         $supplierAddress.val('');
@@ -601,12 +656,36 @@ const bindPurchaseOrderForm = () => {
             currentItems = [];
             $purposeField.val('');
             setNumericField($fundsAvailable, '');
+            if ($fundCluster.length) {
+                $fundCluster.val('');
+            }
             setNumericField($orsAmount, '');
+            deliveryDateSource = 'auto';
+            applyPurchaseOrderDefaults();
             renderItemsTable();
             return;
         }
 
         $purposeField.val(request.purpose || '');
+        if ($fundCluster.length) {
+            $fundCluster.val(request.fund_cluster || '');
+        }
+        if ($deliveryTerm.length) {
+            $deliveryTerm.val(request.requested_delivery_term || defaults.delivery_term || '');
+        }
+        if ($paymentTerm.length) {
+            $paymentTerm.val(request.requested_payment_term || defaults.payment_term || '');
+        }
+        if ($deliveryDate.length) {
+            if (request.requested_delivery_date) {
+                $deliveryDate.val(request.requested_delivery_date);
+                deliveryDateSource = 'requested';
+            } else {
+                const computed = computeDeliveryDate($orderDate.val());
+                $deliveryDate.val(computed || defaults.delivery_date || '');
+                deliveryDateSource = 'auto';
+            }
+        }
         const fundsSource = request.funds_available ?? request.total_estimated_cost ?? '';
         setNumericField($fundsAvailable, fundsSource);
         if (request.total_estimated_cost !== undefined) {
@@ -624,6 +703,26 @@ const bindPurchaseOrderForm = () => {
     $requestSelect.on('change', function () {
         populateFromRequest($(this).val());
     });
+
+    if ($deliveryDate.length) {
+        $deliveryDate.on('input', () => {
+            if (deliveryDateSource === 'auto') {
+                deliveryDateSource = 'manual';
+            }
+        });
+    }
+
+    if ($orderDate.length) {
+        $orderDate.on('change', () => {
+            if (deliveryDateSource !== 'auto') {
+                return;
+            }
+            const computed = computeDeliveryDate($orderDate.val());
+            if (computed && $deliveryDate.length) {
+                $deliveryDate.val(computed);
+            }
+        });
+    }
 
     const initialRequest = config.initialPrNo || $requestSelect.val();
     if (initialRequest && requests[initialRequest]) {

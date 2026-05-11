@@ -117,6 +117,7 @@
                                             <th class="px-3 py-2 text-center text-xs font-bold uppercase tracking-wider text-gray-700 border-r-2 border-gray-400">Rejected</th>
                                             <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-700 border-r-2 border-gray-400">Status</th>
                                             <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-700 border-r-2 border-gray-400">Warranty</th>
+                                            <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-700 border-r-2 border-gray-400">Serial Numbers</th>
                                             <th class="px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-gray-700 border-r-2 border-gray-400">Remarks</th>
                                         </tr>
                                     </thead>

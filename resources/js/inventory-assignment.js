@@ -38,8 +38,18 @@ $(() => {
     const $createModal = $('#inventoryCreateModal');
     const $createForm = $('#inventoryCreateForm');
     const $createErrors = $('#inventoryCreateErrors');
-    const $categorySelect = $('#inventoryCategory');
-    const $subCategorySelect = $('#inventorySubCategory');
+    const $categoryIdField = $('#inventoryCategoryId');
+    const $categoryInputField = $('#inventoryCategoryInput');
+    const $categoryList = $('#inventoryCategoryList');
+    const $categorySuggestions = $('#inventoryCategorySuggestions');
+    const $categorySuggestionsList = $('#inventoryCategorySuggestionsList');
+    const $clearCategoryBtn = $('#inventoryClearCategoryBtn');
+    const $subCategoryIdField = $('#inventorySubCategoryId');
+    const $subCategoryInputField = $('#inventorySubCategoryInput');
+    const $subCategoryList = $('#inventorySubCategoryList');
+    const $subCategorySuggestions = $('#inventorySubCategorySuggestions');
+    const $subCategorySuggestionsList = $('#inventorySubCategorySuggestionsList');
+    const $clearSubCategoryBtn = $('#inventoryClearSubCategoryBtn');
     const $descriptionField = $('#inventoryPropertyDescription');
     const $unitField = $('#inventoryUnit');
     const $quantityField = $('#inventoryQuantity');
@@ -60,7 +70,7 @@ $(() => {
     const $newLocationParentField = $('#inventoryInitialLocationParent');
     const $addLocationBtn = $('#inventoryAddLocationBtn');
     const $initialCustodianField = $('#inventoryInitialCustodian');
-    const $serialsContainer = $('#inventorySerialsContainer');
+    const $serialsList = $('#inventorySerialsList');
 
     const $itemDescription = $('#inventoryItemDescription');
     const $itemSource = $('#inventoryItemSource');
@@ -118,6 +128,11 @@ $(() => {
         .replace(/\s+/g, ' ')
         .toLowerCase();
 
+    const normalizeText = (value = '') => String(value || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+
     const getLocationLabel = (location) => String(location?.label || location?.name || '').trim();
 
     const getLocationById = (locationId) => {
@@ -140,6 +155,47 @@ $(() => {
             const name = normalizeLocationText(location?.name || '');
             return normalized === label || normalized === name;
         }) || null;
+    };
+
+    const getCategoryById = (categoryId) => {
+        const target = String(categoryId || '').trim();
+        if (!target) {
+            return null;
+        }
+
+        return categories.find((category) => String(category.id ?? '') === target) || null;
+    };
+
+    const getCategoryByInput = (inputValue) => {
+        const normalized = normalizeText(inputValue);
+        if (!normalized) {
+            return null;
+        }
+
+        return categories.find((category) => normalizeText(category?.name) === normalized) || null;
+    };
+
+    const getSubCategoryById = (parentId, childId) => {
+        const parent = getCategoryById(parentId);
+        if (!parent) {
+            return null;
+        }
+
+        return parent.children?.find((child) => String(child.id ?? '') === String(childId ?? '')) || null;
+    };
+
+    const getSubCategoryByInput = (parentId, inputValue) => {
+        const parent = getCategoryById(parentId);
+        if (!parent) {
+            return null;
+        }
+
+        const normalized = normalizeText(inputValue);
+        if (!normalized) {
+            return null;
+        }
+
+        return parent.children?.find((child) => normalizeText(child?.name) === normalized) || null;
     };
 
     const renderParentLocationOptions = (selectedParentId = null) => {
@@ -188,6 +244,227 @@ $(() => {
 
         $locationSuggestionsList.html(html);
         $locationSuggestions.removeClass('hidden');
+    };
+
+    const renderCategorySuggestions = (entries = [], activeId = null) => {
+        if (!$categorySuggestions.length || !$categorySuggestionsList.length) {
+            return;
+        }
+
+        if (!entries.length) {
+            $categorySuggestionsList.empty();
+            $categorySuggestions.addClass('hidden');
+            return;
+        }
+
+        const active = activeId == null ? '' : String(activeId);
+        const html = entries.slice(0, 5).map((category) => {
+            const id = String(category.id ?? '');
+            const isActive = active !== '' && id === active;
+            const classes = isActive
+                ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                : 'border-emerald-900/15 bg-white text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100/60';
+
+            return `<button type="button" class="js-category-suggestion inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${classes}" data-category-id="${escapeAttr(id)}">${escapeHtml(category.name || id)}</button>`;
+        }).join('');
+
+        $categorySuggestionsList.html(html);
+        $categorySuggestions.removeClass('hidden');
+    };
+
+    const renderSubCategorySuggestions = (entries = [], activeId = null) => {
+        if (!$subCategorySuggestions.length || !$subCategorySuggestionsList.length) {
+            return;
+        }
+
+        if (!entries.length) {
+            $subCategorySuggestionsList.empty();
+            $subCategorySuggestions.addClass('hidden');
+            return;
+        }
+
+        const active = activeId == null ? '' : String(activeId);
+        const html = entries.slice(0, 5).map((category) => {
+            const id = String(category.id ?? '');
+            const isActive = active !== '' && id === active;
+            const classes = isActive
+                ? 'border-emerald-600 bg-emerald-600 text-white shadow-sm'
+                : 'border-emerald-900/15 bg-white text-emerald-900 hover:border-emerald-400 hover:bg-emerald-100/60';
+
+            return `<button type="button" class="js-subcategory-suggestion inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-semibold transition ${classes}" data-subcategory-id="${escapeAttr(id)}">${escapeHtml(category.name || id)}</button>`;
+        }).join('');
+
+        $subCategorySuggestionsList.html(html);
+        $subCategorySuggestions.removeClass('hidden');
+    };
+
+    const syncCategoryClearButton = () => {
+        if (!$clearCategoryBtn.length) {
+            return;
+        }
+
+        const hasValue = String($categoryInputField.val() || '').trim() !== ''
+            || String($categoryIdField.val() || '').trim() !== '';
+        $clearCategoryBtn.toggleClass('hidden', !hasValue);
+    };
+
+    const syncSubCategoryClearButton = () => {
+        if (!$clearSubCategoryBtn.length) {
+            return;
+        }
+
+        const hasValue = String($subCategoryInputField.val() || '').trim() !== ''
+            || String($subCategoryIdField.val() || '').trim() !== '';
+        $clearSubCategoryBtn.toggleClass('hidden', !hasValue);
+    };
+
+    const setSubCategoryEnabled = (enabled) => {
+        if (!$subCategoryInputField.length) {
+            return;
+        }
+
+        $subCategoryInputField.prop('disabled', !enabled);
+        if (enabled) {
+            $subCategoryInputField
+                .removeClass('bg-gray-100 text-gray-600 cursor-not-allowed')
+                .addClass('bg-white text-gray-700');
+            $subCategoryInputField.attr('placeholder', 'Search and select sub-category...');
+        } else {
+            $subCategoryInputField
+                .removeClass('bg-white text-gray-700')
+                .addClass('bg-gray-100 text-gray-600 cursor-not-allowed');
+            $subCategoryInputField.attr('placeholder', 'Select category first');
+        }
+    };
+
+    const renderCategoryOptions = (selectedCategory = null, searchTerm = '', syncInput = true) => {
+        if (!$categoryList.length || !$categoryInputField.length || !$categoryIdField.length) {
+            return;
+        }
+
+        const selected = selectedCategory == null ? '' : String(selectedCategory);
+        const normalizedSearch = normalizeText(searchTerm);
+        const options = [];
+        let selectedLabel = '';
+
+        const filtered = categories.filter((category) => {
+            const name = String(category?.name || '');
+            const searchable = normalizeText(name);
+            if (normalizedSearch && !searchable.includes(normalizedSearch) && String(category.id) !== selected) {
+                return false;
+            }
+            return true;
+        });
+
+        const limited = filtered.slice(0, 5);
+
+        limited.forEach((category) => {
+            const label = String(category?.name || '').trim();
+            if (!label) {
+                return;
+            }
+            options.push(`<option value="${escapeAttr(label)}"></option>`);
+            if (selected && String(category.id) === selected) {
+                selectedLabel = label;
+            }
+        });
+
+        $categoryList.html(options.join(''));
+        renderCategorySuggestions(normalizedSearch ? limited : [], selected);
+
+        if (selected) {
+            $categoryIdField.val(selected);
+            if (syncInput && selectedLabel) {
+                $categoryInputField.val(selectedLabel);
+            }
+        }
+
+        syncCategoryClearButton();
+    };
+
+    const renderSubCategoryOptions = (parentId, selectedChild = null, searchTerm = '', syncInput = true) => {
+        if (!$subCategoryList.length || !$subCategoryInputField.length || !$subCategoryIdField.length) {
+            return;
+        }
+
+        const parent = getCategoryById(parentId);
+        if (!parent) {
+            $subCategoryList.empty();
+            $subCategoryIdField.val('');
+            if (syncInput) {
+                $subCategoryInputField.val('');
+            }
+            renderSubCategorySuggestions([]);
+            setSubCategoryEnabled(false);
+            syncSubCategoryClearButton();
+            return;
+        }
+
+        setSubCategoryEnabled(true);
+
+        const selected = selectedChild == null ? '' : String(selectedChild);
+        const normalizedSearch = normalizeText(searchTerm);
+        const options = [];
+        let selectedLabel = '';
+
+        const children = Array.isArray(parent.children) ? parent.children : [];
+        const filtered = children.filter((child) => {
+            const name = String(child?.name || '');
+            const searchable = normalizeText(name);
+            if (normalizedSearch && !searchable.includes(normalizedSearch) && String(child.id) !== selected) {
+                return false;
+            }
+            return true;
+        });
+
+        const limited = filtered.slice(0, 5);
+
+        limited.forEach((child) => {
+            const label = String(child?.name || '').trim();
+            if (!label) {
+                return;
+            }
+            options.push(`<option value="${escapeAttr(label)}"></option>`);
+            if (selected && String(child.id) === selected) {
+                selectedLabel = label;
+            }
+        });
+
+        $subCategoryList.html(options.join(''));
+        renderSubCategorySuggestions(normalizedSearch ? limited : [], selected);
+
+        if (selected) {
+            const match = children.find((child) => String(child.id ?? '') === selected);
+            if (match) {
+                $subCategoryIdField.val(selected);
+                if (syncInput && selectedLabel) {
+                    $subCategoryInputField.val(selectedLabel);
+                }
+            } else {
+                $subCategoryIdField.val('');
+                if (syncInput) {
+                    $subCategoryInputField.val('');
+                }
+            }
+        } else {
+            $subCategoryIdField.val('');
+            if (syncInput) {
+                $subCategoryInputField.val('');
+            }
+        }
+
+        syncSubCategoryClearButton();
+    };
+
+    const applyCategorySelection = (parentId = null, childId = null) => {
+        const parent = getCategoryById(parentId);
+        const parentValue = parent ? String(parent.id) : '';
+        $categoryIdField.val(parentValue);
+        if ($categoryInputField.length) {
+            $categoryInputField.val(parent?.name || '');
+        }
+        renderCategoryOptions(parentValue || null, '', false);
+        renderSubCategoryOptions(parentValue || null, childId, '', true);
     };
 
     const syncLocationClearButton = () => {
@@ -300,38 +577,109 @@ $(() => {
         }
     };
 
-    const applyCategoriesToSelect = (selectedParent = null, selectedChild = null) => {
-        $categorySelect.empty();
-        const parentPlaceholderSelected = selectedParent ? '' : 'selected';
-        $categorySelect.append(`<option value="" disabled ${parentPlaceholderSelected}>Select category</option>`);
-        categories.forEach((parent) => {
-            $categorySelect.append(`<option value="${parent.id}" ${String(parent.id) === String(selectedParent) ? 'selected' : ''}>${parent.name}</option>`);
-        });
+    $categoryInputField.on('input', function () {
+        const typedValue = String($(this).val() || '');
+        const matched = getCategoryByInput(typedValue);
+        $categoryIdField.val(matched ? String(matched.id) : '');
+        renderCategoryOptions(matched ? matched.id : null, typedValue, false);
 
-        populateSubCategories(selectedParent, selectedChild);
-    };
+        if (matched) {
+            renderSubCategoryOptions(matched.id, null, '', true);
+        } else {
+            renderSubCategoryOptions(null, null, '', true);
+        }
+    });
 
-    const populateSubCategories = (parentId, selectedChild = null) => {
-        $subCategorySelect.empty();
-        const childPlaceholderSelected = selectedChild ? '' : 'selected';
-        $subCategorySelect.append(`<option value="" disabled ${childPlaceholderSelected}>Select sub-category</option>`);
-
-        const parent = categories.find((cat) => String(cat.id) === String(parentId));
-        if (!parent) {
+    $categoryInputField.on('blur', function () {
+        const matched = getCategoryByInput($(this).val());
+        if (matched) {
+            $categoryIdField.val(String(matched.id));
+            $(this).val(matched.name || '');
+            renderCategoryOptions(matched.id, '', true);
+            renderSubCategoryOptions(matched.id, $subCategoryIdField.val() || null, '', true);
             return;
         }
 
-        parent.children.forEach((child) => {
-            $subCategorySelect.append(`<option value="${child.id}" ${String(child.id) === String(selectedChild) ? 'selected' : ''}>${child.name}</option>`);
-        });
-
-        if (!parent.children.length) {
-            $subCategorySelect.append('<option value="" disabled>No sub-categories available</option>');
+        if (!String($(this).val() || '').trim()) {
+            $categoryIdField.val('');
+            renderCategoryOptions(null, '', false);
+            renderSubCategoryOptions(null, null, '', true);
+            return;
         }
-    };
 
-    $categorySelect.on('change', function () {
-        populateSubCategories($(this).val(), null);
+        renderCategoryOptions(null, $(this).val(), false);
+    });
+
+    $clearCategoryBtn.on('click', function () {
+        $categoryIdField.val('');
+        $categoryInputField.val('');
+        renderCategoryOptions(null, '', false);
+        renderSubCategoryOptions(null, null, '', true);
+        $categoryInputField.trigger('focus');
+    });
+
+    $categorySuggestionsList.on('click', '.js-category-suggestion', function () {
+        const categoryId = String($(this).data('categoryId') || '');
+        if (!categoryId) {
+            return;
+        }
+
+        applyCategorySelection(categoryId, null);
+    });
+
+    $subCategoryInputField.on('input', function () {
+        const parentId = $categoryIdField.val();
+        if (!parentId) {
+            renderSubCategoryOptions(null, null, '', true);
+            return;
+        }
+
+        const typedValue = String($(this).val() || '');
+        const matched = getSubCategoryByInput(parentId, typedValue);
+        $subCategoryIdField.val(matched ? String(matched.id) : '');
+        renderSubCategoryOptions(parentId, matched ? matched.id : null, typedValue, false);
+    });
+
+    $subCategoryInputField.on('blur', function () {
+        const parentId = $categoryIdField.val();
+        if (!parentId) {
+            renderSubCategoryOptions(null, null, '', true);
+            return;
+        }
+
+        const matched = getSubCategoryByInput(parentId, $(this).val());
+        if (matched) {
+            $subCategoryIdField.val(String(matched.id));
+            $(this).val(matched.name || '');
+            renderSubCategoryOptions(parentId, matched.id, '', true);
+            return;
+        }
+
+        if (!String($(this).val() || '').trim()) {
+            $subCategoryIdField.val('');
+            renderSubCategoryOptions(parentId, null, '', true);
+            return;
+        }
+
+        renderSubCategoryOptions(parentId, null, $(this).val(), false);
+    });
+
+    $clearSubCategoryBtn.on('click', function () {
+        const parentId = $categoryIdField.val();
+        $subCategoryIdField.val('');
+        $subCategoryInputField.val('');
+        renderSubCategoryOptions(parentId || null, null, '', false);
+        $subCategoryInputField.trigger('focus');
+    });
+
+    $subCategorySuggestionsList.on('click', '.js-subcategory-suggestion', function () {
+        const parentId = $categoryIdField.val();
+        const subCategoryId = String($(this).data('subcategoryId') || '');
+        if (!parentId || !subCategoryId) {
+            return;
+        }
+
+        renderSubCategoryOptions(parentId, subCategoryId, '', true);
     });
 
     $initialLocationInputField.on('input', function () {
@@ -483,8 +831,7 @@ $(() => {
                 $createForm[0].reset();
                 $createErrors.addClass('hidden').empty();
                 currentStoreUrl = null;
-                populateSubCategories(null, null);
-                $categorySelect.empty();
+                applyCategorySelection(null, null);
                 currentLocationSearchTerm = '';
                 $initialLocationIdField.val('');
                 $initialLocationInputField.val('');
@@ -492,7 +839,7 @@ $(() => {
                 renderParentLocationOptions(null);
                 toggleNewLocationForm(false);
                 $totalCostField.val('0.00');
-                renderSerialInputs(1);
+                renderInspectionSerials([]);
                 $itemAccountableOfficer.text('—');
                 $initialCustodianField.val('');
             }
@@ -570,23 +917,26 @@ $(() => {
         }
     });
 
-    const collectSerialInputs = () => $serialsContainer.find('input[name^="serial_numbers"]').map((_, input) => $(input).val()).get();
-
-    const renderSerialInputs = (count, existingValues = []) => {
-        const total = Number.isFinite(count) && count > 0 ? count : 1;
-        const inputs = [];
-
-        for (let index = 0; index < total; index += 1) {
-            const value = escapeAttr(existingValues[index] ?? '');
-            inputs.push(`
-                <div class="flex items-center gap-3">
-                    <span class="w-14 text-xs font-semibold uppercase tracking-wide text-gray-500">#${index + 1}</span>
-                    <input type="text" name="serial_numbers[${index}]" value="${value}" class="flex-1 rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" placeholder="Serial number" autocomplete="off">
-                </div>
-            `);
+    const renderInspectionSerials = (serials = []) => {
+        if (! $serialsList.length) {
+            return;
         }
 
-        $serialsContainer.html(inputs.join(''));
+        const normalized = Array.isArray(serials)
+            ? serials.map((value) => String(value || '').trim()).filter(Boolean)
+            : [];
+
+        if (!normalized.length) {
+            $serialsList.html('<li class="text-sm text-gray-400 italic">No serial numbers recorded.</li>');
+            return;
+        }
+
+        $serialsList.html(normalized.map((serial) => `
+            <li class="flex items-center gap-2 text-sm text-gray-700">
+                <i class="fas fa-circle text-[6px] text-gray-400"></i>
+                <span>${escapeHtml(serial)}</span>
+            </li>
+        `).join(''));
     };
 
     const recalculateTotalCost = () => {
@@ -596,25 +946,7 @@ $(() => {
         $totalCostField.val(total.toFixed(2));
     };
 
-    const handleQuantityInput = () => {
-        const max = Number($quantityField.attr('max')) || Number.POSITIVE_INFINITY;
-        let quantity = Number($quantityField.val());
-
-        if (!Number.isFinite(quantity) || quantity <= 0) {
-            quantity = 1;
-        }
-
-        if (quantity > max) {
-            quantity = max;
-            $quantityField.val(quantity);
-        }
-
-        recalculateTotalCost();
-        const preservedValues = collectSerialInputs();
-        renderSerialInputs(quantity, preservedValues);
-    };
-
-    $quantityField.on('input', handleQuantityInput);
+    $quantityField.on('input', recalculateTotalCost);
     $unitCostField.on('input', recalculateTotalCost);
 
     const renderEmptyRow = (message) => {
@@ -949,7 +1281,7 @@ $(() => {
             sub_id: item.sub_category_id || null,
         };
 
-        applyCategoriesToSelect(categoriesData.parent_id, categoriesData.sub_id);
+        applyCategorySelection(categoriesData.parent_id, categoriesData.sub_id);
 
         $('#inventoryIaItemId').val(item.ia_item_id);
         $descriptionField.val(item.property_record?.description || item.item_description || '');
@@ -970,7 +1302,7 @@ $(() => {
         renderLocationOptions(preferredLocationId, currentLocationSearchTerm, true);
         renderParentLocationOptions(null);
         toggleNewLocationForm(false);
-        renderSerialInputs(acceptedQuantity);
+        renderInspectionSerials(item.inspection_serial_numbers || []);
 
         $itemDescription.text(item.item_description ?? '—');
         $itemSource.text(`PO ${item.po_no ?? '—'} • IA ${item.ia_no ?? '—'}`);
@@ -1235,10 +1567,10 @@ $(() => {
     }
 
     // Initialize state
-    populateSubCategories(null, null);
+    applyCategorySelection(null, null);
     renderLocationOptions(null, currentLocationSearchTerm, false);
     renderParentLocationOptions(null);
-    renderSerialInputs(1);
+    renderInspectionSerials([]);
     fetchItems();
 
     if (!window.__inventoryAssignmentAutoRefreshTimer) {

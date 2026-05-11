@@ -22,11 +22,18 @@ class PurchaseRequest extends Model
         'sai_no',
         'alobs_no',
         'purpose',
+        'requested_delivery_date',
+        'requested_delivery_term',
+        'requested_payment_term',
         'recommending_officer_id',
         'total_estimated_cost',
         'fund_allocation_id',
         'funds_available',
         'printed',
+    ];
+
+    protected $casts = [
+        'requested_delivery_date' => 'date',
     ];
 
     public function items(): HasMany

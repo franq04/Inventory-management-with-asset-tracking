@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\InspectionReport;
 use App\Models\InspectionReportItem;
+use App\Models\PqsRecord;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\Status;
@@ -199,6 +200,7 @@ class InspectionController extends Controller
                 'quantity_accepted' => $preferredInspection?->quantity_accepted ?? 0,
                 'quantity_rejected' => $preferredInspection?->quantity_rejected ?? 0,
                 'remarks' => $preferredInspection?->inspection_remarks,
+                'serial_numbers' => $this->normalizeSerialNumbers($preferredInspection?->serial_numbers),
                 'warranty_expiration' => optional($preferredInspection?->warranty_expiration)->toDateString(),
             ];
         })->values();
@@ -282,6 +284,7 @@ class InspectionController extends Controller
             'items.*.quantity_accepted' => 'nullable|integer|min:0',
             'items.*.quantity_rejected' => 'nullable|integer|min:0',
             'items.*.remarks' => 'nullable|string',
+            'items.*.serial_numbers' => 'nullable|string',
             'items.*.warranty_expiration' => 'nullable|date',
         ]);
 
@@ -289,6 +292,70 @@ class InspectionController extends Controller
 
         $savedReport = DB::transaction(function () use ($validated, $purchaseOrder, $account) {
             $purchaseOrder->loadMissing(['items', 'inspectionReports.items']);
+
+            $serialNumbersByIndex = [];
+            $serialErrors = [];
+            $allSerials = [];
+
+            foreach ($validated['items'] as $index => $itemData) {
+                /** @var PurchaseOrderItem|null $poItem */
+                $poItem = $purchaseOrder->items->firstWhere('poi_id', $itemData['po_item_id']);
+                if (! $poItem) {
+                    continue;
+                }
+
+                $deliveredQuantity = $itemData['quantity'] ?? $poItem->quantity;
+                $accepted = (int) ($itemData['quantity_accepted'] ?? 0);
+                $rejected = (int) ($itemData['quantity_rejected'] ?? 0);
+
+                if ($accepted + $rejected > $deliveredQuantity) {
+                    $rejected = max(0, $deliveredQuantity - $accepted);
+                }
+
+                $serials = $this->normalizeSerialNumbers($itemData['serial_numbers'] ?? null);
+                $serialNumbersByIndex[$index] = $serials;
+
+                if ($serials && $accepted >= 0 && count($serials) > $accepted) {
+                    $serialErrors["items.{$index}.serial_numbers"] = 'Serial numbers provided exceed the accepted quantity.';
+                }
+
+                $duplicateSerials = $this->findDuplicateSerials($serials);
+                if ($duplicateSerials) {
+                    $serialErrors["items.{$index}.serial_numbers"] = 'Serial numbers must be unique. Duplicates found: '.implode(', ', $duplicateSerials).'.';
+                }
+
+                foreach ($serials as $serial) {
+                    if (isset($allSerials[$serial])) {
+                        $serialErrors["items.{$index}.serial_numbers"] = 'Serial numbers must be unique across all items in this inspection.';
+                        break;
+                    }
+
+                    $allSerials[$serial] = true;
+                }
+            }
+
+            if ($allSerials) {
+                $existingSerials = PqsRecord::query()
+                    ->whereIn('serial_number', array_keys($allSerials))
+                    ->pluck('serial_number')
+                    ->map(fn ($value) => (string) $value)
+                    ->all();
+
+                if ($existingSerials) {
+                    $existingLookup = array_fill_keys($existingSerials, true);
+
+                    foreach ($serialNumbersByIndex as $index => $serials) {
+                        $conflicts = array_values(array_filter($serials, fn ($serial) => isset($existingLookup[$serial])));
+                        if ($conflicts) {
+                            $serialErrors["items.{$index}.serial_numbers"] = 'Serial numbers already recorded: '.implode(', ', $conflicts).'.';
+                        }
+                    }
+                }
+            }
+
+            if ($serialErrors) {
+                throw ValidationException::withMessages($serialErrors);
+            }
 
             $report = null;
             $previousOverallStatus = Status::ITEM_PENDING_INSPECTION;
@@ -334,7 +401,7 @@ class InspectionController extends Controller
 
             $itemStatuses = [];
 
-            foreach ($validated['items'] as $itemData) {
+            foreach ($validated['items'] as $index => $itemData) {
                 /** @var PurchaseOrderItem|null $poItem */
                 $poItem = $purchaseOrder->items->firstWhere('poi_id', $itemData['po_item_id']);
                 if (! $poItem) {
@@ -349,6 +416,9 @@ class InspectionController extends Controller
                     $rejected = max(0, $deliveredQuantity - $accepted);
                 }
 
+                $serials = $serialNumbersByIndex[$index] ?? $this->normalizeSerialNumbers($itemData['serial_numbers'] ?? null);
+                $serializedSerials = $serials ? implode("\n", $serials) : null;
+
                 InspectionReportItem::updateOrCreate(
                     [
                         'ia_no' => $report->ia_no,
@@ -360,6 +430,7 @@ class InspectionController extends Controller
                         'quantity_rejected' => $rejected,
                         'inspection_status_id' => $itemData['status_id'],
                         'inspection_remarks' => $itemData['remarks'] ?? null,
+                        'serial_numbers' => $serializedSerials,
                         'warranty_expiration' => $itemData['warranty_expiration'] ?? null,
                     ]
                 );
@@ -436,8 +507,9 @@ class InspectionController extends Controller
     protected function userCanInspect(): bool
     {
         $user = Auth::user();
+        $role = strtolower((string) (session('role') ?? $user?->role ?? ''));
 
-        return $user && in_array($user->role, ['iac', 'admin'], true);
+        return $role !== '' && in_array($role, ['iac', 'admin'], true);
     }
 
     protected function backfillPendingInspectionItems(): void
@@ -457,7 +529,8 @@ class InspectionController extends Controller
             /** @var PurchaseOrder|null $order */
             $order = PurchaseOrder::with([
                 'items' => function ($query) {
-                    $query->whereNotNull('received_at')->with('latestInspectionItem');
+                    $query->where('fulfillment_status', '!=', 'unavailable')
+                        ->with('latestInspectionItem');
                 },
                 'inspectionReports.items',
             ])->lockForUpdate()->find($purchaseOrder->po_no);
@@ -467,7 +540,7 @@ class InspectionController extends Controller
             }
 
             $itemsNeedingInspection = $order->items->filter(function (PurchaseOrderItem $item) {
-                return $item->received_at && $item->latestInspectionItem === null;
+                return $item->latestInspectionItem === null;
             });
 
             if ($itemsNeedingInspection->isEmpty()) {
@@ -619,10 +692,34 @@ class InspectionController extends Controller
         }
 
         if ($statuses->every(fn ($status) => in_array($status, [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED], true))) {
-            return Status::PO_CLOSED;
+            return Status::PO_PARTIALLY_DELIVERED;
         }
 
         return Status::PO_PARTIALLY_DELIVERED;
+    }
+
+    protected function normalizeSerialNumbers($raw): array
+    {
+        $values = is_array($raw)
+            ? $raw
+            : preg_split('/[\r\n;,]+/', (string) $raw);
+
+        return collect($values)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter(fn ($value) => $value !== '')
+            ->values()
+            ->all();
+    }
+
+    protected function findDuplicateSerials(array $serials): array
+    {
+        if (! $serials) {
+            return [];
+        }
+
+        $duplicates = array_unique(array_diff_assoc($serials, array_unique($serials)));
+
+        return array_values($duplicates);
     }
 
     protected function accountDisplayName($account): ?string

@@ -7,7 +7,7 @@
     $isProcurementActive = request()->routeIs(['custodian.requests.*', 'custodian.orders.*', 'custodian.inspection.*']);
     $isInspectionActive = request()->routeIs(['custodian.inspection.*']);
     $isAssignmentActive = request()->routeIs(['custodian.inventory.*']);
-    $isDivisionRequestsActive = request()->routeIs('division.requests.*');
+    $isDivisionRequestsActive = request()->routeIs(['division.requests.*', 'division_head.requests.*']);
     $isAuditActive = request()->routeIs(['custodian.audit_logs.*']);
     $isEmployeeRequestsActive = request()->routeIs('employee.purchase-requests.*');
 @endphp
@@ -85,7 +85,7 @@
                 Procurement
             </div>
             <ul class="space-y-1">
-                @if(in_array($role, ['custodian', 'admin'], true))
+                @if($role === 'admin')
                     <li>
                         <a href="{{ route('custodian.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <i class="fas fa-shopping-cart text-lg w-6 text-center"></i>
@@ -94,31 +94,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ route('custodian.orders.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.orders.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                            <i class="fas fa-file-invoice-dollar text-lg w-6 text-center"></i>
-                            <span class="ml-3 [.w-20_&]:hidden">Purchase Orders</span>
-                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Purchase Orders</div>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('custodian.inspection.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ $isInspectionActive ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                            <i class="fas fa-clipboard-list text-lg w-6 text-center"></i>
-                            <span class="ml-3 [.w-20_&]:hidden">Inspection &amp; Acceptance</span>
-                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Inspection &amp; Acceptance</div>
-                        </a>
-                    </li>
-                @elseif($role === 'bac')
-                    <li>
-                        <a href="{{ route('bac.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('bac.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                            <i class="fas fa-shopping-cart text-lg w-6 text-center"></i>
-                            <span class="ml-3 [.w-20_&]:hidden">All Requests</span>
-                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">All Requests</div>
-                        </a>
-                    </li>
-                @endif
-                @if($role === 'admin')
-                    <li>
-                        <a href="{{ route('division_head.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('division_head.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                        <a href="{{ route('division.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('division.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
                             <i class="fas fa-clipboard-check text-lg w-6 text-center"></i>
                             <span class="ml-3 [.w-20_&]:hidden">Division Recommendation</span>
                             <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Division Recommendation</div>
@@ -129,6 +105,50 @@
                             <i class="fas fa-gavel text-lg w-6 text-center"></i>
                             <span class="ml-3 [.w-20_&]:hidden">BAC Approval Queue</span>
                             <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">BAC Approval Queue</div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('custodian.inspection.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ $isInspectionActive ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-list text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Inspection &amp; Acceptance</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Inspection &amp; Acceptance</div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('custodian.orders.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.orders.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-file-invoice-dollar text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Purchase Orders</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Purchase Orders</div>
+                        </a>
+                    </li>
+                @elseif($role === 'custodian')
+                    <li>
+                        <a href="{{ route('custodian.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-shopping-cart text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">All Requests</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">All Requests</div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('custodian.inspection.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ $isInspectionActive ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-clipboard-list text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Inspection &amp; Acceptance</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Inspection &amp; Acceptance</div>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('custodian.orders.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.orders.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-file-invoice-dollar text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Purchase Orders</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Purchase Orders</div>
+                        </a>
+                    </li>
+                @elseif($role === 'bac')
+                    <li>
+                        <a href="{{ route('bac.requests.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('bac.requests.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-shopping-cart text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">All Requests</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">All Requests</div>
                         </a>
                     </li>
                 @endif

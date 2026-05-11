@@ -80,6 +80,7 @@
                     <h1 class="text-3xl font-black uppercase tracking-[0.04em]">Purchase Order Register Report</h1>
                     <p class="mt-1 text-sm text-slate-700">Procurement Order Monitoring Summary</p>
                     <p class="mt-2 text-xs text-gray-600">Generated on: {{ $generatedOnLabel ?? now()->format('F d, Y') }}</p>
+                    <p class="mt-1 text-xs text-gray-600">Place of Delivery: {{ config('procurement.purchase_order_defaults.place_of_delivery') }}</p>
                 </div>
                 <img src="{{ asset('images/pqslogo.png') }}" alt="Plant Quarantine Service" class="h-16 w-16 object-contain">
             </div>

@@ -713,6 +713,11 @@ const initBacPurchaseRequestPage = function () {
         document.getElementById('bacPrSaiInput').textContent = data.sai_no || '';
         document.getElementById('bacPrAlobsInput').textContent = data.alobs_no || '';
         document.getElementById('bacPrPurposeTextarea').value = data.purpose || '';
+        document.getElementById('bacPrRequestedDeliveryDate').textContent = data.requested_delivery_date
+            ? formatDate(data.requested_delivery_date)
+            : '—';
+        document.getElementById('bacPrRequestedDeliveryTerm').textContent = data.requested_delivery_term || '—';
+        document.getElementById('bacPrRequestedPaymentTerm').textContent = data.requested_payment_term || '—';
         
         // Requester info
         document.getElementById('bacPrRequestedPrintedName').textContent = data.requester || 'Unknown';

@@ -486,6 +486,25 @@ const initInspectionModal = () => {
         fallbackInspectorName: '',
     };
 
+    const closePurchaseOrderModals = () => {
+        ['#poDetailsModal', '#custodianPrModal', '#purchaseOrderFormModal'].forEach((selector) => {
+            const $target = $(selector);
+            if (!$target.length || $target.hasClass('hidden')) {
+                return;
+            }
+
+            const $panel = $target.find('.modal-panel').first();
+            $target.addClass('opacity-0');
+            if ($panel.length) {
+                $panel.addClass('opacity-0 scale-95 translate-y-2');
+            }
+
+            window.setTimeout(() => $target.addClass('hidden'), 300);
+        });
+
+        document.body.classList.remove('overflow-hidden');
+    };
+
     const statusCodePriority = {
         'IT-01': 1,
         'IT-02': 2,
@@ -579,6 +598,7 @@ const initInspectionModal = () => {
             $form.trigger('reset');
             $itemsContainer.empty();
             $errorBox.addClass('hidden').empty();
+            clearSerialErrors();
             setInspectorName('');
             state.storeUrl = null;
             syncStatuses([]);
@@ -609,7 +629,7 @@ const initInspectionModal = () => {
         if (!items.length) {
             $itemsContainer.html(`
                 <tr>
-                    <td colspan="7" class="px-4 py-6 text-center text-gray-500 text-sm">
+                    <td colspan="8" class="px-4 py-6 text-center text-gray-500 text-sm">
                         No line items found for this purchase order.
                     </td>
                 </tr>
@@ -639,6 +659,8 @@ const initInspectionModal = () => {
             const unit = escapeHtml(item.unit ?? '');
             const warranty = item.warranty_expiration ?? '';
             const statusId = item.status_id != null ? String(item.status_id) : defaultAcceptedStatusId;
+            const serialNumbers = Array.isArray(item.serial_numbers) ? item.serial_numbers : [];
+            const serialValue = escapeHtml(serialNumbers.join('\n'));
 
             return `
                 <tr data-index="${index}" data-delivered="${delivered}" class="bg-white">
@@ -672,6 +694,14 @@ const initInspectionModal = () => {
                         <input type="date" name="items[${index}][warranty_expiration]"
                                value="${warranty}"
                                class="w-40 rounded-lg border px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]">
+                    </td>
+                    <td class="px-3 py-3">
+                        <textarea name="items[${index}][serial_numbers]" rows="2"
+                                  class="w-full rounded-lg border px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]"
+                                  data-serial-input
+                                  placeholder="One per line">${serialValue}</textarea>
+                        <p class="mt-1 text-[10px] text-gray-400">One serial per line.</p>
+                        <p class="mt-1 hidden text-xs text-rose-600" data-serial-error></p>
                     </td>
                     <td class="px-3 py-3">
                         <textarea name="items[${index}][remarks]" rows="2"
@@ -754,6 +784,39 @@ const initInspectionModal = () => {
         }
     };
 
+    const clearSerialErrors = () => {
+        $itemsContainer.find('[data-serial-error]').addClass('hidden').text('');
+        $itemsContainer.find('[data-serial-input]').removeClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
+    };
+
+    const applySerialErrors = (errors = {}) => {
+        clearSerialErrors();
+
+        Object.entries(errors).forEach(([key, messages]) => {
+            if (!String(key).includes('serial_numbers')) {
+                return;
+            }
+
+            const match = String(key).match(/^items\.(\d+)\.serial_numbers/);
+            if (!match) {
+                return;
+            }
+
+            const index = match[1];
+            const $row = $itemsContainer.find(`tr[data-index="${index}"]`);
+            if (! $row.length) {
+                return;
+            }
+
+            const message = Array.isArray(messages) ? messages.join(' ') : String(messages || 'Serial number error.');
+            const $input = $row.find('[data-serial-input]');
+            const $error = $row.find('[data-serial-error]');
+
+            $input.addClass('border-rose-400 focus:ring-rose-200 focus:border-rose-400');
+            $error.text(message).removeClass('hidden');
+        });
+    };
+
     $itemsContainer.on('input', '[data-field="accepted"], [data-field="rejected"]', function () {
         const $row = $(this).closest('tr');
         clampQuantities($row, $(this).data('field'));
@@ -796,8 +859,11 @@ const initInspectionModal = () => {
             return;
         }
 
+        closePurchaseOrderModals();
+
         state.storeUrl = storeUrl;
         $errorBox.addClass('hidden').empty();
+        clearSerialErrors();
         setInspectorName(resolveCurrentInspectorName());
         setLoading(true);
         toggleModal(true);
@@ -830,7 +896,8 @@ const initInspectionModal = () => {
         });
     };
 
-    $(document).on('click', '.js-open-inspection', function () {
+    $(document).on('click', '.js-open-inspection', function (event) {
+        event.preventDefault();
         handleOpen($(this));
     });
 
@@ -856,6 +923,7 @@ const initInspectionModal = () => {
         }
 
         $errorBox.addClass('hidden').empty();
+        clearSerialErrors();
         const $submitBtn = $form.find('button[type="submit"]');
         $submitBtn.prop('disabled', true).addClass('opacity-75 cursor-not-allowed');
 
@@ -877,6 +945,7 @@ const initInspectionModal = () => {
                     const messages = Object.values(xhr.responseJSON.errors).flat();
                     $errorBox.html(messages.map((msg) => `<div>${escapeHtml(msg)}</div>`).join(''));
                     $errorBox.removeClass('hidden');
+                    applySerialErrors(xhr.responseJSON.errors);
                 } else {
                     $errorBox.text('An unexpected error occurred while saving inspection results.');
                     $errorBox.removeClass('hidden');

@@ -138,7 +138,6 @@ const initDivisionHeadPurchaseRequests = () => {
         requestUrl.searchParams.set('_ts', String(Date.now()));
 
         try {
-            const response = await fetch(url, {
             const response = await fetch(requestUrl.toString(), {
                 method: 'GET',
                 headers: {

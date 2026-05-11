@@ -425,36 +425,24 @@ class InventoryAssignmentController extends Controller
             'initial_location_name' => ['nullable', 'string', 'max:255'],
             'initial_location_type' => ['nullable', Rule::in(['building', 'floor', 'room', 'other'])],
             'initial_location_parent_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true))],
-            'serial_numbers' => ['nullable', 'array'],
-            'serial_numbers.*' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $validator->after(function ($validator) {
+        $validator->after(function ($validator) use ($inspectionReportItem) {
             $data = $validator->getData();
             $quantity = (int) ($data['quantity'] ?? 0);
-            $serials = $data['serial_numbers'] ?? [];
+            $serials = $this->normalizeSerialNumbers($inspectionReportItem->serial_numbers ?? null);
 
-            if (! is_array($serials)) {
-                return;
+            if ($serials && $quantity > 0 && count($serials) > $quantity) {
+                $validator->errors()->add('serial_numbers', 'Serial numbers recorded during inspection exceed the quantity to be recorded.');
             }
 
-            if (count($serials) > $quantity && $quantity > 0) {
-                $validator->errors()->add('serial_numbers', 'Serial numbers provided exceed the quantity to be recorded.');
-            }
-
-            $trimmedSerials = array_filter(array_map(function ($value) {
-                $trimmed = trim((string) $value);
-
-                return $trimmed !== '' ? $trimmed : null;
-            }, $serials));
-
-            if ($trimmedSerials) {
-                $duplicateSerials = array_unique(array_diff_assoc($trimmedSerials, array_unique($trimmedSerials)));
+            if ($serials) {
+                $duplicateSerials = array_unique(array_diff_assoc($serials, array_unique($serials)));
                 if ($duplicateSerials) {
                     $validator->errors()->add('serial_numbers', 'Serial numbers must be unique. Duplicates found: '.implode(', ', $duplicateSerials));
                 }
 
-                $existingSerials = PqsRecord::whereIn('serial_number', $trimmedSerials)->pluck('serial_number')->all();
+                $existingSerials = PqsRecord::whereIn('serial_number', $serials)->pluck('serial_number')->all();
                 if ($existingSerials) {
                     $validator->errors()->add('serial_numbers', 'Serial numbers already recorded: '.implode(', ', array_unique($existingSerials)).'.');
                 }
@@ -484,11 +472,7 @@ class InventoryAssignmentController extends Controller
             ], 422);
         }
 
-        $serialNumbers = array_map(function ($value) {
-            $trimmed = trim((string) $value);
-
-            return $trimmed !== '' ? $trimmed : null;
-        }, $validated['serial_numbers'] ?? []);
+        $serialNumbers = $this->normalizeSerialNumbers($inspectionReportItem->serial_numbers ?? null);
 
         if (count($serialNumbers) < $quantity) {
             $serialNumbers = array_pad($serialNumbers, $quantity, null);
@@ -780,6 +764,19 @@ class InventoryAssignmentController extends Controller
         return $label ?: $location->location_name;
     }
 
+    protected function normalizeSerialNumbers($raw): array
+    {
+        $values = is_array($raw)
+            ? $raw
+            : preg_split('/[\r\n;,]+/', (string) $raw);
+
+        return collect($values)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter(fn ($value) => $value !== '')
+            ->values()
+            ->all();
+    }
+
     protected function transformItem(InspectionReportItem $item, bool $includeAssociations = false): array
     {
         $poItem = $item->purchaseOrderItem;
@@ -815,6 +812,7 @@ class InventoryAssignmentController extends Controller
             'supplier_name' => $po?->supplier?->supplier_name,
             'accountable_officer_id' => $accountableOfficer?->employee_id,
             'accountable_officer_name' => $accountableOfficer?->full_name,
+            'inspection_serial_numbers' => $this->normalizeSerialNumbers($item->serial_numbers ?? null),
             'serial_number' => $propertyRecord?->serial_number,
         ];
 

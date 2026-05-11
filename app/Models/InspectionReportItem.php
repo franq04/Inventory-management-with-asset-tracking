@@ -32,6 +32,7 @@ class InspectionReportItem extends Model
         'quantity_rejected',
         'inspection_status_id',
         'inspection_remarks',
+        'serial_numbers',
         'property_no',
         'warranty_expiration',
     ];

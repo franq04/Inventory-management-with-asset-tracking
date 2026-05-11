@@ -342,12 +342,23 @@ class PurchaseOrderController extends Controller
         $suppliers = Supplier::orderBy('supplier_name')->get();
         $custodians = Account::where('role', 'custodian')->orderBy('username')->get();
         $initialPr = $request->query('pr');
+        $defaults = config('procurement.purchase_order_defaults', []);
+        $deliveryDays = (int) ($defaults['delivery_days'] ?? 0);
+        $defaultDeliveryDate = $deliveryDays > 0 ? now()->addDays($deliveryDays)->toDateString() : null;
+        $poDefaults = [
+            'place_of_delivery' => $defaults['place_of_delivery'] ?? '',
+            'delivery_term' => $defaults['delivery_term'] ?? '',
+            'payment_term' => $defaults['payment_term'] ?? '',
+            'delivery_date' => $defaults['delivery_date'] ?? $defaultDeliveryDate ?? '',
+            'delivery_days' => $deliveryDays,
+        ];
 
         return view('custodian.purchase_orders.create', [
             'requests' => $requests,
             'suppliers' => $suppliers,
             'custodians' => $custodians,
             'initialPr' => $initialPr,
+            'poDefaults' => $poDefaults,
         ]);
     }
 
@@ -768,6 +779,23 @@ class PurchaseOrderController extends Controller
             ], 422);
         }
 
+        if ($purchaseOrderItem->fulfillment_status === 'unavailable') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unavailable items cannot be marked as received.',
+            ], 422);
+        }
+
+        $purchaseOrderItem->loadMissing('latestInspectionItem');
+        $latestInspection = $purchaseOrderItem->latestInspectionItem;
+        $acceptedStatuses = [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED];
+        if (! $latestInspection || ! in_array((int) ($latestInspection->inspection_status_id ?? 0), $acceptedStatuses, true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Inspect and accept this item before marking it as received.',
+            ], 422);
+        }
+
         $account = Auth::user();
 
         if (! $account) {
@@ -781,43 +809,49 @@ class PurchaseOrderController extends Controller
             $purchaseOrderItem->save();
 
             $purchaseOrder = $purchaseOrderItem->purchaseOrder()->lockForUpdate()->firstOrFail();
-            $purchaseOrder->load('items');
+            $purchaseOrder->load(['items.latestInspectionItem']);
 
             $totalItems = $purchaseOrder->items->count();
             $receivedCount = $purchaseOrder->items->whereNotNull('received_at')->count();
             $allReceived = $totalItems > 0 && $receivedCount === $totalItems;
 
-            $targetStatus = $allReceived ? Status::PO_DELIVERED_PENDING_INSPECTION : Status::PO_PARTIALLY_DELIVERED;
             $statusChanged = false;
+            $acceptedStatuses = [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED];
+            $allInspectedAccepted = $purchaseOrder->items->every(function (PurchaseOrderItem $item) use ($acceptedStatuses) {
+                $inspectionStatus = (int) ($item->latestInspectionItem?->inspection_status_id ?? 0);
+                return in_array($inspectionStatus, $acceptedStatuses, true);
+            });
 
-            if ((int) $purchaseOrder->status_id !== $targetStatus) {
-                $oldStatus = $purchaseOrder->status_id;
-                $purchaseOrder->status_id = $targetStatus;
-                $purchaseOrder->save();
+            if ((int) $purchaseOrder->status_id !== Status::PO_CANCELLED) {
+                $targetStatus = $allReceived && $allInspectedAccepted
+                    ? Status::PO_CLOSED
+                    : Status::PO_PARTIALLY_DELIVERED;
 
-                StatusHistory::create([
-                    'table_name' => 'purchase_orders',
-                    'record_id' => $purchaseOrder->po_no,
-                    'old_status_id' => $oldStatus,
-                    'new_status_id' => $targetStatus,
-                    'changed_by' => $account->account_id,
-                    'remarks' => 'Updated after receiving purchase order items.',
-                    'changed_at' => now(),
-                ]);
+                if ((int) $purchaseOrder->status_id !== $targetStatus) {
+                    $oldStatus = $purchaseOrder->status_id;
+                    $purchaseOrder->status_id = $targetStatus;
+                    $purchaseOrder->save();
 
-                $statusChanged = true;
+                    StatusHistory::create([
+                        'table_name' => 'purchase_orders',
+                        'record_id' => $purchaseOrder->po_no,
+                        'old_status_id' => $oldStatus,
+                        'new_status_id' => $targetStatus,
+                        'changed_by' => $account->account_id,
+                        'remarks' => 'Updated after receiving purchase order items.',
+                        'changed_at' => now(),
+                    ]);
 
-                PurchaseRequestStatusSynchronizer::sync(
-                    $purchaseOrder,
-                    $account->account_id,
-                    $allReceived
-                        ? sprintf('All items received for purchase order %s.', $purchaseOrder->po_no)
-                        : sprintf('Receiving progress recorded for purchase order %s.', $purchaseOrder->po_no)
-                );
-            }
+                    $statusChanged = true;
 
-            if ($allReceived) {
-                $this->ensurePendingInspectionReport($purchaseOrder);
+                    PurchaseRequestStatusSynchronizer::sync(
+                        $purchaseOrder,
+                        $account->account_id,
+                        $allReceived && $allInspectedAccepted
+                            ? sprintf('Purchase order %s closed after receiving all inspected items.', $purchaseOrder->po_no)
+                            : sprintf('Receiving progress recorded for purchase order %s.', $purchaseOrder->po_no)
+                    );
+                }
             }
 
             AuditLog::create([
@@ -838,8 +872,8 @@ class PurchaseOrderController extends Controller
         $this->notifyStakeholdersOfReceivingProgress($purchaseOrder, $updatedItem, $allReceived);
 
         $message = $allReceived
-            ? 'All items for this purchase order are now received and ready for inspection.'
-            : 'Item marked as received. Remaining items stay on the receiving queue.';
+            ? 'All items for this purchase order are now marked as received.'
+            : 'Item marked as received after inspection.';
 
         return response()->json([
             'status' => 'success',
@@ -1259,8 +1293,8 @@ class PurchaseOrderController extends Controller
         }
 
         $message = $allReceived
-            ? sprintf('All items for purchase order %s have been received and are ready for inspection.', $purchaseOrder->po_no)
-            : sprintf('Item "%s" (Qty %d) for purchase order %s has been marked as received.', $item->item_description, $item->quantity, $purchaseOrder->po_no);
+            ? sprintf('All items for purchase order %s have been marked as received after inspection.', $purchaseOrder->po_no)
+            : sprintf('Item "%s" (Qty %d) for purchase order %s has been marked as received after inspection.', $item->item_description, $item->quantity, $purchaseOrder->po_no);
 
         $type = $allReceived ? 'success' : 'info';
 
