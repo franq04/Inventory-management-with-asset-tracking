@@ -766,6 +766,54 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
+    public function markArrived(Request $request, PurchaseOrder $purchaseOrder)
+    {
+        if (! in_array((int) $purchaseOrder->status_id, [Status::PO_SENT_TO_SUPPLIER], true)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This purchase order is not awaiting delivery.',
+            ], 422);
+        }
+
+        $account = Auth::user();
+
+        DB::transaction(function () use ($purchaseOrder, $account) {
+            $oldStatus = $purchaseOrder->status_id;
+            $purchaseOrder->status_id = Status::PO_DELIVERED_PENDING_INSPECTION;
+            $purchaseOrder->save();
+
+            $this->ensurePendingInspectionReport($purchaseOrder);
+
+            StatusHistory::create([
+                'table_name' => 'purchase_orders',
+                'record_id' => $purchaseOrder->po_no,
+                'old_status_id' => $oldStatus,
+                'new_status_id' => Status::PO_DELIVERED_PENDING_INSPECTION,
+                'changed_by' => $account?->account_id,
+                'remarks' => 'Marked as arrived and queued for inspection.',
+                'changed_at' => now(),
+            ]);
+
+            AuditLog::create([
+                'account_id' => $account?->account_id,
+                'table_name' => 'purchase_orders',
+                'action' => 'UPDATE',
+                'description' => sprintf('Marked purchase order %s as arrived', $purchaseOrder->po_no),
+            ]);
+
+            PurchaseRequestStatusSynchronizer::sync(
+                $purchaseOrder,
+                $account?->account_id,
+                sprintf('Purchase order %s marked as arrived and queued for inspection.', $purchaseOrder->po_no)
+            );
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Purchase order marked as arrived and queued for inspection.',
+        ]);
+    }
+
     public function receiveItem(Request $request, PurchaseOrderItem $purchaseOrderItem)
     {
         $validated = $request->validate([
@@ -1029,12 +1077,6 @@ class PurchaseOrderController extends Controller
                 'icon' => 'fa-truck-ramp-box',
                 'badge' => 'bg-sky-100 text-sky-800',
             ],
-            'receiving' => [
-                'label' => 'Receiving Queue',
-                'description' => 'Deliveries in progress or partially received that need follow-up.',
-                'icon' => 'fa-boxes-packing',
-                'badge' => 'bg-amber-100 text-amber-700',
-            ],
             'inspection' => [
                 'label' => 'Inspection & Acceptance',
                 'description' => 'Batches awaiting inspection results or documentation.',
@@ -1095,7 +1137,7 @@ class PurchaseOrderController extends Controller
     protected function resolvePipelineStage(PurchaseOrder $order): string
     {
         return match ((int) $order->status_id) {
-            Status::PO_PARTIALLY_DELIVERED => 'receiving',
+            Status::PO_PARTIALLY_DELIVERED => 'inspection',
             Status::PO_DELIVERED_PENDING_INSPECTION => 'inspection',
             Status::PO_CLOSED => 'completed',
             Status::PO_CANCELLED => 'issues',
@@ -1240,17 +1282,22 @@ class PurchaseOrderController extends Controller
         $latestInspectionDate = optional($order->inspectionReports->sortByDesc('inspection_date')->first()?->inspection_date)->format('M d, Y');
         $deliveriesCount = $order->inspectionReports->count();
 
+        $isClosed = (int) $order->status_id === Status::PO_CLOSED;
+
         return [
             'accepted_count' => $acceptedCount,
             'issue_count' => $issueCount,
             'pending_count' => $pendingCount,
             'deliveries_count' => $deliveriesCount,
             'latest_inspection_date' => $latestInspectionDate,
-            'can_inspect' => in_array((int) $order->status_id, [
-                Status::PO_PARTIALLY_DELIVERED,
-                Status::PO_DELIVERED_PENDING_INSPECTION,
-                Status::PO_CLOSED,
-            ], true) || $deliveriesCount > 0,
+            // Only allow inspection when PO is not closed. If PO is closed, disallow inspect even
+            // if there are historical deliveries.
+            'can_inspect' => ! $isClosed && (
+                in_array((int) $order->status_id, [
+                    Status::PO_PARTIALLY_DELIVERED,
+                    Status::PO_DELIVERED_PENDING_INSPECTION,
+                ], true) || $deliveriesCount > 0
+            ),
         ];
     }
 

@@ -45,7 +45,9 @@
         return request()->has($key.'_page');
     }) ?? 'pending';
 @endphp
-<div id="inspectionAcceptancePage" class="relative space-y-8 transition-all duration-200 ease-out">
+<div id="inspectionAcceptancePage" class="relative space-y-8 transition-all duration-200 ease-out"
+    data-form-url-template="{{ route('custodian.inspection.form', ['purchase_order' => '__PO__']) }}"
+    data-store-url-template="{{ route('custodian.inspection.store', ['purchase_order' => '__PO__']) }}">
     <div class="animate-card rounded-[28px] border border-emerald-950/10 bg-gradient-to-br from-[#173628] via-[#1a3a2d] to-[#285641] px-6 py-6 text-white shadow-[0_20px_60px_-25px_rgba(26,58,45,0.65)] sm:px-8 lg:px-10 overflow-hidden relative">
         <div class="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(249,191,15,0.18),_transparent_60%)]"></div>
         <div class="absolute -right-8 bottom-0 h-32 w-32 rounded-full border border-white/10 bg-white/5 blur-2xl"></div>

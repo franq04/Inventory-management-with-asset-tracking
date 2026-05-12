@@ -430,6 +430,36 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
+    public function suggestItemDescriptions(Request $request)
+    {
+        $term = trim((string) $request->query('q', ''));
+        if (mb_strlen($term) < 2) {
+            return response()->json(['data' => []]);
+        }
+
+        $limit = (int) $request->query('limit', 10);
+        $limit = max(1, min($limit, 20));
+
+        $escaped = $this->escapeLike($term);
+
+        $allowedRoles = ['employee', 'admin', 'custodian'];
+
+        $suggestions = PurchaseRequestItem::query()
+            ->select('item_description')
+            ->where('item_description', 'like', '%' . $escaped . '%')
+            ->whereHas('purchaseRequest.requester', function ($query) use ($allowedRoles) {
+                $query->whereIn('role', $allowedRoles);
+            })
+            ->orderBy('item_description')
+            ->distinct()
+            ->limit($limit)
+            ->pluck('item_description')
+            ->filter()
+            ->values();
+
+        return response()->json(['data' => $suggestions]);
+    }
+
     public function destroy(Request $request, PurchaseRequest $purchaseRequest)
     {
         $account = Auth::user();
@@ -700,6 +730,11 @@ class PurchaseRequestController extends Controller
         }
 
         return $prefix . str_pad((string) $nextSequence, 3, '0', STR_PAD_LEFT);
+    }
+
+    protected function escapeLike(string $value): string
+    {
+        return addcslashes($value, '\\%_');
     }
 
     protected function canDeletePurchaseRequest(PurchaseRequest $purchaseRequest): bool

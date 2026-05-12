@@ -198,6 +198,18 @@ const initEmployeePurchaseRequests = () => {
     let activeWaitContext = { priId: null, status: null };
     let activeEditContext = { prNo: null, updateUrl: null };
     let rowIndex = 0;
+    const suggestionCache = new Map();
+    const suggestionMinChars = 2;
+    const suggestionDelayMs = 250;
+    const suggestionLimit = 10;
+    let $floatingSuggestionPanel = $('#prItemDescriptionSuggest');
+
+    if (!$floatingSuggestionPanel.length) {
+        $floatingSuggestionPanel = $(
+            '<div id="prItemDescriptionSuggest" class="fixed z-[120] hidden max-h-52 overflow-auto rounded-md border border-gray-300 bg-white shadow-lg"></div>'
+        );
+        $('body').append($floatingSuggestionPanel);
+    }
 
     const updateRowTotal = ($row) => {
         const quantity = Number($row.find('[data-quantity]').val() || 0);
@@ -248,6 +260,126 @@ const initEmployeePurchaseRequests = () => {
         } else {
             $warning.addClass('hidden');
         }
+    };
+
+    const getDescriptionPanel = () => $floatingSuggestionPanel;
+
+    const positionDescriptionPanel = ($textarea) => {
+        if (!$textarea || !$textarea.length) {
+            return;
+        }
+
+        const rect = $textarea[0].getBoundingClientRect();
+        $floatingSuggestionPanel.css({
+            left: `${rect.left}px`,
+            top: `${rect.bottom + 4}px`,
+            width: `${rect.width}px`,
+        });
+        $floatingSuggestionPanel.data('activeDescriptionInput', $textarea);
+    };
+
+    const isTextareaInView = ($textarea, $container) => {
+        if (!$textarea || !$textarea.length || !$container || !$container.length) {
+            return true;
+        }
+
+        const inputRect = $textarea[0].getBoundingClientRect();
+        const containerRect = $container[0].getBoundingClientRect();
+        return inputRect.bottom >= containerRect.top && inputRect.top <= containerRect.bottom;
+    };
+
+    const syncDescriptionPanelPosition = () => {
+        const $active = $floatingSuggestionPanel.data('activeDescriptionInput');
+        if (!$active || !$active.length) {
+            return;
+        }
+
+        if ($modal.hasClass('hidden')) {
+            hideDescriptionSuggestions($floatingSuggestionPanel);
+            return;
+        }
+
+        const $container = $modal.find('.hide-scrollbar').first();
+        if (!isTextareaInView($active, $container)) {
+            hideDescriptionSuggestions($floatingSuggestionPanel);
+            return;
+        }
+
+        positionDescriptionPanel($active);
+    };
+
+    const hideDescriptionSuggestions = ($panel) => {
+        if ($panel && $panel.length) {
+            $panel.addClass('hidden').empty();
+            $panel.removeData('activeDescriptionInput');
+        }
+    };
+
+    const renderDescriptionSuggestions = ($panel, suggestions = []) => {
+        if (!Array.isArray(suggestions) || suggestions.length === 0) {
+            hideDescriptionSuggestions($panel);
+            return;
+        }
+
+        const html = suggestions.map((value) => {
+            const safeValue = escapeHtml(value);
+            return `<button type="button" class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-emerald-50" data-description-suggestion>${safeValue}</button>`;
+        }).join('');
+
+        $panel.html(html).removeClass('hidden');
+        const $active = $panel.data('activeDescriptionInput');
+        if ($active && $active.length) {
+            positionDescriptionPanel($active);
+        }
+    };
+
+    const fetchItemDescriptionSuggestions = (term) => {
+        const trimmed = String(term || '').trim();
+        if (!config?.itemDescriptionSuggestUrl || trimmed.length < suggestionMinChars) {
+            return Promise.resolve([]);
+        }
+
+        const cacheKey = trimmed.toLowerCase();
+        if (suggestionCache.has(cacheKey)) {
+            return Promise.resolve(suggestionCache.get(cacheKey));
+        }
+
+        return $.ajax({
+            method: 'GET',
+            url: config.itemDescriptionSuggestUrl,
+            data: { q: trimmed, limit: suggestionLimit },
+        })
+            .then((response) => {
+                const list = Array.isArray(response?.data) ? response.data : [];
+                suggestionCache.set(cacheKey, list);
+                return list;
+            })
+            .catch(() => []);
+    };
+
+    const scheduleDescriptionSuggest = ($textarea) => {
+        const term = String($textarea.val() || '').trim();
+        const $panel = getDescriptionPanel();
+
+        if (term.length < suggestionMinChars) {
+            hideDescriptionSuggestions($panel);
+            return;
+        }
+
+        positionDescriptionPanel($textarea);
+
+        const existingTimer = $textarea.data('suggestionTimer');
+        if (existingTimer) {
+            clearTimeout(existingTimer);
+        }
+
+        const timerId = setTimeout(() => {
+            fetchItemDescriptionSuggestions(term).then((suggestions) => {
+                renderDescriptionSuggestions($panel, suggestions);
+            });
+        }, suggestionDelayMs);
+
+        $textarea.data('suggestionTimer', timerId);
     };
 
     const registerRowEvents = ($row) => {
@@ -358,7 +490,10 @@ const initEmployeePurchaseRequests = () => {
                     </div>
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
-                    <textarea name="items[${idx}][item_description]" class="w-full border border-gray-400 px-2 py-1 text-sm min-h-[72px] resize-y focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the item in detail..."></textarea>
+                    <div class="relative" data-description-wrapper>
+                        <textarea name="items[${idx}][item_description]" class="w-full border border-gray-400 px-2 py-1 text-sm min-h-[72px] resize-y focus:border-[#1a3a2d] focus:ring-0" placeholder="Describe the item in detail..." data-description-input></textarea>
+                        <div class="absolute left-0 right-0 z-20 mt-1 hidden max-h-48 overflow-auto rounded-md border border-gray-300 bg-white shadow-lg" data-description-suggestions></div>
+                    </div>
                     <input type="hidden" name="items[${idx}][item_type]" value="consumable" />
                 </td>
                 <td class="border border-gray-500 px-2 py-2">
@@ -508,7 +643,54 @@ const initEmployeePurchaseRequests = () => {
         updateGrandTotal();
     });
 
+    $itemRows.on('input', '[data-description-input]', function () {
+        scheduleDescriptionSuggest($(this));
+    });
+
+    $itemRows.on('focus', '[data-description-input]', function () {
+        scheduleDescriptionSuggest($(this));
+    });
+
+    $itemRows.on('blur', '[data-description-input]', function () {
+        const $textarea = $(this);
+        setTimeout(() => {
+            hideDescriptionSuggestions(getDescriptionPanel($textarea));
+        }, 150);
+    });
+
+    $(document).on('pointerdown.employeeDescriptionSuggestItem', '[data-description-suggestion]', function (event) {
+        event.preventDefault();
+        const $button = $(this);
+        const $panel = getDescriptionPanel();
+        const $textarea = $panel.data('activeDescriptionInput');
+        if ($textarea && $textarea.length) {
+            $textarea.val($button.text()).trigger('input');
+            $textarea[0].focus({ preventScroll: true });
+        }
+        hideDescriptionSuggestions($panel);
+    });
+
     $addItemRow.on('click', addItemRow);
+
+    const $formScrollContainer = $modal.find('.hide-scrollbar').first();
+
+    $(window).on('resize.employeeDescriptionSuggest scroll.employeeDescriptionSuggest', () => {
+        syncDescriptionPanelPosition();
+    });
+
+    if ($formScrollContainer.length) {
+        $formScrollContainer.on('scroll.employeeDescriptionSuggest', () => {
+            syncDescriptionPanelPosition();
+        });
+    }
+
+    $(document).on('click.employeeDescriptionSuggest', (event) => {
+        if ($(event.target).closest('[data-description-wrapper]').length) {
+            return;
+        }
+
+        hideDescriptionSuggestions(getDescriptionPanel());
+    });
 
     resetCreateRequestForm();
 

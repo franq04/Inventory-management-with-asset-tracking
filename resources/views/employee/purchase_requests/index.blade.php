@@ -392,7 +392,7 @@
                         </div>
 
                         <div class="border-b border-gray-400 px-4 py-6">
-                            <div class="overflow-x-auto hide-scrollbar">
+                            <div class="overflow-x-auto overflow-y-visible hide-scrollbar">
                                 <table class="w-full border border-gray-500 text-sm border-collapse" id="prItemsTable">
                                     <thead class="bg-gray-100 text-xs uppercase tracking-wide text-gray-700">
                                         <tr>
@@ -559,6 +559,7 @@
         showUrlTemplate: '{{ route('employee.purchase-requests.show', ['purchase_request' => '__PR__']) }}',
         destroyUrlTemplate: '{{ route('employee.purchase-requests.destroy', ['purchase_request' => '__PR__']) }}',
         decisionUrlTemplate: '{{ route('employee.purchase-requests.items.decision', ['purchase_request_item' => '__PRI__']) }}',
+        itemDescriptionSuggestUrl: '{{ route('employee.purchase-requests.item-descriptions') }}',
         logos: {
             bpi: '{{ asset('images/bpi-logo.png') }}',
             pqs: '{{ asset('images/pqslogo.png') }}',
