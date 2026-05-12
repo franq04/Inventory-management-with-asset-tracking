@@ -326,7 +326,6 @@
                                     $inspectableStatuses = [
                                         \App\Models\Status::PO_PARTIALLY_DELIVERED,
                                         \App\Models\Status::PO_DELIVERED_PENDING_INSPECTION,
-                                        \App\Models\Status::PO_CLOSED,
                                     ];
                                     $canInspect = in_array($order->status_id, $inspectableStatuses, true) || $order->inspectionReports->isNotEmpty();
 
@@ -412,7 +411,7 @@
                                     @endif
 
                                     {{-- Receiving Progress (for delivery/receiving stages) --}}
-                                    @if (in_array($stage['key'], ['awaiting_delivery', 'receiving'], true) && $order->items->isNotEmpty())
+                                    @if (in_array($stage['key'], ['awaiting_delivery'], true) && $order->items->isNotEmpty())
                                         <div class="px-5 py-3 border-t border-gray-100">
                                             <div class="flex items-center justify-between mb-2">
                                                 <span class="text-[10px] font-bold uppercase tracking-wider text-gray-500">
@@ -555,15 +554,23 @@
                                                 <i class="fas fa-check"></i> Accept & Send
                                             </button>
                                         @endif
+                                        @if ($stage['key'] === 'awaiting_delivery' && (int) $order->status_id === \App\Models\Status::PO_SENT_TO_SUPPLIER)
+                                            <button type="button" class="js-mark-arrived inline-flex items-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-sky-700 transition cursor-pointer"
+                                                data-arrive-url="{{ route('custodian.orders.arrive', $order) }}">
+                                                <i class="fas fa-truck-loading"></i> Mark Arrived
+                                            </button>
+                                        @endif
                                         <button class="js-view-po inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition cursor-pointer "
                                             data-show-url="{{ route('custodian.orders.show', $order) }}">
                                             <i class="fas fa-eye"></i> View PO
                                         </button>
-                                        @if ($canInspect)
+                                        @if ($canInspect && (int) $order->status_id !== \App\Models\Status::PO_CLOSED)
                                             <button type="button"
                                                 class="js-open-inspection inline-flex items-center gap-2 rounded-lg bg-[#1a3a2d] px-4 py-2 text-xs font-semibold text-white shadow hover:bg-opacity-90 transition"
                                                 data-form-url="{{ route('custodian.inspection.form', $order) }}"
-                                                data-store-url="{{ route('custodian.inspection.store', $order) }}">
+                                                data-store-url="{{ route('custodian.inspection.store', $order) }}"
+                                                data-po-no="{{ $order->po_no }}"
+                                                data-inspection-index-url="{{ route('custodian.inspection.index') }}">
                                                 <i class="fas fa-clipboard-check"></i> Inspect
                                             </button>
                                         @endif
@@ -597,7 +604,6 @@
                 <select name="stage" class="rounded-2xl border border-emerald-950/10 bg-white px-3 py-3 text-sm shadow-sm transition focus:border-[#1a3a2d] focus:ring-1 focus:ring-[#1a3a2d]/50">
                     <option value="" @selected(!$registerStage)>All Stages</option>
                     <option value="awaiting_delivery" @selected($registerStage === 'awaiting_delivery')>Awaiting Delivery</option>
-                    <option value="receiving" @selected($registerStage === 'receiving')>Receiving</option>
                     <option value="inspection" @selected($registerStage === 'inspection')>Inspection</option>
                     <option value="issues" @selected($registerStage === 'issues')>Issues</option>
                     <option value="completed" @selected($registerStage === 'completed')>Completed</option>

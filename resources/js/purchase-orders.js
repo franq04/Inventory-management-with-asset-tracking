@@ -914,6 +914,8 @@ const applyPurchaseOrderPageSnapshot = (html) => {
         }
 
         bindPartialOrderActions();
+        bindAcceptPoActions();
+        bindMarkArrivedActions();
         bindReceiveItemActions();
 
         requestAnimationFrame(() => {
@@ -999,6 +1001,51 @@ const bindAcceptPoActions = () => {
             },
             error: (xhr) => {
                 let message = 'Unable to accept this purchase order. Please try again.';
+                if (xhr.status === 422 && xhr.responseJSON?.message) {
+                    message = xhr.responseJSON.message;
+                }
+                showToast(message, 'error');
+            },
+            complete: () => {
+                $button.prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+            },
+        });
+    });
+};
+
+const bindMarkArrivedActions = () => {
+    $(purchaseOrderPipelineSelector).on('click', '.js-mark-arrived', async function () {
+        const $button = $(this);
+        const url = $button.data('arrive-url');
+        if (!url) {
+            return;
+        }
+
+        const confirmed = await sharedOpenConfirmModal({
+            title: 'Mark Items as Arrived',
+            message: 'Mark this purchase order as arrived and move it to Inspection & Acceptance?',
+            confirmLabel: 'Mark Arrived',
+            tone: 'success',
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        $button.prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+
+        $.ajax({
+            method: 'POST',
+            url,
+            data: { _token: csrfToken() },
+            success: (response) => {
+                showToast(response?.message || 'Purchase order marked as arrived.', 'success');
+                window.setTimeout(() => {
+                    softNavigate(window.location.href, { replace: true });
+                }, 350);
+            },
+            error: (xhr) => {
+                let message = 'Unable to mark this purchase order as arrived.';
                 if (xhr.status === 422 && xhr.responseJSON?.message) {
                     message = xhr.responseJSON.message;
                 }
@@ -1393,6 +1440,7 @@ $(() => {
     bindPurchaseOrderForm();
     bindPartialOrderActions();
     bindAcceptPoActions();
+    bindMarkArrivedActions();
     bindReceiveItemActions();
     setupPurchaseOrderPipelineAutoRefresh();
 });

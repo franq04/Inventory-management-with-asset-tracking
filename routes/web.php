@@ -282,6 +282,11 @@ Route::middleware('role:custodian,admin')->group(function () {
             'acceptOrder',
         ])->name('orders.accept');
 
+        Route::post('purchase-orders/{purchase_order}/arrive', [
+            PurchaseOrderController::class,
+            'markArrived'
+        ])->name('orders.arrive');
+
         Route::post('purchase-orders/items/{purchase_order_item}/receive', [
             PurchaseOrderController::class,
             'receiveItem',
@@ -487,6 +492,9 @@ Route::middleware(['auth.session', 'role:employee,custodian,admin'])->group(func
     Route::prefix('employee')->name('employee.')->group(function () {
         Route::get('purchase-requests', [EmployeePurchaseRequestController::class, 'index'])
             ->name('purchase-requests.index');
+
+        Route::get('purchase-requests/item-descriptions', [EmployeePurchaseRequestController::class, 'suggestItemDescriptions'])
+            ->name('purchase-requests.item-descriptions');
 
         Route::post('purchase-requests', [EmployeePurchaseRequestController::class, 'store'])
             ->name('purchase-requests.store');

@@ -898,7 +898,23 @@ const initInspectionModal = () => {
 
     $(document).on('click', '.js-open-inspection', function (event) {
         event.preventDefault();
-        handleOpen($(this));
+        const $btn = $(this);
+
+        // If we're not on the inspection index page, redirect there and include the PO number
+        if (!$(inspectionRootSelector).length) {
+            const poNo = $btn.data('po-no');
+            const indexUrl = $btn.data('inspection-index-url') || '/custodian/inspection-acceptance';
+            if (poNo) {
+                const next = new URL(indexUrl, window.location.origin);
+                next.searchParams.set('po', poNo);
+                next.searchParams.set('open', '1');
+                softNavigate(next.toString());
+                return;
+            }
+            // fallback: open in-place
+        }
+
+        handleOpen($btn);
     });
 
     $(document).on('click', '[data-close-modal]', () => toggleModal(false));
@@ -960,6 +976,38 @@ const initInspectionModal = () => {
     $form.on('input change', '#inspectionDate, #inspectionRemarks, #inspectionItems input, #inspectionItems select, #inspectionItems textarea', () => {
         ensureInspectorNameVisible();
     });
+
+    // Auto-open modal if arriving with ?po=PO_NO&open=1
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const po = params.get('po');
+        const open = params.get('open');
+        if (String(open) === '1' && po) {
+            const $root = $(inspectionRootSelector);
+            const formTemplate = $root.data('form-url-template');
+            const storeTemplate = $root.data('store-url-template');
+
+            if (formTemplate) {
+                const formUrl = String(formTemplate).replace('__PO__', po);
+                const storeUrl = storeTemplate ? String(storeTemplate).replace('__PO__', po) : null;
+                const $fake = $('<div>');
+                $fake.data('form-url', formUrl);
+                if (storeUrl) {
+                    $fake.data('store-url', storeUrl);
+                }
+                // give the modal a short moment to initialize
+                setTimeout(() => {
+                    try {
+                        handleOpen($fake);
+                    } catch (e) {
+                        console.error('Failed to auto-open inspection modal', e);
+                    }
+                }, 120);
+            }
+        }
+    } catch (ex) {
+        // ignore URL parsing errors
+    }
 };
 
 $(() => {

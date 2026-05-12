@@ -57,9 +57,19 @@ class InspectionController extends Controller
                 });
 
                 if (in_array(Status::ITEM_PENDING_INSPECTION, $statusIds, true)) {
-                    $builder->orWhereDoesntHave('latestInspectionItem');
+                    // Only include items without an inspection if their PO has been marked arrived
+                    $builder->orWhereDoesntHave('latestInspectionItem', function ($q) {
+                        // force join to ensure the purchase order status is checked when there is no latestInspectionItem
+                    });
                 }
             });
+
+            // Restrict pending tab to purchase orders that have been marked arrived
+            if ($key === 'pending') {
+                $query->whereHas('purchaseOrder', function ($q) {
+                    $q->where('status_id', Status::PO_DELIVERED_PENDING_INSPECTION);
+                });
+            }
 
             $paginator = $query
                 ->orderByDesc('poi_id')
@@ -137,6 +147,12 @@ class InspectionController extends Controller
                     $builder->orWhereDoesntHave('latestInspectionItem');
                 }
             });
+
+            if ($activeTab === 'pending') {
+                $baseQuery->whereHas('purchaseOrder', function ($q) {
+                    $q->where('status_id', Status::PO_DELIVERED_PENDING_INSPECTION);
+                });
+            }
         }
 
         return [
@@ -692,9 +708,10 @@ class InspectionController extends Controller
         }
 
         if ($statuses->every(fn ($status) => in_array($status, [Status::ITEM_ACCEPTED, Status::ITEM_RECORDED], true))) {
-            return Status::PO_PARTIALLY_DELIVERED;
+            return Status::PO_CLOSED;
         }
 
+        // Default fallback: partially delivered (some inspection results, but not fully accepted/recorded)
         return Status::PO_PARTIALLY_DELIVERED;
     }
 

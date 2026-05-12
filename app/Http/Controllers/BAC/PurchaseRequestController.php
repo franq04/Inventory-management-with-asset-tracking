@@ -163,8 +163,11 @@ class PurchaseRequestController extends Controller
             ]);
         }
 
-        // Prevent self-approval
-        if ($purchaseRequest->account_id === Auth::id()) {
+        // Prevent self-approval except for administrators
+        $user = Auth::user();
+        $isAdmin = $user && strtolower((string) ($user->role ?? '')) === 'admin';
+
+        if ($purchaseRequest->account_id === Auth::id() && ! $isAdmin) {
             throw ValidationException::withMessages([
                 'status' => 'You cannot approve a purchase request you submitted.',
             ]);
