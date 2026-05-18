@@ -135,7 +135,14 @@
                                 </div>
                                 <div class="flex flex-col gap-1.5">
                                     <label class="text-xs font-bold uppercase tracking-wider text-gray-700">Estimated Useful Life</label>
-                                    <input type="text" name="estimated_useful_life" id="inventoryUsefulLife" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" placeholder="e.g. 5 years">
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="number" min="0" step="0.1" name="estimated_useful_life_value" id="inventoryUsefulLifeValue" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400" placeholder="e.g. 5">
+                                        <select name="estimated_useful_life_unit" id="inventoryUsefulLifeUnit" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 focus:border-gray-400">
+                                            <option value="years" selected>Years</option>
+                                            <option value="months">Months</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[11px] text-gray-500">Choose months or years to avoid confusion.</p>
                                 </div>
                             </div>
 

@@ -165,6 +165,7 @@
                                         <select id="condition" name="condition" data-auto-submit class="pqs-filter-control mt-1 rounded-2xl border border-emerald-950/10 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-2 focus:ring-[#1a3a2d]/15">
                                             <option value="" @selected(!$conditionFilter)>Any</option>
                                             <option value="serviceable" @selected($conditionFilter === 'serviceable')>Serviceable</option>
+                                            <option value="maintenance" @selected($conditionFilter === 'maintenance')>Under Maintenance</option>
                                             <option value="unserviceable" @selected($conditionFilter === 'unserviceable')>Unserviceable</option>
                                         </select>
                                     </div>
@@ -271,8 +272,12 @@
                         <p id="pqsRecActive" class="mt-1 text-lg font-bold text-emerald-700">—</p>
                     </div>
                     <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-                        <p class="text-xs uppercase tracking-wide text-gray-500">For Repair</p>
-                        <p id="pqsRecRepair" class="mt-1 text-lg font-bold text-amber-700">—</p>
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Under Maintenance</p>
+                        <p id="pqsRecMaintenance" class="mt-1 text-lg font-bold text-amber-700">—</p>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                        <p class="text-xs uppercase tracking-wide text-gray-500">Unserviceable</p>
+                        <p id="pqsRecRepair" class="mt-1 text-lg font-bold text-rose-700">—</p>
                     </div>
                     <div class="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                         <p class="text-xs uppercase tracking-wide text-gray-500">Unlocated</p>
@@ -874,6 +879,8 @@
     const bulkTurnoverCloseEls = bulkTurnoverModal ? Array.from(bulkTurnoverModal.querySelectorAll('[data-close-bulk-turnover]')) : [];
     const conditionConfirmModal = document.getElementById('pqsConditionConfirmModal');
     const conditionConfirmPanel = conditionConfirmModal ? conditionConfirmModal.querySelector('.condition-confirm-panel') : null;
+    const conditionConfirmIcon = document.getElementById('pqsConditionConfirmIcon');
+    const conditionConfirmTitle = document.getElementById('pqsConditionConfirmTitle');
     const conditionConfirmMessage = document.getElementById('pqsConditionConfirmMessage');
     const conditionConfirmYesBtn = document.getElementById('pqsConditionConfirmYes');
     const conditionConfirmCloseEls = conditionConfirmModal ? Array.from(conditionConfirmModal.querySelectorAll('[data-condition-confirm-close]')) : [];
@@ -894,6 +901,15 @@
     const conditionForm = document.getElementById('pqsConditionForm');
     const conditionSuccess = document.getElementById('pqsConditionSuccess');
     const conditionError = document.getElementById('pqsConditionError');
+    const conditionSelectToggle = document.getElementById('pqsConditionSelectToggle');
+    const conditionSelectLabel = document.getElementById('pqsConditionSelectLabel');
+    const conditionSelectPanel = document.getElementById('pqsConditionSelectPanel');
+    const conditionSelectList = document.getElementById('pqsConditionSelectList');
+    const conditionSelect = document.getElementById('pqsConditionSelect');
+    const conditionSelectError = document.getElementById('pqsConditionSelectError');
+    const conditionSelectOptions = conditionSelectList
+        ? Array.from(conditionSelectList.querySelectorAll('[data-condition-option]'))
+        : [];
     const conditionEffectiveAt = document.getElementById('pqsConditionEffectiveAt');
     const conditionReasonCode = document.getElementById('pqsConditionReasonCode');
     const conditionReasonHelp = document.getElementById('pqsConditionReasonHelp');
@@ -904,7 +920,8 @@
     const conditionHistoryEl = document.getElementById('pqsConditionHistory');
     const conditionRemarks = document.getElementById('pqsConditionRemarks');
     const conditionRemarksError = document.getElementById('pqsConditionRemarksError');
-    const conditionUnserviceableBtn = document.getElementById('pqsConditionUnserviceable');
+    const conditionSubmitBtn = document.getElementById('pqsConditionSubmit');
+    const conditionActionButtons = [conditionSubmitBtn].filter((button) => button);
     const allConditionReasonOptions = conditionReasonCode
         ? Array.from(conditionReasonCode.options).map((option) => ({
             value: String(option.value || ''),
@@ -975,20 +992,126 @@
     const defaultFundCluster = '01';
     const statusActive = '{{ \App\Models\PqsRecord::STATUS_ACTIVE }}';
     const statusForRepair = '{{ \App\Models\PqsRecord::STATUS_FOR_REPAIR }}';
+    const statusMaintenance = '{{ \App\Models\PqsRecord::STATUS_MAINTENANCE }}';
     const statusDisposed = '{{ \App\Models\PqsRecord::STATUS_DISPOSED }}';
     const statusLost = '{{ \App\Models\PqsRecord::STATUS_LOST }}';
     let currentRecord = null;
     let currentShowUrl = null;
 
     const normalizeAssetStatus = (status) => String(status || '').trim() || statusActive;
+    const conditionPresets = {
+        maintenance: {
+            value: 'maintenance',
+            label: 'Under Maintenance',
+            icon: 'fa-screwdriver-wrench',
+            chipClass: 'border-amber-200 bg-amber-50 text-amber-700',
+        },
+        serviceable: {
+            value: 'serviceable',
+            label: 'Serviceable',
+            icon: 'fa-circle-check',
+            chipClass: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        },
+        unserviceable: {
+            value: 'unserviceable',
+            label: 'Unserviceable',
+            icon: 'fa-triangle-exclamation',
+            chipClass: 'border-rose-200 bg-rose-50 text-rose-700',
+        },
+    };
+    const defaultConditionLabel = 'Select condition';
+
+    const setConditionSelectError = (message = '') => {
+        if (!conditionSelectError) {
+            return;
+        }
+
+        const hasMessage = String(message || '').trim() !== '';
+        conditionSelectError.classList.toggle('hidden', !hasMessage);
+        conditionSelectError.textContent = hasMessage ? message : '';
+    };
+
+    const setConditionSelectLabel = (value = '') => {
+        if (!conditionSelectLabel) {
+            return;
+        }
+
+        const preset = conditionPresets[value] || null;
+        if (!preset) {
+            conditionSelectLabel.textContent = defaultConditionLabel;
+            return;
+        }
+
+        conditionSelectLabel.innerHTML = `
+            <span class="inline-flex items-center gap-2 rounded-full border px-2 py-0.5 text-xs font-semibold ${preset.chipClass}">
+                <i class="fas ${preset.icon}"></i>
+                ${preset.label}
+            </span>
+        `;
+    };
+
+    const setConditionSelectValue = (value = '') => {
+        if (conditionSelect) {
+            conditionSelect.value = value;
+        }
+        setConditionSelectLabel(value);
+        setConditionSelectError('');
+        applyConditionReasonOptions(value || 'serviceable');
+    };
+
+    const getConditionSelectValue = () => String(conditionSelect?.value || '').trim();
+
+    const inferConditionFromRecord = (record) => {
+        const normalizedStatus = normalizeAssetStatus(record?.asset_status);
+        if (normalizedStatus === statusMaintenance) {
+            return 'maintenance';
+        }
+        if ([statusForRepair, statusDisposed, statusLost].includes(normalizedStatus)) {
+            return 'unserviceable';
+        }
+        return 'serviceable';
+    };
 
     const humanizeReasonCode = (reasonCode) => String(reasonCode || '')
         .trim()
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 
-    const getConditionPresentation = (status) => {
+    const getLatestConditionMovement = (record) => {
+        const movements = Array.isArray(record?.recent_movements) ? record.recent_movements : [];
+
+        return movements.find((movement) => {
+            const type = String(movement?.movement_type || '').trim();
+            return type === 'maintenance_out' || type === 'maintenance_in';
+        }) || null;
+    };
+
+    const getConditionPresentation = (recordOrStatus) => {
+        const status = typeof recordOrStatus === 'string'
+            ? recordOrStatus
+            : recordOrStatus?.asset_status;
         const normalizedStatus = normalizeAssetStatus(status);
+        const latestMovement = typeof recordOrStatus === 'object'
+            ? getLatestConditionMovement(recordOrStatus)
+            : null;
+        const latestType = String(latestMovement?.movement_type || '').trim();
+        const latestReason = String(latestMovement?.reason_code || '').trim();
+
+        if (normalizedStatus === statusMaintenance) {
+            return {
+                label: 'Under Maintenance',
+                icon: 'fa-screwdriver-wrench',
+                chipClass: 'border-amber-200 bg-amber-50 text-amber-700',
+            };
+        }
+
+        if (normalizedStatus === statusForRepair && latestType === 'maintenance_out' && latestReason === 'maintenance') {
+            return {
+                label: 'Under Maintenance',
+                icon: 'fa-screwdriver-wrench',
+                chipClass: 'border-amber-200 bg-amber-50 text-amber-700',
+            };
+        }
 
         if (normalizedStatus === statusForRepair) {
             return {
@@ -1023,6 +1146,10 @@
 
     const getTransferBlockedMessage = (status) => {
         const normalizedStatus = normalizeAssetStatus(status);
+
+        if (normalizedStatus === statusMaintenance) {
+            return 'Transfer is disabled while this asset is under maintenance.';
+        }
 
         if (normalizedStatus === statusForRepair) {
             return 'Transfer is disabled while this asset is unserviceable.';
@@ -1069,8 +1196,8 @@
         }
     };
 
-    const renderConditionChip = (status) => {
-        const presentation = getConditionPresentation(status);
+    const renderConditionChip = (recordOrStatus) => {
+        const presentation = getConditionPresentation(recordOrStatus);
 
         if (currentConditionEl) {
             currentConditionEl.textContent = presentation.label;
@@ -1086,6 +1213,7 @@
 
     const recAssets = document.getElementById('pqsRecAssets');
     const recActive = document.getElementById('pqsRecActive');
+    const recMaintenance = document.getElementById('pqsRecMaintenance');
     const recRepair = document.getElementById('pqsRecRepair');
     const recUnlocated = document.getElementById('pqsRecUnlocated');
     const recStale = document.getElementById('pqsRecStale');
@@ -1662,23 +1790,41 @@
         }
     };
 
-    const setConditionLoading = (isLoading) => {
-        if (!conditionUnserviceableBtn) {
+    const setConditionLoading = (isLoading, activeButton = null) => {
+        if (conditionActionButtons.length === 0) {
             return;
         }
 
-        if (isLoading) {
-            conditionUnserviceableBtn.dataset.originalHtml = conditionUnserviceableBtn.innerHTML;
-            conditionUnserviceableBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            conditionUnserviceableBtn.disabled = true;
-            return;
+        if (conditionSelectToggle) {
+            conditionSelectToggle.disabled = isLoading;
+            conditionSelectToggle.classList.toggle('opacity-70', isLoading);
+            conditionSelectToggle.classList.toggle('cursor-not-allowed', isLoading);
         }
 
-        if (conditionUnserviceableBtn.dataset.originalHtml) {
-            conditionUnserviceableBtn.innerHTML = conditionUnserviceableBtn.dataset.originalHtml;
-        }
+        conditionActionButtons.forEach((button) => {
+            if (!button) {
+                return;
+            }
 
-        conditionUnserviceableBtn.disabled = false;
+            if (!button.dataset.originalHtml) {
+                button.dataset.originalHtml = button.innerHTML;
+            }
+
+            if (isLoading) {
+                button.disabled = true;
+                button.classList.add('opacity-70', 'cursor-not-allowed');
+                if (activeButton && activeButton === button) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                }
+                return;
+            }
+
+            button.disabled = false;
+            button.classList.remove('opacity-70', 'cursor-not-allowed');
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+            }
+        });
     };
 
     const setConditionReasonError = (message = '') => {
@@ -1715,6 +1861,11 @@
             return;
         }
 
+        if (conditionValue === 'maintenance') {
+            conditionReasonHelp.textContent = 'Required when placing an asset under maintenance.';
+            return;
+        }
+
         conditionReasonHelp.textContent = 'Required when marking as unserviceable.';
     };
 
@@ -1730,23 +1881,24 @@
         conditionExpectedFixDate.classList.toggle('bg-rose-50/30', hasMessage);
     };
 
-    const syncExpectedFixDateVisibility = (conditionValue = 'unserviceable') => {
+    const syncExpectedFixDateVisibility = (conditionValue = 'serviceable') => {
         if (!conditionExpectedFixDateWrap || !conditionExpectedFixDate) {
             return;
         }
 
-        const reasonValue = String(conditionReasonCode?.value || '').trim();
-        const showExpectedFixDate = conditionValue === 'unserviceable' && reasonValue === 'for_repair';
+        const showExpectedFixDate = conditionValue === 'maintenance';
 
         conditionExpectedFixDateWrap.classList.toggle('hidden', !showExpectedFixDate);
+        conditionExpectedFixDate.required = showExpectedFixDate;
         if (!showExpectedFixDate) {
             conditionExpectedFixDate.value = '';
             setConditionExpectedFixDateError('');
         }
     };
 
-    const applyConditionReasonOptions = (conditionValue = 'unserviceable') => {
+    const applyConditionReasonOptions = (conditionValue = 'serviceable') => {
         if (!conditionReasonCode || allConditionReasonOptions.length === 0) {
+            syncExpectedFixDateVisibility(conditionValue);
             return;
         }
 
@@ -1775,19 +1927,29 @@
         syncExpectedFixDateVisibility(conditionValue);
     };
 
-    const updateConditionButtonsState = (record) => {
-        const isUnserviceable = normalizeAssetStatus(record?.asset_status) === statusForRepair;
+    const updateConditionControlsState = (record) => {
+        const normalizedStatus = normalizeAssetStatus(record?.asset_status);
+        const isActive = normalizedStatus === statusActive;
+        const isLocked = [statusDisposed, statusLost].includes(normalizedStatus);
+        const disableAll = !record || isLocked;
+        const selectedCondition = getConditionSelectValue();
+        const disableSubmit = disableAll || (isActive && selectedCondition === 'serviceable');
 
-        if (!conditionUnserviceableBtn) {
-            return;
+        if (conditionSelectToggle) {
+            conditionSelectToggle.disabled = disableAll;
+            conditionSelectToggle.classList.toggle('opacity-60', disableAll);
+            conditionSelectToggle.classList.toggle('cursor-not-allowed', disableAll);
+            conditionSelectToggle.title = disableAll ? 'Asset condition cannot be updated.' : 'Select asset condition';
         }
 
-        conditionUnserviceableBtn.disabled = isUnserviceable;
-        conditionUnserviceableBtn.classList.toggle('opacity-60', isUnserviceable);
-        conditionUnserviceableBtn.classList.toggle('cursor-not-allowed', isUnserviceable);
-        conditionUnserviceableBtn.title = isUnserviceable
-            ? 'Asset is already marked as unserviceable.'
-            : 'Mark Unserviceable';
+        if (conditionSubmitBtn) {
+            conditionSubmitBtn.disabled = disableSubmit;
+            conditionSubmitBtn.classList.toggle('opacity-60', disableSubmit);
+            conditionSubmitBtn.classList.toggle('cursor-not-allowed', disableSubmit);
+            conditionSubmitBtn.title = disableAll
+                ? 'Asset condition cannot be updated.'
+                : (isActive && selectedCondition === 'serviceable' ? 'Asset is already serviceable.' : 'Save condition');
+        }
     };
 
     const renderConditionHistory = (movements = []) => {
@@ -1806,11 +1968,17 @@
 
         conditionHistoryEl.innerHTML = conditionMovements.map((movement) => {
             const when = movement?.effective_at ? formatDate(movement.effective_at) : '—';
-            const isUnserviceable = String(movement?.movement_type || '') === 'maintenance_out';
-            const stateLabel = isUnserviceable ? 'Marked Unserviceable' : 'Marked Serviceable';
-            const stateClass = isUnserviceable
-                ? 'bg-rose-100 text-rose-700 border-rose-200'
-                : 'bg-emerald-100 text-emerald-700 border-emerald-200';
+            const isMaintenanceOut = String(movement?.movement_type || '') === 'maintenance_out';
+            const reasonRaw = String(movement?.reason_code || '').trim();
+            const isMaintenance = isMaintenanceOut && reasonRaw === 'maintenance';
+            const stateLabel = isMaintenance
+                ? 'Under Maintenance'
+                : (isMaintenanceOut ? 'Marked Unserviceable' : 'Marked Serviceable');
+            const stateClass = isMaintenance
+                ? 'bg-amber-100 text-amber-700 border-amber-200'
+                : (isMaintenanceOut
+                    ? 'bg-rose-100 text-rose-700 border-rose-200'
+                    : 'bg-emerald-100 text-emerald-700 border-emerald-200');
             const byText = movement?.moved_by ? `By ${movement.moved_by}` : 'By System';
             const reasonCode = humanizeReasonCode(movement?.reason_code || '');
             const reasonHtml = reasonCode !== ''
@@ -1819,6 +1987,10 @@
             const remarks = String(movement?.remarks || '').trim();
             const remarksHtml = remarks !== ''
                 ? `<p class="mt-1 text-[11px] text-gray-500">${escapeHtml(remarks)}</p>`
+                : '';
+            const expectedReturn = movement?.expected_return_at ? formatDate(movement.expected_return_at) : '';
+            const expectedHtml = expectedReturn !== '' && isMaintenanceOut
+                ? `<p class="mt-1 text-[11px] text-gray-600">Expected completion: <span class="font-medium text-gray-700">${escapeHtml(expectedReturn)}</span></p>`
                 : '';
 
             return `
@@ -1829,6 +2001,7 @@
                     </div>
                     <p class="mt-1 text-[11px] text-gray-600">${escapeHtml(byText)}</p>
                     ${reasonHtml}
+                    ${expectedHtml}
                     ${remarksHtml}
                 </div>
             `;
@@ -1934,6 +2107,7 @@
             to_display: toDisplay,
             moved_by: movedBy,
             effective_at: movement?.effective_at || null,
+            expected_return_at: movement?.expected_return_at || null,
             remarks: movement?.remarks || '',
         };
     };
@@ -2120,6 +2294,10 @@
     const closeTurnoverSearchPanels = () => {
         turnoverEmployeePanel?.classList.add('hidden');
         turnoverLocationPanel?.classList.add('hidden');
+    };
+
+    const closeConditionSelectPanel = () => {
+        conditionSelectPanel?.classList.add('hidden');
     };
 
     const renderSearchableList = ({ selectField, listField, queryText, onSelect }) => {
@@ -2579,7 +2757,7 @@
         setText(currentSectionEl, '', 'Unassigned');
         setText(currentConditionEl, 'Serviceable', 'Serviceable');
         setText(lastMovementEl, '', '—');
-        renderConditionChip(statusActive);
+        renderConditionChip({ asset_status: statusActive, recent_movements: [] });
         renderMovementTimeline([]);
         timelineRequestToken += 1;
 
@@ -2620,14 +2798,16 @@
             setConditionReasonError('');
             setConditionExpectedFixDateError('');
             setConditionRemarksError('');
-            syncExpectedFixDateVisibility('unserviceable');
+            setConditionSelectError('');
+            setConditionSelectValue('');
+            syncExpectedFixDateVisibility('serviceable');
         }
 
         if (conditionHistoryEl) {
             conditionHistoryEl.innerHTML = '<p class="text-gray-400 italic">No condition history yet.</p>';
         }
 
-        updateConditionButtonsState(null);
+        updateConditionControlsState(null);
         updateTransferActionAvailability(null);
 
         setActionTab('details');
@@ -2791,14 +2971,16 @@
         setText(currentCustodianEl, record.current_custodian?.name || '', 'Unassigned');
         setText(currentDivisionEl, record.assigned_division || '', 'Unassigned');
         setText(currentSectionEl, record.assigned_section || '', 'Unassigned');
-        renderConditionChip(record.asset_status);
+        renderConditionChip(record);
         setText(lastMovementEl, formatDate(record.last_movement_at), '—');
 
-        updateConditionButtonsState(record);
+        setConditionSelectValue(inferConditionFromRecord(record));
+        updateConditionControlsState(record);
         updateTransferActionAvailability(record);
         setConditionReasonError('');
         setConditionExpectedFixDateError('');
         setConditionRemarksError('');
+        setConditionSelectError('');
 
         if (conditionReasonCode) {
             conditionReasonCode.value = '';
@@ -2806,7 +2988,6 @@
         if (conditionEffectiveAt && String(conditionEffectiveAt.value || '').trim() === '') {
             conditionEffectiveAt.value = todayInputValue();
         }
-        applyConditionReasonOptions('unserviceable');
 
         const recentConditionEntries = Array.isArray(record.recent_movements)
             ? record.recent_movements.map((entry) => mapTimelineItem(entry))
@@ -3192,6 +3373,30 @@
         },
     });
 
+    if (conditionSelectToggle && conditionSelectPanel) {
+        conditionSelectToggle.addEventListener('click', () => {
+            const willOpen = conditionSelectPanel.classList.contains('hidden');
+            closeTransferSearchPanels();
+            closeTurnoverSearchPanels();
+            closeConditionSelectPanel();
+            if (willOpen) {
+                conditionSelectPanel.classList.remove('hidden');
+            }
+        });
+    }
+
+    conditionSelectOptions.forEach((button) => {
+        button.addEventListener('click', () => {
+            const value = String(button.dataset.value || '').trim();
+            if (value === '') {
+                return;
+            }
+            setConditionSelectValue(value);
+            updateConditionControlsState(currentRecord);
+            closeConditionSelectPanel();
+        });
+    });
+
     document.addEventListener('location-registry:created', (event) => {
         const location = event?.detail?.location;
         if (!location) {
@@ -3252,11 +3457,15 @@
         const clickedInCustodian = target.closest('#pqsTransferCustodianPanel') || target.closest('#pqsTransferCustodianToggle');
         const clickedInTurnoverEmployee = target.closest('#pqsTurnoverEmployeePanel') || target.closest('#pqsTurnoverEmployeeToggle');
         const clickedInTurnoverLocation = target.closest('#pqsTurnoverLocationPanel') || target.closest('#pqsTurnoverLocationToggle');
+        const clickedInConditionSelect = target.closest('#pqsConditionSelectPanel') || target.closest('#pqsConditionSelectToggle');
         if (!clickedInLocation && !clickedInCustodian) {
             closeTransferSearchPanels();
         }
         if (!clickedInTurnoverEmployee && !clickedInTurnoverLocation) {
             closeTurnoverSearchPanels();
+        }
+        if (!clickedInConditionSelect) {
+            closeConditionSelectPanel();
         }
     });
 
@@ -3415,15 +3624,23 @@
         }
     });
 
-    const submitConditionUpdate = async (conditionValue) => {
-        if (!currentRecord?.property_no || !conditionValue) {
+    const submitConditionUpdate = async (conditionValue, activeButton = null) => {
+        const selectedCondition = conditionValue || getConditionSelectValue();
+        if (!currentRecord?.property_no) {
             setConditionMessage(conditionError, 'Open a record first before updating condition.', 'error');
+            return;
+        }
+
+        if (!selectedCondition) {
+            setConditionSelectError('Select a condition first.');
+            setConditionMessage(conditionError, 'Select a condition before saving.', 'error');
             return;
         }
 
         setConditionMessage(conditionError, '', 'error');
         setConditionMessage(conditionSuccess, '', 'success');
         setConditionRemarksError('');
+        setConditionExpectedFixDateError('');
 
         if (conditionEffectiveAt && String(conditionEffectiveAt.value || '').trim() === '') {
             conditionEffectiveAt.value = todayInputValue();
@@ -3431,19 +3648,77 @@
 
         const remarksValue = String(conditionRemarks?.value || '').trim();
         if (remarksValue === '') {
-            setConditionRemarksError('Remarks is required when marking an asset as unserviceable.');
+            setConditionRemarksError('Remarks is required to update asset condition.');
             setConditionMessage(conditionError, 'Provide remarks first.', 'error');
             return;
         }
 
+        const expectedReturnValue = String(conditionExpectedFixDate?.value || '').trim();
+        if (selectedCondition === 'maintenance' && expectedReturnValue === '') {
+            setConditionExpectedFixDateError('Estimated completion date is required for maintenance.');
+            setConditionMessage(conditionError, 'Provide an estimated completion date.', 'error');
+            return;
+        }
+
         const effectiveDateLabel = String(conditionEffectiveAt?.value || '').trim() || todayInputValue();
+        const actionLabelMap = {
+            maintenance: 'UNDER MAINTENANCE',
+            serviceable: 'SERVICEABLE',
+            unserviceable: 'UNSERVICEABLE',
+        };
+        const actionLabel = actionLabelMap[selectedCondition] || 'UNSERVICEABLE';
+        const actionHintMap = {
+            maintenance: 'Press Under Maintenance to continue or Cancel to review first.',
+            serviceable: 'Press Mark Serviceable to continue or Cancel to review first.',
+            unserviceable: 'Press Mark Unserviceable to continue or Cancel to review first.',
+        };
+        const confirmStyles = {
+            maintenance: {
+                title: 'Mark Asset Under Maintenance',
+                iconClass: 'fa-screwdriver-wrench',
+                iconWrapClass: 'bg-amber-100 text-amber-700',
+                buttonClass: 'bg-amber-600 hover:bg-amber-700',
+                buttonText: 'Under Maintenance',
+            },
+            serviceable: {
+                title: 'Mark Asset Serviceable',
+                iconClass: 'fa-circle-check',
+                iconWrapClass: 'bg-emerald-100 text-emerald-700',
+                buttonClass: 'bg-emerald-600 hover:bg-emerald-700',
+                buttonText: 'Mark Serviceable',
+            },
+            unserviceable: {
+                title: 'Mark Asset Unserviceable',
+                iconClass: 'fa-triangle-exclamation',
+                iconWrapClass: 'bg-rose-100 text-rose-700',
+                buttonClass: 'bg-rose-600 hover:bg-rose-700',
+                buttonText: 'Mark Unserviceable',
+            },
+        };
+        const confirmConfig = confirmStyles[selectedCondition] || confirmStyles.unserviceable;
+        if (conditionConfirmTitle) {
+            conditionConfirmTitle.textContent = confirmConfig.title;
+        }
+        if (conditionConfirmIcon) {
+            conditionConfirmIcon.className = `flex h-10 w-10 items-center justify-center rounded-full ${confirmConfig.iconWrapClass}`;
+            conditionConfirmIcon.innerHTML = `<i class="fas ${confirmConfig.iconClass}"></i>`;
+        }
+        if (conditionConfirmYesBtn) {
+            conditionConfirmYesBtn.className = `rounded-xl px-4 py-2 text-sm font-semibold text-white transition ${confirmConfig.buttonClass}`;
+            conditionConfirmYesBtn.textContent = confirmConfig.buttonText;
+        }
+        const extraLines = [];
+        if (selectedCondition === 'maintenance' && expectedReturnValue !== '') {
+            extraLines.push(`Estimated Completion: ${expectedReturnValue}`);
+        }
+
         const confirmMessage = [
-            'You are about to mark this asset as UNSERVICEABLE.',
+            `You are about to mark this asset as ${actionLabel}.`,
             `Property No: ${currentRecord.property_no}`,
             `Effective Date: ${effectiveDateLabel}`,
+            ...extraLines,
             '',
-            'This action cannot be reverted from this screen.',
-            'Press Mark Unserviceable to continue or Cancel to review first.'
+            actionHintMap[selectedCondition] || actionHintMap.unserviceable,
         ].join('\n');
 
         const isConfirmed = await openConditionConfirmModal(confirmMessage);
@@ -3451,14 +3726,15 @@
             return;
         }
 
-        setConditionLoading(true);
+        setConditionLoading(true, activeButton);
 
         try {
             const conditionUrl = "{{ route('pqs.movements.condition', ['pqsRecord' => '__PROPERTY__']) }}".replace('__PROPERTY__', encodeURIComponent(currentRecord.property_no));
 
             const payload = {
-                condition: conditionValue,
+                condition: selectedCondition,
                 effective_at: conditionEffectiveAt?.value || null,
+                expected_return_at: selectedCondition === 'maintenance' ? expectedReturnValue : null,
                 remarks: remarksValue,
             };
 
@@ -3477,6 +3753,9 @@
             if (!response.ok) {
                 if (data?.errors?.remarks?.length) {
                     setConditionRemarksError(String(data.errors.remarks[0] || ''));
+                }
+                if (data?.errors?.expected_return_at?.length) {
+                    setConditionExpectedFixDateError(String(data.errors.expected_return_at[0] || ''));
                 }
                 const message = data?.message || Object.values(data?.errors || {}).flat().join(' ') || 'Failed to update asset condition.';
                 throw new Error(message);
@@ -3501,15 +3780,14 @@
         }
     };
 
-    conditionUnserviceableBtn?.addEventListener('click', () => submitConditionUpdate('unserviceable'));
+    conditionSubmitBtn?.addEventListener('click', () => {
+        submitConditionUpdate(getConditionSelectValue(), conditionSubmitBtn);
+    });
     conditionReasonCode?.addEventListener('change', () => {
         setConditionReasonError('');
         setConditionExpectedFixDateError('');
 
-        const selectedOption = conditionReasonCode.selectedOptions?.[0] || null;
-        const optionCondition = String(selectedOption?.dataset?.condition || 'unserviceable');
-        const inferredCondition = optionCondition === 'serviceable' ? 'serviceable' : 'unserviceable';
-        syncExpectedFixDateVisibility(inferredCondition);
+        syncExpectedFixDateVisibility(getConditionSelectValue() || 'serviceable');
     });
     conditionExpectedFixDate?.addEventListener('change', () => setConditionExpectedFixDateError(''));
     conditionRemarks?.addEventListener('input', () => setConditionRemarksError(''));
@@ -3549,6 +3827,7 @@
 
             recAssets && (recAssets.textContent = Number(totals.assets || 0).toLocaleString('en-PH'));
             recActive && (recActive.textContent = Number(totals.active || 0).toLocaleString('en-PH'));
+            recMaintenance && (recMaintenance.textContent = Number(totals.maintenance || 0).toLocaleString('en-PH'));
             recRepair && (recRepair.textContent = Number(totals.for_repair || 0).toLocaleString('en-PH'));
             recUnlocated && (recUnlocated.textContent = Number(totals.unlocated || 0).toLocaleString('en-PH'));
             recStale && (recStale.textContent = Number(totals.stale_inventory || 0).toLocaleString('en-PH'));

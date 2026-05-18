@@ -277,6 +277,7 @@ class PqsController extends Controller
                     'to_location' => $movement->toLocation?->location_name,
                     'moved_by' => $movement->movedByAccount?->username,
                     'effective_at' => optional($movement->effective_at)->toDateTimeString(),
+                    'expected_return_at' => optional($movement->expected_return_at)->toDateString(),
                     'remarks' => $movement->remarks,
                 ];
             })->values()->all(),
@@ -428,6 +429,8 @@ class PqsController extends Controller
                 PqsRecord::STATUS_ACTIVE,
                 PqsRecord::STATUS_TRANSFERRED,
             ]);
+        } elseif ($conditionFilter === 'maintenance') {
+            $query->where('asset_status', PqsRecord::STATUS_MAINTENANCE);
         } elseif ($conditionFilter === 'unserviceable') {
             $query->whereIn('asset_status', [
                 PqsRecord::STATUS_FOR_REPAIR,

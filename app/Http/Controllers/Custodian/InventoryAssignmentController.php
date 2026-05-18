@@ -420,6 +420,8 @@ class InventoryAssignmentController extends Controller
             'quantity' => ['required', 'integer', 'min:1', 'max:'.$maxQuantity],
             'unit_cost' => ['required', 'numeric', 'min:0'],
             'date_acquired' => ['required', 'date'],
+            'estimated_useful_life_value' => ['nullable', 'numeric', 'min:0.1'],
+            'estimated_useful_life_unit' => ['nullable', Rule::in(['months', 'years'])],
             'estimated_useful_life' => ['nullable', 'string', 'max:100'],
             'initial_location_id' => ['nullable', Rule::exists('physical_locations', 'location_id')->where(fn ($query) => $query->where('is_active', true)->where('location_type', '!=', 'storage'))],
             'initial_location_name' => ['nullable', 'string', 'max:255'],
@@ -450,6 +452,12 @@ class InventoryAssignmentController extends Controller
         });
 
         $validated = $validator->validate();
+
+        $estimatedUsefulLife = $this->normalizeUsefulLife(
+            $validated['estimated_useful_life_value'] ?? null,
+            $validated['estimated_useful_life_unit'] ?? null,
+            $validated['estimated_useful_life'] ?? null
+        );
 
         $parentCategory = Category::with('children')->findOrFail($validated['category_id']);
         $subCategory = $parentCategory->children->firstWhere('cat_id', $validated['sub_category_id']);
@@ -509,7 +517,7 @@ class InventoryAssignmentController extends Controller
         $dateAcquired = Carbon::parse($validated['date_acquired']);
         $year = (int) $dateAcquired->format('Y');
 
-        $result = DB::transaction(function () use ($inspectionReportItem, $parentCategory, $subCategory, $validated, $quantity, $unitCost, $totalCost, $account, $serialNumbers, $accountableOfficerId, $assignedSectionId, $assignedDivisionId, $initialLocationId, $year) {
+        $result = DB::transaction(function () use ($inspectionReportItem, $parentCategory, $subCategory, $validated, $quantity, $unitCost, $totalCost, $account, $serialNumbers, $accountableOfficerId, $assignedSectionId, $assignedDivisionId, $initialLocationId, $year, $estimatedUsefulLife) {
             $reservedPropertyNumbers = [];
             $createdPropertyNumbers = [];
 
@@ -574,7 +582,7 @@ class InventoryAssignmentController extends Controller
                         'unit' => $validated['unit'],
                         'unit_cost' => $unitCost,
                         'total_cost' => $unitCost,
-                        'estimated_useful_life' => $validated['estimated_useful_life'] ?? null,
+                        'estimated_useful_life' => $estimatedUsefulLife,
                     ]);
                 } else {
                     ParRecord::create([
@@ -585,6 +593,7 @@ class InventoryAssignmentController extends Controller
                         'date_acquired' => $validated['date_acquired'],
                         'unit_value' => $unitCost,
                         'amount' => $unitCost,
+                        'estimated_useful_life' => $estimatedUsefulLife,
                     ]);
                 }
 
@@ -833,7 +842,8 @@ class InventoryAssignmentController extends Controller
             'unit_value' => (float) $propertyRecord->unit_value,
             'total_value' => (float) $propertyRecord->total_value,
             'quantity' => (int) $propertyRecord->on_hand_per_count,
-            'estimated_useful_life' => $propertyRecord->icsRecord?->estimated_useful_life,
+            'estimated_useful_life' => $propertyRecord->icsRecord?->estimated_useful_life
+                ?? $propertyRecord->parRecord?->estimated_useful_life,
             'remarks' => $propertyRecord->remarks,
             'accountable_officer_id' => $propertyRecord->accountable_officer_id,
             'accountable_officer_name' => $propertyRecord->accountableOfficer?->full_name,
@@ -859,6 +869,7 @@ class InventoryAssignmentController extends Controller
                 'unit_value' => (float) $propertyRecord->parRecord->unit_value,
                 'amount' => (float) $propertyRecord->parRecord->amount,
                 'date_acquired' => optional($propertyRecord->parRecord->date_acquired)->toDateString(),
+                'estimated_useful_life' => $propertyRecord->parRecord->estimated_useful_life,
             ];
         }
 
@@ -930,5 +941,27 @@ class InventoryAssignmentController extends Controller
             || PqsRecord::where('property_no', $propertyNo)->lockForUpdate()->exists());
 
         return $propertyNo;
+    }
+
+    private function normalizeUsefulLife($value, ?string $unit, ?string $legacy = null): ?string
+    {
+        if ($value !== null && $value !== '') {
+            $numeric = (float) $value;
+            if ($numeric <= 0) {
+                return null;
+            }
+
+            $normalizedValue = rtrim(rtrim(number_format($numeric, 2, '.', ''), '0'), '.');
+            $normalizedUnit = $unit === 'months' ? 'months' : 'years';
+
+            return $normalizedValue.' '.$normalizedUnit;
+        }
+
+        $legacyValue = trim((string) $legacy);
+        if ($legacyValue !== '') {
+            return $legacyValue;
+        }
+
+        return null;
     }
 }

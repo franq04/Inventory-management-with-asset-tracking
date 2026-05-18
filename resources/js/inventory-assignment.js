@@ -56,7 +56,8 @@ $(() => {
     const $unitCostField = $('#inventoryUnitCost');
     const $totalCostField = $('#inventoryTotalCost');
     const $dateAcquiredField = $('#inventoryDateAcquired');
-    const $usefulLifeField = $('#inventoryUsefulLife');
+    const $usefulLifeValueField = $('#inventoryUsefulLifeValue');
+    const $usefulLifeUnitField = $('#inventoryUsefulLifeUnit');
     const $initialLocationIdField = $('#inventoryInitialLocationId');
     const $initialLocationInputField = $('#inventoryInitialLocationInput');
     const $clearLocationBtn = $('#inventoryClearLocationBtn');
@@ -132,6 +133,24 @@ $(() => {
         .trim()
         .replace(/\s+/g, ' ')
         .toLowerCase();
+
+    const parseUsefulLife = (value = '') => {
+        const raw = String(value || '').trim();
+        if (!raw) {
+            return { amount: '', unit: 'years' };
+        }
+
+        const match = raw.match(/(\d+(?:\.\d+)?)/);
+        if (!match) {
+            return { amount: '', unit: 'years' };
+        }
+
+        const isMonths = /\b(month|months|mo|mos|mth|mths)\b/i.test(raw);
+        return {
+            amount: match[1],
+            unit: isMonths ? 'months' : 'years',
+        };
+    };
 
     const getLocationLabel = (location) => String(location?.label || location?.name || '').trim();
 
@@ -1292,7 +1311,10 @@ $(() => {
         $unitCostField.val(item.unit_cost ?? 0);
         $totalCostField.val((acceptedQuantity * (item.unit_cost ?? 0)).toFixed(2));
         $dateAcquiredField.val(item.property_record?.date_acquired || todayIso());
-        $usefulLifeField.val(item.property_record?.estimated_useful_life || '');
+        const usefulLife = item.property_record?.estimated_useful_life || '';
+        const usefulLifeParts = parseUsefulLife(usefulLife);
+        $usefulLifeValueField.val(usefulLifeParts.amount || '');
+        $usefulLifeUnitField.val(usefulLifeParts.unit || 'years');
         const preferredLocationId = item.property_record?.current_location_id
             || item.recommended_initial_location_id
             || null;
@@ -1401,7 +1423,10 @@ $(() => {
                 $viewTotalCost.text(totalCostValue != null ? formatCurrency(totalCostValue) : '—');
 
                 $viewOfficer.text(propertyRecord.accountable_officer_name || data.accountable_officer_name || '—');
-                const usefulLife = propertyRecord.estimated_useful_life || data.ics_record?.estimated_useful_life || '';
+                const usefulLife = propertyRecord.estimated_useful_life
+                    || data.ics_record?.estimated_useful_life
+                    || data.par_record?.estimated_useful_life
+                    || '';
                 $viewUsefulLife.text(usefulLife || '—');
 
                 const serialRaw = propertyRecord.serial_number || '';

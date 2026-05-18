@@ -32,6 +32,7 @@ class ParRecord extends Model
         'date_acquired',
         'unit_value',
         'amount',
+        'estimated_useful_life',
     ];
 
     protected $casts = [

@@ -496,26 +496,71 @@
 
                             <div id="pqsActionConditionPane" class="mt-4 hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-4 shadow-sm">
                                 <h4 class="text-xs font-semibold uppercase tracking-wide text-rose-700">Asset Serviceability</h4>
-                                <p class="mt-2 text-sm text-gray-600">Use this to mark the current asset as serviceable or unserviceable while preserving movement history.</p>
+                                <p class="mt-2 text-sm text-gray-600">Use this to mark the current asset as serviceable, under maintenance, or unserviceable while preserving movement history.</p>
 
                                 <div id="pqsConditionSuccess" class="hidden mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700"></div>
                                 <div id="pqsConditionError" class="hidden mt-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700"></div>
 
                                 <form id="pqsConditionForm" class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    <div class="md:col-span-2">
+                                        <label for="pqsConditionSelect" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Condition</label>
+                                        <div class="relative mt-1">
+                                            <button id="pqsConditionSelectToggle" type="button" class="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700">
+                                                <span id="pqsConditionSelectLabel" class="flex items-center gap-2">Select condition</span>
+                                                <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                                            </button>
+                                            <div id="pqsConditionSelectPanel" class="absolute z-30 mt-1 hidden w-full rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                                                <ul id="pqsConditionSelectList" class="space-y-1">
+                                                    <li>
+                                                        <button type="button" data-condition-option data-value="maintenance" data-label="Under Maintenance" data-chip-class="border-amber-200 bg-amber-50 text-amber-700" data-icon="fa-screwdriver-wrench" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-amber-50/70">
+                                                            <span class="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                                                <i class="fas fa-screwdriver-wrench"></i>
+                                                                Under Maintenance
+                                                            </span>
+                                                            <span class="text-[11px] text-gray-400">Needs estimated date</span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button type="button" data-condition-option data-value="serviceable" data-label="Serviceable" data-chip-class="border-emerald-200 bg-emerald-50 text-emerald-700" data-icon="fa-circle-check" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-emerald-50/70">
+                                                            <span class="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                                                                <i class="fas fa-circle-check"></i>
+                                                                Serviceable
+                                                            </span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button type="button" data-condition-option data-value="unserviceable" data-label="Unserviceable" data-chip-class="border-rose-200 bg-rose-50 text-rose-700" data-icon="fa-triangle-exclamation" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-rose-50/70">
+                                                            <span class="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                                                                <i class="fas fa-triangle-exclamation"></i>
+                                                                Unserviceable
+                                                            </span>
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        <input id="pqsConditionSelect" name="condition" type="hidden" value="">
+                                        <p id="pqsConditionSelectError" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
                                     <div>
                                         <label for="pqsConditionEffectiveAt" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Effective Date</label>
                                         <input id="pqsConditionEffectiveAt" name="effective_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
                                     </div>
-                                    <div>
+                                    <div id="pqsConditionExpectedFixDateWrap" class="hidden">
+                                        <label for="pqsConditionExpectedFixDate" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Estimated Completion Date <span class="text-rose-600">*</span></label>
+                                        <input id="pqsConditionExpectedFixDate" name="expected_return_at" type="date" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                                        <p id="pqsConditionExpectedFixDateError" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
+                                    </div>
+                                    <div class="md:col-span-2">
                                         <label for="pqsConditionRemarks" class="text-xs font-semibold uppercase tracking-wide text-gray-500">Remarks <span class="text-rose-600">*</span></label>
                                         <textarea id="pqsConditionRemarks" name="remarks" rows="2" maxlength="1000" class="mt-1 w-full rounded-xl border border-gray-200 px-3 py-2 text-sm" placeholder="Required condition notes"></textarea>
                                         <p id="pqsConditionRemarksError" class="mt-1 hidden text-xs font-medium text-rose-700"></p>
                                     </div>
 
                                     <div class="md:col-span-2 flex flex-wrap items-center gap-3">
-                                        <button type="button" id="pqsConditionUnserviceable" data-condition-value="unserviceable" class="inline-flex items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800">
-                                            <i class="fas fa-triangle-exclamation"></i>
-                                            Mark Unserviceable
+                                        <button type="button" id="pqsConditionSubmit" class="inline-flex items-center gap-2 rounded-xl bg-[#1a3a2d] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#285641]">
+                                            <i class="fas fa-floppy-disk"></i>
+                                            Save Condition
                                         </button>
                                     </div>
                                 </form>

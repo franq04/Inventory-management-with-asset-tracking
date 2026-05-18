@@ -71,7 +71,7 @@ Characteristics:
 - Endpoint: pqs/{property_no}/movements
 - Allowed movement types: transfer, relocation, inventory_correction, maintenance_out, maintenance_in
 - Target flexibility: location, employee, division, section (any valid combination)
-- Maintenance behavior: maintenance_out sets asset status to for_repair; maintenance_in sets it back to active
+- Maintenance behavior: maintenance_out sets asset status to maintenance (under maintenance) or for_repair (unserviceable) based on reason_code; maintenance_in sets it back to active
 - Notification behavior: sends assignment notification when a target employee is set
 
 ### What is Bulk Employee Turnover

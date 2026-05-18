@@ -15,3 +15,17 @@ Schedule::command('pr:process-expired-items')
     ->withoutOverlapping()
     ->runInBackground()
     ->appendOutputTo(storage_path('logs/expired-items.log'));
+
+Schedule::command('assets:notify-unserviceable')
+    ->daily()
+    ->at('00:10')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/unserviceable-assets.log'));
+
+Schedule::command('assets:notify-maintenance-due')
+    ->daily()
+    ->at('00:15')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->appendOutputTo(storage_path('logs/maintenance-due.log'));

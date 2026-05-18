@@ -23,6 +23,7 @@ class AssetMovement extends Model
         'movement_type',
         'reason_code',
         'effective_at',
+        'expected_return_at',
         'recorded_by',
         'source_table',
         'source_record_id',
@@ -31,6 +32,7 @@ class AssetMovement extends Model
 
     protected $casts = [
         'effective_at' => 'datetime',
+        'expected_return_at' => 'date',
     ];
 
     public function property(): BelongsTo

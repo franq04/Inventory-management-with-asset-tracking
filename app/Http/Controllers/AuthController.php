@@ -6,12 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 use App\Mail\PasswordResetLink;
 use App\Models\Account;
 use App\Models\AuditLog;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class AuthController extends Controller
 {
@@ -160,7 +162,28 @@ class AuthController extends Controller
             'username' => $account->username,
         ]);
 
-        Mail::to($employeeEmail)->send(new PasswordResetLink($account->username, $resetUrl));
+        $requestedAt = now()->format('F j, Y g:i A');
+        $requestIp = $request->ip();
+
+        try {
+            Mail::to($employeeEmail)->send(new PasswordResetLink(
+                $account->username,
+                $resetUrl,
+                $employeeEmail,
+                $requestedAt,
+                $requestIp
+            ));
+        } catch (TransportExceptionInterface $exception) {
+            Log::warning('Password reset email failed to send.', [
+                'username' => $account->username,
+                'email' => $employeeEmail,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return back()
+                ->withErrors(['email' => 'We could not send the reset email right now. Please try again later.'])
+                ->withInput($request->only('username', 'email'));
+        }
 
         return back()->with('status', 'A reset link has been sent to your recovery email.');
     }

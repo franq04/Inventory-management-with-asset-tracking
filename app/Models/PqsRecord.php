@@ -62,6 +62,7 @@ class PqsRecord extends Model
     const STATUS_DISPOSED = 'disposed';
     const STATUS_LOST = 'lost';
     const STATUS_FOR_REPAIR = 'for_repair';
+    const STATUS_MAINTENANCE = 'maintenance';
 
     public function category(): BelongsTo
     {
@@ -149,8 +150,8 @@ class PqsRecord extends Model
      */
     public function canBeTransferred(): bool
     {
-        // Cannot transfer disposed, lost, or currently unserviceable assets.
-        if (in_array($this->asset_status, [self::STATUS_DISPOSED, self::STATUS_LOST, self::STATUS_FOR_REPAIR], true)) {
+        // Cannot transfer disposed, lost, unserviceable, or under maintenance assets.
+        if (in_array($this->asset_status, [self::STATUS_DISPOSED, self::STATUS_LOST, self::STATUS_FOR_REPAIR, self::STATUS_MAINTENANCE], true)) {
             return false;
         }
 
@@ -204,6 +205,7 @@ class PqsRecord extends Model
             self::STATUS_DISPOSED => 'secondary',
             self::STATUS_LOST => 'danger',
             self::STATUS_FOR_REPAIR => 'warning',
+            self::STATUS_MAINTENANCE => 'warning',
             default => 'secondary',
         };
     }

@@ -53,6 +53,7 @@
             @forelse($records as $record)
             @php
                 $assetStatusLabel = match ((string) ($record->asset_status ?? \App\Models\PqsRecord::STATUS_ACTIVE)) {
+                    \App\Models\PqsRecord::STATUS_MAINTENANCE => 'Under Maintenance',
                     \App\Models\PqsRecord::STATUS_FOR_REPAIR,
                     \App\Models\PqsRecord::STATUS_DISPOSED,
                     \App\Models\PqsRecord::STATUS_LOST => 'Unserviceable',

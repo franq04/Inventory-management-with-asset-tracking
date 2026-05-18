@@ -861,7 +861,7 @@ class UserManualController extends Controller
                 [
                     'title' => 'Condition',
                     'icon' => 'fas fa-circle-check',
-                    'chip' => 'Any | Serviceable | Unserviceable',
+                    'chip' => 'Any | Serviceable | Under Maintenance | Unserviceable',
                     'description' => 'Show only assets with a selected condition status for validation and reporting.',
                 ],
                 [
