@@ -107,7 +107,6 @@
                                 @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->supplier_id }}"
                                             data-address="{{ $supplier->address }}"
-                                            data-tin="{{ $supplier->tin }}"
                                             data-contact="{{ $supplier->contact_person }}"
                                             data-contact-number="{{ $supplier->contact_no }}"
                                             data-email="{{ $supplier->email }}">
@@ -127,10 +126,6 @@
                         <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                             <label for="poNewSupplierAddress" class="font-semibold">Address :</label>
                             <input type="text" id="poNewSupplierAddress" name="new_supplier[address]" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Complete address" data-new-supplier-field disabled>
-                        </div>
-                        <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
-                            <label for="poNewSupplierTin" class="font-semibold">TIN :</label>
-                            <input type="text" id="poNewSupplierTin" name="new_supplier[tin]" class="w-full rounded border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-[#1a3a2d] focus:ring-[#1a3a2d]" placeholder="Tax Identification Number" data-new-supplier-field disabled>
                         </div>
                         <div class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                             <label for="poNewSupplierContact" class="font-semibold">Contact Person :</label>
@@ -166,10 +161,6 @@
                     <div id="poSupplierAddressRow" class="grid grid-cols-[auto,1fr] items-center gap-x-2">
                         <label for="poSupplierAddress" class="font-semibold">Address :</label>
                         <input type="text" id="poSupplierAddress" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
-                    </div>
-                    <div id="poSupplierTinRow" class="grid grid-cols-[auto,1fr] items-center gap-x-2">
-                        <label for="poSupplierTin" class="font-semibold">TIN :</label>
-                        <input type="text" id="poSupplierTin" class="w-full border-0 border-b border-dotted border-gray-400 bg-transparent px-2 text-sm text-gray-700 focus:ring-0" readonly placeholder="—">
                     </div>
                 </div>
             </div>
@@ -348,7 +339,6 @@ $suppliersData = $suppliers->mapWithKeys(function ($supplier) {
     return [$supplier->supplier_id => [
         'name' => $supplier->supplier_name,
         'address' => $supplier->address,
-        'tin' => $supplier->tin,
         'contact_person' => $supplier->contact_person,
         'contact_no' => $supplier->contact_no,
         'email' => $supplier->email,

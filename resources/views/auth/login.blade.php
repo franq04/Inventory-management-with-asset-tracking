@@ -194,6 +194,16 @@
                     </button>
                 </div>
                 <p id="login-password-error" class="-mt-4 text-sm font-medium text-red-600 min-h-[1.25rem]" role="alert" aria-live="polite">{{ $errors->first('password') }}</p>
+
+                @if (session('status'))
+                    <div class="-mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+                        {{ session('status') }}
+                    </div>
+                @endif
+
+                <div class="-mt-2 text-right">
+                    <a href="{{ route('password.request') }}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Forgot password?</a>
+                </div>
                 
                 <div>
                     <button id="loginSubmitBtn" type="submit" data-no-global-loading="true" class="shimmer-btn group w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-lg font-semibold text-white bg-[var(--secondary-color)] hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--primary-color)] transition-all duration-300 ease-in-out active:scale-[0.98]">
@@ -277,6 +287,10 @@
                 usernameInput.addEventListener('blur', () => interactiveOrb.classList.remove('user-focused'));
             }
             if (passwordInput && interactiveOrb) {
+
+            @if (session('toast'))
+                showLoginToast(@json(session('toast.message')), @json(session('toast.type', 'success')));
+            @endif
                 passwordInput.addEventListener('focus', () => interactiveOrb.classList.add('pass-focused'));
                 passwordInput.addEventListener('blur', () => interactiveOrb.classList.remove('pass-focused'));
             }

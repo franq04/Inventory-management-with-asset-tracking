@@ -228,6 +228,15 @@
                         </a>
                     </li>
                 @endif
+                @if (Route::has('suppliers.index'))
+                    <li>
+                        <a href="{{ route('suppliers.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('suppliers.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-truck text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Suppliers</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Suppliers</div>
+                        </a>
+                    </li>
+                @endif
             </ul>
         </div>
         @endif

@@ -371,7 +371,6 @@ class PurchaseOrderController extends Controller
             'new_supplier' => ['sometimes', 'array'],
             'new_supplier.name' => ['required_if:supplier_mode,new', 'nullable', 'string', 'max:150'],
             'new_supplier.address' => ['nullable', 'string', 'max:255'],
-            'new_supplier.tin' => ['nullable', 'string', 'max:50'],
             'new_supplier.contact_person' => ['nullable', 'string', 'max:150'],
             'new_supplier.contact_no' => ['nullable', 'string', 'max:50'],
             'new_supplier.email' => ['nullable', 'email', 'max:150'],
@@ -417,10 +416,6 @@ class PurchaseOrderController extends Controller
                 'contact_no' => $newSupplier['contact_no'] ?? null,
                 'email' => $newSupplier['email'] ?? null,
             ];
-
-            if (Schema::hasColumn('suppliers', 'tin')) {
-                $supplierAttributes['tin'] = $newSupplier['tin'] ?? null;
-            }
 
             Supplier::create($supplierAttributes);
 

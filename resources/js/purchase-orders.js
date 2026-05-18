@@ -414,8 +414,6 @@ const bindPurchaseOrderForm = () => {
     const $newSupplierName = $('#poNewSupplierName');
     const $supplierAddressRow = $('#poSupplierAddressRow');
     const $supplierAddress = $('#poSupplierAddress');
-    const $supplierTin = $('#poSupplierTin');
-    const $supplierTinRow = $('#poSupplierTinRow');
     const $conformeName = $('#poConformeName');
     const $conformeDate = $('#poConformeDate');
     const $orderDate = $('#poOrderDate');
@@ -481,13 +479,11 @@ const bindPurchaseOrderForm = () => {
 
     const clearExistingSupplierDisplay = () => {
         $supplierAddress.val('');
-        $supplierTin.val('');
     };
 
     const populateExistingSupplier = (supplierId) => {
         const info = suppliers[supplierId] || {};
         $supplierAddress.val(info.address || '');
-        $supplierTin.val(info.tin || '');
 
         if (info.name && !$conformeName.is(':focus')) {
             $conformeName.val(info.name);
@@ -519,7 +515,6 @@ const bindPurchaseOrderForm = () => {
         $existingSupplierWrapper.toggleClass('hidden', !isExisting);
         $newSupplierWrapper.toggleClass('hidden', isExisting);
         $supplierAddressRow.toggleClass('hidden', !isExisting);
-        $supplierTinRow.toggleClass('hidden', !isExisting);
 
         $supplierSelect.prop('disabled', !isExisting);
         if (isExisting) {

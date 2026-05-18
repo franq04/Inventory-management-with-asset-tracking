@@ -17,6 +17,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Management\AccountController;
 use App\Http\Controllers\Management\CategoryController;
 use App\Http\Controllers\Management\EmployeeController;
+use App\Http\Controllers\Management\SupplierController;
 use App\Http\Controllers\Inventory\PqsController;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -31,6 +32,10 @@ Route::get('/', function () {
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-password', [AuthController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 
 Route::middleware(['auth.session'])->group(function () {
     $toProfileImageUrl = static function (?string $path): string {
@@ -298,6 +303,10 @@ Route::middleware('role:custodian,admin')->group(function () {
             ->name('audit_logs.print.pdf');
         Route::get('audit-logs/export/excel', [AuditLogController::class, 'exportExcel'])
             ->name('audit_logs.export.excel');
+        Route::get('audit-logs/backup', [AuditLogController::class, 'downloadBackup'])
+            ->name('audit_logs.backup');
+        Route::post('audit-logs/recover', [AuditLogController::class, 'recover'])
+            ->name('audit_logs.recover');
     });
 
     Route::middleware('role:custodian,iac,admin')->group(function () {
@@ -377,6 +386,9 @@ Route::middleware(['auth.session', 'role:custodian,admin'])->group(function () {
     Route::post('categories/{category}/children', [CategoryController::class, 'storeChild'])->name('categories.children.store');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+    Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+    Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
         Route::resource('employees', EmployeeController::class)
             ->except(['show'])
             ->names('employees');

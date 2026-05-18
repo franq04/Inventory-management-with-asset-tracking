@@ -47,6 +47,38 @@
         </div>
     </div>
 
+    @if (session('success'))
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ session('success') }}</span>
+            </div>
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>Please fix the errors below and try again.</span>
+            </div>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-xs text-red-700">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="space-y-5">
             <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-[0_14px_40px_-28px_rgba(15,60,45,0.45)]">
                 <form id="filterForm" method="GET" action="{{ route('custodian.audit_logs.index') }}" class="space-y-4">
@@ -90,6 +122,14 @@
                                 <i class="fas fa-undo"></i>
                                 Reset
                             </a>
+                            <a href="{{ route('custodian.audit_logs.backup') }}" id="auditLogsBackupBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                <i class="fas fa-database text-indigo-600"></i>
+                                Backup SQL
+                            </a>
+                            <button type="button" id="auditLogsRecoverBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
+                                <i class="fas fa-rotate text-amber-600"></i>
+                                Recover SQL
+                            </button>
                             <button type="button" id="auditLogsPrintPdfBtn" class="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition-all hover:border-[#1a3a2d]/20 hover:bg-[#f7faf8] hover:text-[#1a3a2d]">
                                 <i class="fas fa-file-pdf text-rose-600"></i>
                                 Print PDF
@@ -165,12 +205,57 @@
         </div>
     </div>
 </div>
+
+<div id="auditRecoverModal" class="fixed inset-0 z-[140] hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="auditRecoverTitle">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" data-close-recover-modal></div>
+    <div class="relative flex min-h-full items-center justify-center p-4">
+        <div class="modal-panel relative w-full max-w-lg rounded-2xl bg-white shadow-2xl transition-all duration-300 ease-out opacity-0 scale-95 translate-y-2">
+            <div class="flex items-center justify-between rounded-t-2xl bg-gradient-to-r from-[#1a3a2d] to-[#285641] px-5 py-4 text-white">
+                <div>
+                    <h3 id="auditRecoverTitle" class="text-lg font-bold tracking-tight">Recover Database</h3>
+                    <p class="text-xs text-white/80">Upload a SQL dump to restore the database.</p>
+                </div>
+                <button type="button" class="rounded-lg p-2 text-white/80 transition-all hover:bg-white/10 hover:text-white" data-close-recover-modal data-recover-focus>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="auditRecoverForm" method="POST" action="{{ route('custodian.audit_logs.recover') }}" enctype="multipart/form-data" data-turbo="false" class="space-y-4 p-5">
+                @csrf
+                <div>
+                    <label for="auditRecoverFile" class="mb-1 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">SQL File</label>
+                    <input id="auditRecoverFile" name="backup_sql" type="file" accept=".sql,.txt" required class="w-full rounded-xl border border-emerald-950/15 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-[#1a3a2d] focus:outline-none focus:ring-4 focus:ring-[#1a3a2d]/10" />
+                    <p class="mt-2 text-xs text-amber-700">Warning: recovery will drop all tables before importing the SQL file.</p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 border-t border-gray-100 pt-3">
+                    <button type="button" class="rounded-xl border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50" data-close-recover-modal>
+                        Cancel
+                    </button>
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-700">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        Recover Database
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
-    // Use an Immediately Invoked Function Expression (IIFE) to avoid polluting the global scope
-    (function($) {
+    (() => {
+        const boot = (attempt = 0) => {
+            if (!window.jQuery) {
+                if (attempt < 40) {
+                    window.setTimeout(() => boot(attempt + 1), 50);
+                }
+                return;
+            }
+
+            // Use an Immediately Invoked Function Expression (IIFE) to avoid polluting the global scope
+            (function($) {
         // Cache jQuery objects for performance
         const $contentWrapper = $('#auditLogContent');
         const $skeleton = $('#auditLogSkeleton');
@@ -318,7 +403,11 @@
         syncKpis({{ (int) $logs->total() }});
         animateRows();
 
-    })(jQuery);
+            })(window.jQuery);
+        };
+
+        boot();
+    })();
 
     // PDF and Excel Export Handlers
     (function() {
@@ -343,6 +432,53 @@
                 window.location.href = url;
             });
         }
+    })();
+
+    (() => {
+        const modal = document.getElementById('auditRecoverModal');
+        const openBtn = document.getElementById('auditLogsRecoverBtn');
+        const form = document.getElementById('auditRecoverForm');
+        const modalPanel = modal?.querySelector('.modal-panel') ?? null;
+        const focusTarget = modal?.querySelector('[data-recover-focus]') ?? null;
+
+        const openModal = () => {
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                modal.classList.add('opacity-100');
+                modalPanel?.classList.remove('opacity-0', 'scale-95', 'translate-y-2');
+            });
+            document.body.classList.add('overflow-hidden');
+            focusTarget?.focus();
+        };
+
+        const closeModal = () => {
+            if (!modal) return;
+            modal.classList.remove('opacity-100');
+            modalPanel?.classList.add('opacity-0', 'scale-95', 'translate-y-2');
+            window.setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }, 200);
+        };
+
+        openBtn?.addEventListener('click', openModal);
+        modal?.querySelectorAll('[data-close-recover-modal]').forEach((btn) => {
+            btn.addEventListener('click', closeModal);
+        });
+
+        modal?.addEventListener('click', (event) => {
+            if (event.target instanceof HTMLElement && event.target.hasAttribute('data-close-recover-modal')) {
+                closeModal();
+            }
+        });
+
+        form?.addEventListener('submit', (event) => {
+            const confirmed = window.confirm('This will drop ALL tables and restore the database from the selected SQL file. Continue?');
+            if (!confirmed) {
+                event.preventDefault();
+            }
+        });
     })();
 </script>
 @endpush
