@@ -297,6 +297,46 @@
             </div>
 
             <div class="rounded-2xl border border-emerald-950/10 bg-white p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.7)]">
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="text-lg font-semibold text-[#1a3a2d]">Useful Life Alert</h3>
+                    <span class="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">Next 30 days</span>
+                </div>
+                <p class="mt-2 text-xs text-gray-500">Items reaching estimated useful life within one month.</p>
+                <ul class="mt-4 space-y-4">
+                    @forelse ($usefulLifeAlerts as $alert)
+                        <li class="rounded-xl border border-amber-100 bg-amber-50/40 px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="text-sm">
+                                    <p class="font-semibold text-gray-800">{{ $alert['article'] }}</p>
+                                    <p class="text-xs text-gray-500">Property no: {{ $alert['property_no'] }}</p>
+                                </div>
+                                <span class="rounded-full border border-amber-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                    {{ $alert['days_left'] }} days left
+                                </span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
+                                <span>Expiry: {{ $alert['expires_at'] }}</span>
+                                @if($alert['useful_life'])
+                                    <span>• Useful life: {{ $alert['useful_life'] }}</span>
+                                @endif
+                            </div>
+                            @if($alert['current_location'] || $alert['current_custodian'])
+                                <p class="mt-2 text-xs text-gray-500">
+                                    {{ $alert['current_location'] ? 'Location: ' . $alert['current_location'] : '' }}
+                                    {{ $alert['current_location'] && $alert['current_custodian'] ? ' • ' : '' }}
+                                    {{ $alert['current_custodian'] ? 'Custodian: ' . $alert['current_custodian'] : '' }}
+                                </p>
+                            @endif
+                        </li>
+                    @empty
+                        <li class="rounded-xl border border-dashed border-gray-200 px-4 py-4 text-center text-xs text-gray-500">
+                            No assets are within one month of their estimated useful life.
+                        </li>
+                    @endforelse
+                </ul>
+            </div>
+
+            <div class="rounded-2xl border border-emerald-950/10 bg-white p-6 shadow-[0_20px_45px_-35px_rgba(15,23,42,0.7)]">
                 <h3 class="text-lg font-semibold text-[#1a3a2d]">Recently Acquired</h3>
                 <ul class="mt-4 space-y-4">
                     @forelse ($recentAssets as $recent)

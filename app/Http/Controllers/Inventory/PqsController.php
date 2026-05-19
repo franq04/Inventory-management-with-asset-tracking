@@ -77,6 +77,8 @@ class PqsController extends Controller
             ->limit(5)
             ->get();
 
+        $usefulLifeAlerts = $this->buildUsefulLifeAlerts();
+
         $transferLocations = PhysicalLocation::query()
             ->where('is_active', true)
             ->where('location_type', '!=', 'storage')
@@ -120,6 +122,7 @@ class PqsController extends Controller
             'dateTo' => $dateTo,
             'categories' => $categories,
             'recentAssets' => $recentAssets,
+            'usefulLifeAlerts' => $usefulLifeAlerts,
             'transferLocations' => $transferLocations,
             'turnoverLocations' => $turnoverLocations,
             'transferCustodians' => $transferCustodians,
@@ -281,6 +284,87 @@ class PqsController extends Controller
                     'remarks' => $movement->remarks,
                 ];
             })->values()->all(),
+        ];
+    }
+
+    protected function buildUsefulLifeAlerts(): array
+    {
+        $today = now()->startOfDay();
+
+        $candidates = PqsRecord::query()
+            ->with(['category', 'currentLocation', 'currentCustodian', 'accountableOfficer', 'icsRecord', 'parRecord'])
+            ->whereNotNull('date_acquired')
+            ->where(function ($query) {
+                $query->whereHas('icsRecord', function ($query) {
+                    $query->whereNotNull('estimated_useful_life')
+                        ->where('estimated_useful_life', '!=', '');
+                })->orWhereHas('parRecord', function ($query) {
+                    $query->whereNotNull('estimated_useful_life')
+                        ->where('estimated_useful_life', '!=', '');
+                });
+            })
+            ->get();
+
+        $alerts = [];
+
+        foreach ($candidates as $record) {
+            $lifeRaw = $record->icsRecord?->estimated_useful_life ?: $record->parRecord?->estimated_useful_life;
+            $life = $this->parseUsefulLife((string) $lifeRaw);
+            if (! $life || ! $record->date_acquired) {
+                continue;
+            }
+
+            $expiryDate = Carbon::parse($record->date_acquired)
+                ->startOfDay()
+                ->addMonthsNoOverflow($life['months']);
+
+            $alertStart = $expiryDate->copy()->subMonthNoOverflow();
+            if ($today->lt($alertStart) || $today->gt($expiryDate)) {
+                continue;
+            }
+
+            $alerts[] = [
+                'property_no' => (string) $record->property_no,
+                'article' => (string) $record->article,
+                'category' => $record->category?->cat_name,
+                'current_location' => $record->currentLocation?->location_name,
+                'current_custodian' => $record->currentCustodian?->full_name ?? $record->accountableOfficer?->full_name,
+                'date_acquired' => optional($record->date_acquired)->format('M d, Y'),
+                'expires_at' => $expiryDate->format('M d, Y'),
+                'days_left' => $today->diffInDays($expiryDate, false),
+                'useful_life' => $lifeRaw,
+            ];
+        }
+
+        usort($alerts, static function (array $left, array $right) {
+            return strtotime($left['expires_at']) <=> strtotime($right['expires_at']);
+        });
+
+        return array_slice($alerts, 0, 6);
+    }
+
+    protected function parseUsefulLife(string $raw): ?array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return null;
+        }
+
+        if (! preg_match('/(\d+(?:\.\d+)?)/', $raw, $matches)) {
+            return null;
+        }
+
+        $value = (float) $matches[1];
+        if ($value <= 0) {
+            return null;
+        }
+
+        $isMonths = (bool) preg_match('/\b(month|months|mo|mos|mth|mths)\b/i', $raw);
+        $months = $isMonths ? (int) round($value) : (int) round($value * 12);
+        $months = max(1, $months);
+
+        return [
+            'months' => $months,
         ];
     }
 
