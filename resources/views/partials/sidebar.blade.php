@@ -2,7 +2,7 @@
     $role = strtolower(session('role') ?? auth()->user()->role ?? '');
 
     // Active state checks
-    $isManagementActive = request()->routeIs(['custodian.fund_allocations.*', 'accounts.*', 'categories.*', 'employees.*']);
+    $isManagementActive = request()->routeIs(['custodian.fund_allocations.*', 'custodian.locations.*', 'accounts.*', 'categories.*', 'employees.*']);
     $isInventoryActive = request()->routeIs(['pqs.*', 'custodian.inventory.*']);
     $isProcurementActive = request()->routeIs(['custodian.requests.*', 'custodian.orders.*', 'custodian.inspection.*']);
     $isInspectionActive = request()->routeIs(['custodian.inspection.*']);
@@ -198,6 +198,15 @@
                             <i class="fas fa-wallet text-lg w-6 text-center"></i>
                             <span class="ml-3 [.w-20_&]:hidden">Fund Allocations</span>
                             <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Fund Allocations</div>
+                        </a>
+                    </li>
+                @endif
+                @if (Route::has('custodian.locations.index'))
+                    <li>
+                        <a href="{{ route('custodian.locations.index') }}" class="group relative flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors duration-200 {{ request()->routeIs('custodian.locations.*') ? 'bg-[var(--secondary-color)] text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                            <i class="fas fa-map-location-dot text-lg w-6 text-center"></i>
+                            <span class="ml-3 [.w-20_&]:hidden">Locations</span>
+                            <div class="absolute left-full ml-4 px-2 py-1 text-sm bg-gray-800 text-white rounded-md opacity-0 [.w-20_&]:group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none pointer-events-none">Locations</div>
                         </a>
                     </li>
                 @endif

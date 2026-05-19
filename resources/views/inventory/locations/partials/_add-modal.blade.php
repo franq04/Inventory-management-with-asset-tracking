@@ -1,4 +1,4 @@
-gi<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/55 p-4 opacity-0 transition duration-300" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="locationRegistryModalTitle">
+<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-900/55 p-4 opacity-0 transition duration-300" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="locationRegistryModalTitle">
     <div class="modal-panel w-full max-w-2xl rounded-2xl border border-emerald-950/10 bg-white opacity-0 scale-95 translate-y-2 shadow-2xl transition duration-300">
         <div class="flex items-start justify-between border-b border-gray-200 px-6 py-4">
             <div>
@@ -74,6 +74,7 @@ gi<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-cente
             const openButtons = Array.from(document.querySelectorAll('[data-open-location-registry-modal]'));
             const errorNodes = Array.from(form.querySelectorAll('[data-location-error-for]'));
             const locationTypeField = form.querySelector('[name="location_type"]');
+            const parentField = form.querySelector('[name="parent_location_id"]');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             let restoreBodyOverflowOnClose = false;
 
@@ -133,9 +134,17 @@ gi<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-cente
                 locationTypeField.disabled = false;
                 locationTypeField.classList.remove('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
 
+                if (parentField) {
+                    parentField.disabled = false;
+                    parentField.classList.remove('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
+                }
+
                 const forcedType = String(triggerButton?.dataset?.locationRegistryType || '').trim();
                 const lockTypeRaw = String(triggerButton?.dataset?.locationRegistryLockType || '').trim().toLowerCase();
                 const shouldLockType = lockTypeRaw === '1' || lockTypeRaw === 'true';
+                const forcedParent = String(triggerButton?.dataset?.locationRegistryParent || '').trim();
+                const lockParentRaw = String(triggerButton?.dataset?.locationRegistryLockParent || '').trim().toLowerCase();
+                const shouldLockParent = lockParentRaw === '1' || lockParentRaw === 'true';
 
                 if (forcedType !== '' && Array.from(locationTypeField.options).some((option) => option.value === forcedType)) {
                     locationTypeField.value = forcedType;
@@ -144,6 +153,17 @@ gi<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-cente
                 if (shouldLockType) {
                     locationTypeField.disabled = true;
                     locationTypeField.classList.add('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
+                }
+
+                if (parentField) {
+                    if (forcedParent !== '' && Array.from(parentField.options).some((option) => option.value === forcedParent)) {
+                        parentField.value = forcedParent;
+                    }
+
+                    if (shouldLockParent) {
+                        parentField.disabled = true;
+                        parentField.classList.add('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
+                    }
                 }
             };
 
@@ -214,6 +234,10 @@ gi<div id="locationRegistryModal" class="fixed inset-0 z-[80] hidden items-cente
                     locationTypeField?.classList.remove('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
                     if (locationTypeField) {
                         locationTypeField.disabled = false;
+                    }
+                    parentField?.classList.remove('bg-gray-100', 'text-gray-600', 'cursor-not-allowed');
+                    if (parentField) {
+                        parentField.disabled = false;
                     }
                     resetErrors();
                 }, 300);

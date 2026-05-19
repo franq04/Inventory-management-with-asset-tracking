@@ -219,6 +219,17 @@ Route::middleware('role:custodian,admin')->group(function () {
         Route::delete('fund-allocations/{fundAllocation}', [App\Http\Controllers\Custodian\FundAllocationController::class, 'destroy'])
             ->name('fund_allocations.destroy');
 
+        Route::get('locations', [PhysicalLocationController::class, 'index'])
+            ->name('locations.index');
+        Route::get('locations/{location}', [PhysicalLocationController::class, 'show'])
+            ->name('locations.show');
+        Route::post('locations', [PhysicalLocationController::class, 'store'])
+            ->name('locations.store');
+        Route::put('locations/{location}', [PhysicalLocationController::class, 'update'])
+            ->name('locations.update');
+        Route::delete('locations/{location}', [PhysicalLocationController::class, 'destroy'])
+            ->name('locations.destroy');
+
         Route::get('user-manual', [UserManualController::class, 'index'])
             ->name('user_manual.index');
         Route::get('user-manual/export', [UserManualController::class, 'export'])
