@@ -7,6 +7,21 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Project Setup (Recommended)
+
+For consistent installs across developers and CI, keep both lockfiles committed: `composer.lock` and `package-lock.json`.
+
+1. Install PHP dependencies:
+	- `composer install`
+2. Install Node dependencies:
+	- `npm ci` (CI) or `npm install` (local development)
+3. Build or run the frontend:
+	- `npm run build` or `npm run dev`
+
+## CI (GitHub Actions)
+
+The workflow in `.github/workflows/ci.yml` installs PHP and Node dependencies and runs a frontend build on each push and pull request.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
